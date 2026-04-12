@@ -6,6 +6,7 @@ Each tool is a single, self-contained HTML file. The site is hosted via [GitHub 
 
 ## Tools
 
+- [Browser LLM Playground](browser-llm-playground) test whether your browser/device can run a small local LLM with WebGPU
 - [Word Counter](word-counter) count words, characters, sentences, and lines in real time
 - [Pace Calculator](pace-calculator) convert between pace, speed, and finish time for distances from 5K to 100 miles
 - [Raised Bed Planner](raised-bed-planner) plan your square foot garden layout with companion planting guidance

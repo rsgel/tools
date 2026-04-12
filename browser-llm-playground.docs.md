@@ -1,0 +1,1 @@
+A simple browser-based playground for testing whether a device can run an LLM locally with WebGPU and WebLLM. It checks key capabilities, lets you load a small model in-browser, and streams a response without requiring your own backend.
