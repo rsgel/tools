@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raised Bed Planner</title>
+    <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      max-width: 1060px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+      color: #333;
+      background: #fafaf7;
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 28px;
+    }
+    .subtitle {
+      color: #666;
+      margin-top: -12px;
+      margin-bottom: 16px;
+      font-size: 15px;
+    }
+    .config {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .config label {
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .config input[type="number"] {
+      width: 56px;
+      padding: 4px 8px;
+      font-size: 16px;
+      border: 2px solid #ccc;
+      border-radius: 4px;
+      text-align: center;
+    }
+    .config input:focus {
+      outline: none;
+      border-color: #5c940d;
+    }
+    button {
+      font-family: inherit;
+    }
+    .btn {
+      padding: 6px 16px;
+      background: #5c940d;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background: #4c7a0b;
+    }
+    .palette-bar {
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin-bottom: 16px;
+    }
+    .pal-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: flex-start;
+    }
+    .pal-group {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      flex-wrap: wrap;
+    }
+    .pal-group::after {
+      content: "";
+      display: block;
+      width: 1px;
+      height: 22px;
+      background: #e0e0e0;
+      margin-left: 3px;
+    }
+    .pal-group:last-child::after { display: none; }
+    .main-layout {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+    }
+    .grid-section {
+      flex: 1;
+      min-width: 0;
+    }
+    .sidebar {
+      width: 260px;
+      flex-shrink: 0;
+    }
+    .bed-frame {
+      background: #8d6e63;
+      padding: 8px;
+      border-radius: 6px;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.2), 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .bed-grid {
+      display: grid;
+      gap: 3px;
+    }
+    .bed-cell {
+      aspect-ratio: 1;
+      background: #f5f0e6;
+      border-radius: 2px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.12s, box-shadow 0.12s;
+      position: relative;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .bed-cell:hover {
+      background: #ece5d5;
+    }
+    .bed-cell.occupied:hover {
+      filter: brightness(0.95);
+    }
+    .cell-icon {
+      font-size: 24px;
+      line-height: 1;
+    }
+    .cell-name {
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      color: rgba(0,0,0,0.6);
+      margin-top: 1px;
+      text-align: center;
+      line-height: 1.1;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      padding: 0 2px;
+    }
+    .cell-count {
+      font-size: 8px;
+      color: rgba(0,0,0,0.4);
+    }
+    .bed-cell.hl-friend {
+      box-shadow: inset 0 0 0 3px #2f9e44;
+    }
+    .bed-cell.hl-foe {
+      box-shadow: inset 0 0 0 3px #e03131;
+    }
+    .bed-cell.has-conflict::after {
+      content: "⚠";
+      position: absolute;
+      top: 1px;
+      right: 2px;
+      font-size: 11px;
+      line-height: 1;
+    }
+    .legend {
+      display: flex;
+      gap: 16px;
+      margin-top: 8px;
+      font-size: 12px;
+      color: #666;
+      flex-wrap: wrap;
+    }
+    .legend span::before {
+      content: "";
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+    .leg-friend::before { background: #2f9e44; }
+    .leg-foe::before { background: #e03131; }
+    .leg-conflict::before { background: #ffd43b; content: "⚠"; font-size: 10px; background: none; margin-right: 2px; }
+    .plant-info {
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 12px;
+      min-height: 60px;
+    }
+    .plant-info .hint {
+      color: #999;
+      font-size: 14px;
+      margin: 0;
+    }
+    .info-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .info-icon { font-size: 28px; }
+    .info-name { font-size: 18px; font-weight: 600; }
+    .info-meta { font-size: 13px; color: #666; margin-bottom: 6px; }
+    .info-section { font-size: 13px; margin-top: 4px; }
+    .info-section strong { font-weight: 600; }
+    .info-friends { color: #2f9e44; }
+    .info-foes { color: #c92a2a; }
+    .pal-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #999;
+      white-space: nowrap;
+    }
+    .pal-btn {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      padding: 3px 6px;
+      border: 2px solid #ddd;
+      border-radius: 4px;
+      background: white;
+      cursor: pointer;
+      font-size: 11px;
+      transition: all 0.12s;
+      line-height: 1.3;
+      white-space: nowrap;
+    }
+    .pal-btn:hover { border-color: #999; background: #f5f5f5; }
+    .pal-btn.selected {
+      border-color: #5c940d;
+      background: #f0fce0;
+      box-shadow: 0 0 0 1px #5c940d;
+    }
+    .pal-btn .p-icon { font-size: 13px; }
+    .pal-btn.eraser { background: #fff5f5; border-color: #ffc9c9; }
+    .pal-btn.eraser:hover { background: #ffe3e3; border-color: #ff8787; }
+    .pal-btn.eraser.selected {
+      border-color: #e03131; background: #ffe3e3; box-shadow: 0 0 0 1px #e03131;
+    }
+    .summary {
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 12px;
+      font-size: 13px;
+    }
+    .summary h3 { margin: 0 0 6px; font-size: 14px; }
+    .summary-list { list-style: none; padding: 0; margin: 0; }
+    .summary-list li { padding: 1px 0; }
+    .summary-empty { color: #999; font-style: italic; }
+    .actions { display: flex; flex-wrap: wrap; gap: 6px; }
+    .act-btn {
+      padding: 8px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: white;
+      cursor: pointer;
+      font-size: 13px;
+      flex: 1;
+      min-width: 100px;
+      text-align: center;
+    }
+    .act-btn:hover { background: #f5f5f5; border-color: #999; }
+    .act-btn.danger { color: #e03131; border-color: #ffc9c9; }
+    .act-btn.danger:hover { background: #fff5f5; }
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      max-width: 520px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal h2 { margin-top: 0; font-size: 20px; }
+    .modal p { font-size: 14px; color: #666; margin-top: 0; }
+    .modal textarea {
+      width: 100%;
+      min-height: 200px;
+      padding: 12px;
+      font-family: "SF Mono", Monaco, Menlo, monospace;
+      font-size: 13px;
+      border: 2px solid #ddd;
+      border-radius: 4px;
+      resize: vertical;
+    }
+    .modal textarea:focus { outline: none; border-color: #5c940d; }
+    .modal-btns { display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end; }
+    .modal-btns button {
+      padding: 8px 16px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      background: white;
+    }
+    .modal-btns .primary { background: #5c940d; color: white; border-color: #5c940d; }
+    .modal-btns .primary:hover { background: #4c7a0b; }
+    .error-msg { color: #e03131; font-size: 13px; margin-top: 8px; display: none; }
+    @media (max-width: 700px) {
+      body { padding: 12px; }
+      h1 { font-size: 24px; }
+      .main-layout { flex-direction: column; }
+      .sidebar { width: 100%; }
+      .cell-icon { font-size: 20px; }
+      .cell-name { font-size: 8px; }
+      .pal-row { gap: 4px; }
+      .pal-group::after { display: none; }
+    }
+    </style>
+</head>
+<body>
+    <h1>Raised Bed Planner</h1>
+    <p class="subtitle">Plan your square foot garden layout with companion planting guidance.</p>
+
+    <div class="config">
+      <label>Width: <input type="number" id="bedW" min="1" max="12" value="4"> ft</label>
+      <label>Length: <input type="number" id="bedH" min="1" max="12" value="4"> ft</label>
+      <button class="btn" id="applyBtn">Apply</button>
+    </div>
+
+    <div class="palette-bar">
+      <div id="palette" class="pal-row"></div>
+    </div>
+
+    <div class="main-layout">
+      <div class="grid-section">
+        <div class="bed-frame">
+          <div id="grid" class="bed-grid"></div>
+        </div>
+        <div class="legend">
+          <span class="leg-friend">Good companion</span>
+          <span class="leg-foe">Avoid pairing</span>
+          <span class="leg-conflict">⚠ Conflict</span>
+        </div>
+      </div>
+
+      <div class="sidebar">
+        <div id="info" class="plant-info">
+          <p class="hint">Select a plant below, then click a square to place it.</p>
+        </div>
+
+        <div id="summary" class="summary">
+          <h3>Plant Summary</h3>
+          <p class="summary-empty">No plants placed yet.</p>
+        </div>
+
+        <div class="actions">
+          <button class="act-btn" id="exportYaml">📄 YAML</button>
+          <button class="act-btn" id="exportMd">📝 Markdown</button>
+          <button class="act-btn" id="importBtn">📥 Import</button>
+          <button class="act-btn danger" id="clearBtn">Clear All</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal">
+        <h2>Import Layout</h2>
+        <p>Paste a YAML layout below (exported from this tool or hand-written).</p>
+        <textarea id="importText" placeholder="# Raised Bed Layout
+bed_width: 4
+bed_height: 4
+layout:
+  - [Tomato, Basil, Carrots, -]
+  - [Pepper, -, Lettuce, Onions]
+  - [-, Bush Beans, Bush Beans, -]
+  - [Radishes, -, -, Marigolds]"></textarea>
+        <div class="error-msg" id="importError"></div>
+        <div class="modal-btns">
+          <button id="importCancel">Cancel</button>
+          <button class="primary" id="importApply">Import</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+    // ── Plant Data ──
+    // Spacing: plants per square foot (standard square foot gardening)
+    // Sources: Mel Bartholomew's Square Foot Gardening, Wikipedia
+    const PLANTS = {
+      tomato:      { name: "Tomato",       icon: "🍅", per: 1,  cat: "Nightshade",  clr: "#ffe3e3" },
+      pepper:      { name: "Pepper",       icon: "🫑", per: 1,  cat: "Nightshade",  clr: "#fff4e6" },
+      eggplant:    { name: "Eggplant",     icon: "🍆", per: 1,  cat: "Nightshade",  clr: "#f3d9fa" },
+      broccoli:    { name: "Broccoli",     icon: "🥦", per: 1,  cat: "Brassica",    clr: "#d3f9d8" },
+      cabbage:     { name: "Cabbage",      icon: "🥬", per: 1,  cat: "Brassica",    clr: "#c3fae8" },
+      kale:        { name: "Kale",         icon: "🥬", per: 1,  cat: "Brassica",    clr: "#b2f2bb" },
+      cauliflower: { name: "Cauliflower",  icon: "🥦", per: 1,  cat: "Brassica",    clr: "#e6fcf5" },
+      bushBeans:   { name: "Bush Beans",   icon: "🫘", per: 9,  cat: "Legume",      clr: "#e9fac8" },
+      poleBeans:   { name: "Pole Beans",   icon: "🫛", per: 8,  cat: "Legume",      clr: "#f4fce3" },
+      peas:        { name: "Peas",         icon: "🫛", per: 8,  cat: "Legume",      clr: "#e9fac8" },
+      cucumber:    { name: "Cucumber",     icon: "🥒", per: 2,  cat: "Cucurbit",    clr: "#c3fae8" },
+      zucchini:    { name: "Zucchini",     icon: "🥒", per: 1,  cat: "Cucurbit",    clr: "#c3fae8" },
+      squash:      { name: "Squash",       icon: "🎃", per: 1,  cat: "Cucurbit",    clr: "#fff4e6" },
+      lettuce:     { name: "Lettuce",      icon: "🥬", per: 4,  cat: "Leafy Green", clr: "#d3f9d8" },
+      spinach:     { name: "Spinach",      icon: "🌱", per: 9,  cat: "Leafy Green", clr: "#c3fae8" },
+      chard:       { name: "Swiss Chard",  icon: "🌿", per: 4,  cat: "Leafy Green", clr: "#c3fae8" },
+      carrots:     { name: "Carrots",      icon: "🥕", per: 16, cat: "Root",        clr: "#fff4e6" },
+      beets:       { name: "Beets",        icon: "🟣", per: 9,  cat: "Root",        clr: "#f3d9fa" },
+      radishes:    { name: "Radishes",     icon: "🔴", per: 16, cat: "Root",        clr: "#ffe3e3" },
+      turnips:     { name: "Turnips",      icon: "⚪", per: 9,  cat: "Root",        clr: "#f1f3f5" },
+      onions:      { name: "Onions",       icon: "🧅", per: 9,  cat: "Allium",      clr: "#fff9db" },
+      garlic:      { name: "Garlic",       icon: "🧄", per: 9,  cat: "Allium",      clr: "#fff9db" },
+      greenOnions: { name: "Green Onions", icon: "🧅", per: 16, cat: "Allium",      clr: "#f4fce3" },
+      basil:       { name: "Basil",        icon: "🌿", per: 4,  cat: "Herb",        clr: "#d3f9d8" },
+      parsley:     { name: "Parsley",      icon: "☘️", per: 4,  cat: "Herb",        clr: "#d3f9d8" },
+      cilantro:    { name: "Cilantro",     icon: "🌿", per: 9,  cat: "Herb",        clr: "#c3fae8" },
+      dill:        { name: "Dill",         icon: "🌾", per: 1,  cat: "Herb",        clr: "#f4fce3" },
+      marigolds:   { name: "Marigolds",    icon: "🌼", per: 4,  cat: "Flower",      clr: "#fff9db" },
+      nasturtiums: { name: "Nasturtiums",  icon: "🌺", per: 1,  cat: "Flower",      clr: "#fff4e6" },
+    };
+
+    // ── Companion Planting Data ──
+    // Sources: Wikipedia "List of companion plants" (citing Alabama Cooperative Extension,
+    // UCCE Master Gardeners, Iowa State University, Utah State, Cornell, and others)
+    // Friends/foes are checked in both directions, so only one side needs to list the pair.
+    const COMPANIONS = {
+      tomato:      { friends: ["basil","carrots","onions","garlic","greenOnions","parsley","marigolds","nasturtiums","pepper","eggplant","cilantro"],
+                     foes: ["broccoli","cabbage","kale","cauliflower","beets","dill","poleBeans"] },
+      pepper:      { friends: ["tomato","basil","onions","carrots","marigolds","spinach","eggplant"],
+                     foes: ["broccoli","cabbage","kale","cauliflower"] },
+      eggplant:    { friends: ["bushBeans","pepper","tomato","marigolds","basil"],
+                     foes: [] },
+      broccoli:    { friends: ["beets","onions","garlic","lettuce","dill","spinach","chard","nasturtiums"],
+                     foes: ["tomato","pepper","eggplant","poleBeans"] },
+      cabbage:     { friends: ["beets","onions","garlic","bushBeans","dill","lettuce","spinach","chard","marigolds","nasturtiums"],
+                     foes: ["tomato","pepper","eggplant","poleBeans"] },
+      kale:        { friends: ["beets","onions","garlic","lettuce","dill","spinach","chard"],
+                     foes: ["tomato","pepper","eggplant","poleBeans"] },
+      cauliflower: { friends: ["beets","onions","garlic","bushBeans","spinach","peas","chard"],
+                     foes: ["tomato","pepper","eggplant","poleBeans","nasturtiums"] },
+      bushBeans:   { friends: ["cucumber","eggplant","lettuce","beets","carrots","radishes","squash","zucchini","marigolds","nasturtiums","cabbage","cauliflower","chard"],
+                     foes: ["onions","garlic","greenOnions"] },
+      poleBeans:   { friends: ["carrots","cucumber","radishes","squash","zucchini","marigolds","nasturtiums"],
+                     foes: ["onions","garlic","greenOnions","broccoli","cabbage","kale","cauliflower","beets"] },
+      peas:        { friends: ["carrots","turnips","radishes","cucumber","spinach","cauliflower"],
+                     foes: ["onions","garlic","greenOnions"] },
+      cucumber:    { friends: ["bushBeans","poleBeans","peas","radishes","lettuce","onions","garlic","dill","marigolds","nasturtiums"],
+                     foes: [] },
+      zucchini:    { friends: ["bushBeans","poleBeans","radishes","marigolds","nasturtiums"],
+                     foes: [] },
+      squash:      { friends: ["bushBeans","poleBeans","radishes","marigolds","nasturtiums"],
+                     foes: [] },
+      lettuce:     { friends: ["carrots","radishes","beets","onions","bushBeans","broccoli","dill","cilantro","cucumber"],
+                     foes: ["parsley"] },
+      spinach:     { friends: ["peas","bushBeans","broccoli","cabbage","cauliflower","kale","pepper"],
+                     foes: [] },
+      chard:       { friends: ["broccoli","cabbage","kale","cauliflower","bushBeans"],
+                     foes: [] },
+      carrots:     { friends: ["tomato","lettuce","onions","garlic","greenOnions","peas","bushBeans","poleBeans"],
+                     foes: ["dill"] },
+      beets:       { friends: ["lettuce","onions","garlic","bushBeans","broccoli","cabbage","kale","cauliflower"],
+                     foes: ["poleBeans"] },
+      radishes:    { friends: ["lettuce","peas","bushBeans","cucumber","squash","zucchini","nasturtiums","poleBeans"],
+                     foes: [] },
+      turnips:     { friends: ["peas","broccoli"],
+                     foes: [] },
+      onions:      { friends: ["tomato","pepper","lettuce","beets","carrots","broccoli","cabbage","kale","cauliflower","cucumber"],
+                     foes: ["bushBeans","poleBeans","peas"] },
+      garlic:      { friends: ["tomato","pepper","lettuce","beets","carrots","broccoli","cabbage","kale","cauliflower","cucumber"],
+                     foes: ["bushBeans","poleBeans","peas"] },
+      greenOnions: { friends: ["tomato","pepper","lettuce","beets","carrots","broccoli","cabbage","kale","cauliflower"],
+                     foes: ["bushBeans","poleBeans","peas"] },
+      basil:       { friends: ["tomato","pepper","eggplant","marigolds"],
+                     foes: [] },
+      parsley:     { friends: ["tomato","carrots"],
+                     foes: ["lettuce"] },
+      cilantro:    { friends: ["lettuce","tomato","spinach","cabbage"],
+                     foes: [] },
+      dill:        { friends: ["broccoli","cabbage","kale","lettuce","cucumber","onions"],
+                     foes: ["carrots","tomato"] },
+      marigolds:   { friends: ["tomato","pepper","cucumber","squash","zucchini","bushBeans","poleBeans","onions","broccoli","cabbage"],
+                     foes: [] },
+      nasturtiums: { friends: ["tomato","cucumber","squash","zucchini","bushBeans","poleBeans","radishes","cabbage","broccoli"],
+                     foes: ["cauliflower"] },
+    };
+
+    // ── State ──
+    let bedW = 4;
+    let bedH = 4;
+    let grid = [];
+    let selected = null; // plant ID, "eraser", or null
+    let hovered = null;  // plant ID being hovered in palette
+
+    // ── Init ──
+    function init() {
+      loadState();
+      document.getElementById("bedW").value = bedW;
+      document.getElementById("bedH").value = bedH;
+      renderPalette();
+      renderGrid();
+      renderSummary();
+    }
+
+    // ── Companion helpers ──
+    function areFriends(a, b) {
+      if (a === b) return false;
+      return COMPANIONS[a]?.friends?.includes(b) || COMPANIONS[b]?.friends?.includes(a);
+    }
+    function areFoes(a, b) {
+      if (a === b) return false;
+      return COMPANIONS[a]?.foes?.includes(b) || COMPANIONS[b]?.foes?.includes(a);
+    }
+
+    function getNeighbors(r, c) {
+      const n = [];
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          if (dr === 0 && dc === 0) continue;
+          const nr = r + dr, nc = c + dc;
+          if (nr >= 0 && nr < bedH && nc >= 0 && nc < bedW && grid[nr][nc]) {
+            n.push(grid[nr][nc]);
+          }
+        }
+      }
+      return n;
+    }
+
+    function cellHasConflict(r, c) {
+      const pid = grid[r][c];
+      if (!pid) return false;
+      const neighbors = getNeighbors(r, c);
+      return neighbors.some(nid => areFoes(pid, nid));
+    }
+
+    // ── Render Grid ──
+    function renderGrid() {
+      const el = document.getElementById("grid");
+      el.style.gridTemplateColumns = `repeat(${bedW}, 1fr)`;
+      el.innerHTML = "";
+      for (let r = 0; r < bedH; r++) {
+        for (let c = 0; c < bedW; c++) {
+          const cell = document.createElement("div");
+          cell.className = "bed-cell";
+          cell.dataset.row = r;
+          cell.dataset.col = c;
+
+          const pid = grid[r]?.[c];
+          if (pid && PLANTS[pid]) {
+            const p = PLANTS[pid];
+            cell.classList.add("occupied");
+            cell.style.background = p.clr;
+            cell.innerHTML = `<span class="cell-icon">${p.icon}</span>
+              <span class="cell-name">${p.name}</span>
+              <span class="cell-count">${p.per}/sqft</span>`;
+            if (cellHasConflict(r, c)) {
+              cell.classList.add("has-conflict");
+            }
+          }
+
+          // Companion highlights when a plant is selected or hovered in palette
+          const hlPlant = hovered || (selected && selected !== "eraser" ? selected : null);
+          if (hlPlant && pid) {
+            if (areFoes(hlPlant, pid)) cell.classList.add("hl-foe");
+            else if (areFriends(hlPlant, pid)) cell.classList.add("hl-friend");
+          }
+
+          cell.addEventListener("click", () => onCellClick(r, c));
+          cell.addEventListener("contextmenu", (e) => {
+            e.preventDefault();
+            if (grid[r]?.[c]) {
+              grid[r][c] = null;
+              renderGrid();
+              renderSummary();
+              saveState();
+            }
+          });
+          el.appendChild(cell);
+        }
+      }
+    }
+
+    function onCellClick(r, c) {
+      if (selected === "eraser") {
+        grid[r][c] = null;
+      } else if (selected) {
+        if (grid[r][c] === selected) {
+          grid[r][c] = null;
+        } else {
+          grid[r][c] = selected;
+        }
+      } else {
+        // No tool selected — show info about this cell's plant
+        if (grid[r][c]) showInfo(grid[r][c]);
+        return;
+      }
+      renderGrid();
+      renderSummary();
+      saveState();
+    }
+
+    // ── Render Palette ──
+    function renderPalette() {
+      const el = document.getElementById("palette");
+      const cats = {};
+      for (const [id, p] of Object.entries(PLANTS)) {
+        if (!cats[p.cat]) cats[p.cat] = [];
+        cats[p.cat].push(id);
+      }
+
+      let html = `<div class="pal-group">
+          <button class="pal-btn eraser${selected === 'eraser' ? ' selected' : ''}" data-id="eraser">
+            <span class="p-icon">🧹</span> Eraser
+          </button>
+        </div>`;
+
+      for (const cat of ["Nightshade","Brassica","Legume","Cucurbit","Leafy Green","Root","Allium","Herb","Flower"]) {
+        if (!cats[cat]) continue;
+        html += `<div class="pal-group">`;
+        for (const id of cats[cat]) {
+          const p = PLANTS[id];
+          const sel = selected === id ? " selected" : "";
+          html += `<button class="pal-btn${sel}" data-id="${id}" title="${p.name} · ${p.per}/sqft · ${p.cat}">
+            <span class="p-icon">${p.icon}</span>${p.name}
+          </button>`;
+        }
+        html += `</div>`;
+      }
+      el.innerHTML = html;
+
+      el.querySelectorAll(".pal-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = btn.dataset.id;
+          if (selected === id) {
+            selected = null;
+          } else {
+            selected = id;
+          }
+          renderPalette();
+          renderGrid();
+          if (selected && selected !== "eraser") showInfo(selected);
+          else document.getElementById("info").innerHTML = '<p class="hint">Select a plant below, then click a square to place it.</p>';
+        });
+        if (btn.dataset.id !== "eraser") {
+          btn.addEventListener("mouseenter", () => {
+            hovered = btn.dataset.id;
+            renderGrid();
+            showInfo(btn.dataset.id);
+          });
+          btn.addEventListener("mouseleave", () => {
+            hovered = null;
+            renderGrid();
+          });
+        }
+      });
+    }
+
+    // ── Plant Info ──
+    function showInfo(id) {
+      const p = PLANTS[id];
+      if (!p) return;
+      const comp = COMPANIONS[id] || { friends: [], foes: [] };
+
+      // Collect all friends (both directions)
+      const allFriends = new Set(comp.friends);
+      const allFoes = new Set(comp.foes);
+      for (const [otherId, otherComp] of Object.entries(COMPANIONS)) {
+        if (otherId === id) continue;
+        if (otherComp.friends?.includes(id)) allFriends.add(otherId);
+        if (otherComp.foes?.includes(id)) allFoes.add(otherId);
+      }
+
+      const friendNames = [...allFriends].filter(f => PLANTS[f]).map(f => `${PLANTS[f].icon} ${PLANTS[f].name}`).join(", ");
+      const foeNames = [...allFoes].filter(f => PLANTS[f]).map(f => `${PLANTS[f].icon} ${PLANTS[f].name}`).join(", ");
+
+      document.getElementById("info").innerHTML = `
+        <div class="info-header">
+          <span class="info-icon">${p.icon}</span>
+          <span class="info-name">${p.name}</span>
+        </div>
+        <div class="info-meta">${p.per} plant${p.per > 1 ? "s" : ""} per square foot · ${p.cat}</div>
+        ${friendNames ? `<div class="info-section"><strong class="info-friends">Good companions:</strong> ${friendNames}</div>` : ""}
+        ${foeNames ? `<div class="info-section"><strong class="info-foes">Avoid planting near:</strong> ${foeNames}</div>` : ""}
+        ${!friendNames && !foeNames ? '<div class="info-section" style="color:#999">No strong companion relationships documented.</div>' : ""}`;
+    }
+
+    // ── Summary ──
+    function renderSummary() {
+      const counts = {};
+      let total = 0;
+      for (let r = 0; r < bedH; r++) {
+        for (let c = 0; c < bedW; c++) {
+          if (grid[r]?.[c]) {
+            counts[grid[r][c]] = (counts[grid[r][c]] || 0) + 1;
+            total++;
+          }
+        }
+      }
+      const el = document.getElementById("summary");
+      if (total === 0) {
+        el.innerHTML = `<h3>Plant Summary</h3><p class="summary-empty">No plants placed yet.</p>`;
+        return;
+      }
+      let html = `<h3>Plant Summary</h3><ul class="summary-list">`;
+      for (const [id, count] of Object.entries(counts)) {
+        const p = PLANTS[id];
+        if (!p) continue;
+        const plants = count * p.per;
+        html += `<li>${p.icon} <strong>${p.name}</strong>: ${count} sq (${plants} plant${plants > 1 ? "s" : ""})</li>`;
+      }
+      html += `</ul><div style="margin-top:6px;color:#888;font-size:12px">${total} of ${bedW * bedH} squares used</div>`;
+      el.innerHTML = html;
+    }
+
+    // ── Export YAML ──
+    function exportYaml() {
+      let yaml = "# Raised Bed Layout\n";
+      yaml += `# Generated by Raised Bed Planner\n`;
+      yaml += `bed_width: ${bedW}\n`;
+      yaml += `bed_height: ${bedH}\n`;
+      yaml += "layout:\n";
+      for (let r = 0; r < bedH; r++) {
+        const cells = [];
+        for (let c = 0; c < bedW; c++) {
+          const pid = grid[r]?.[c];
+          cells.push(pid ? PLANTS[pid].name : "-");
+        }
+        yaml += `  - [${cells.join(", ")}]\n`;
+      }
+      return yaml;
+    }
+
+    // ── Export Markdown ──
+    function exportMarkdown() {
+      let md = `# Raised Bed Layout (${bedW}ft × ${bedH}ft)\n\n`;
+      md += "|   |";
+      for (let c = 0; c < bedW; c++) md += ` ${c + 1} |`;
+      md += "\n|---|";
+      for (let c = 0; c < bedW; c++) md += "---|";
+      md += "\n";
+
+      for (let r = 0; r < bedH; r++) {
+        md += `| **${r + 1}** |`;
+        for (let c = 0; c < bedW; c++) {
+          const pid = grid[r]?.[c];
+          if (pid && PLANTS[pid]) {
+            const p = PLANTS[pid];
+            md += ` ${p.icon} ${p.name} (${p.per}/sqft) |`;
+          } else {
+            md += " - |";
+          }
+        }
+        md += "\n";
+      }
+
+      // Summary
+      const counts = {};
+      for (let r = 0; r < bedH; r++) {
+        for (let c = 0; c < bedW; c++) {
+          if (grid[r]?.[c]) {
+            const id = grid[r][c];
+            counts[id] = (counts[id] || 0) + 1;
+          }
+        }
+      }
+      if (Object.keys(counts).length > 0) {
+        md += "\n## Plant Summary\n\n";
+        for (const [id, count] of Object.entries(counts)) {
+          const p = PLANTS[id];
+          if (!p) continue;
+          md += `- ${p.icon} **${p.name}**: ${count} square${count > 1 ? "s" : ""} (${count * p.per} plant${count * p.per > 1 ? "s" : ""})\n`;
+        }
+      }
+      return md;
+    }
+
+    // ── Import YAML ──
+    function importYaml(text) {
+      const wm = text.match(/bed_width:\s*(\d+)/);
+      const hm = text.match(/bed_height:\s*(\d+)/);
+      if (!wm || !hm) return "Could not find bed_width or bed_height.";
+
+      const w = parseInt(wm[1]);
+      const h = parseInt(hm[1]);
+      if (w < 1 || w > 12 || h < 1 || h > 12) return "Bed dimensions must be 1–12.";
+
+      const rows = [];
+      const rowRe = /-\s*\[([^\]]+)\]/g;
+      let m;
+      while ((m = rowRe.exec(text)) !== null) {
+        rows.push(m[1].split(",").map(s => s.trim()));
+      }
+      if (rows.length !== h) return `Expected ${h} rows but found ${rows.length}.`;
+
+      // Build name→id lookup (case-insensitive)
+      const nameMap = {};
+      for (const [id, p] of Object.entries(PLANTS)) {
+        nameMap[p.name.toLowerCase()] = id;
+      }
+
+      const newGrid = [];
+      for (let r = 0; r < h; r++) {
+        const row = [];
+        for (let c = 0; c < w; c++) {
+          const name = rows[r][c];
+          if (!name || name === "-") {
+            row.push(null);
+          } else {
+            const id = nameMap[name.toLowerCase()];
+            if (!id) return `Unknown plant: "${name}" (row ${r + 1}, col ${c + 1}).`;
+            row.push(id);
+          }
+        }
+        newGrid.push(row);
+      }
+
+      bedW = w;
+      bedH = h;
+      grid = newGrid;
+      return null; // success
+    }
+
+    function downloadFile(content, filename) {
+      const blob = new Blob([content], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // ── localStorage ──
+    function saveState() {
+      try {
+        localStorage.setItem("raisedBedPlanner", JSON.stringify({ bedW, bedH, grid }));
+      } catch (e) { /* ignore */ }
+    }
+    function loadState() {
+      try {
+        const saved = localStorage.getItem("raisedBedPlanner");
+        if (saved) {
+          const s = JSON.parse(saved);
+          bedW = s.bedW || 4;
+          bedH = s.bedH || 4;
+          grid = s.grid || [];
+        }
+      } catch (e) { /* ignore */ }
+      // Ensure grid is correct size
+      ensureGrid();
+    }
+    function ensureGrid() {
+      while (grid.length < bedH) grid.push([]);
+      grid.length = bedH;
+      for (let r = 0; r < bedH; r++) {
+        if (!Array.isArray(grid[r])) grid[r] = [];
+        while (grid[r].length < bedW) grid[r].push(null);
+        grid[r].length = bedW;
+      }
+    }
+
+    // ── Event Listeners ──
+    document.getElementById("applyBtn").addEventListener("click", () => {
+      const w = parseInt(document.getElementById("bedW").value) || 4;
+      const h = parseInt(document.getElementById("bedH").value) || 4;
+      bedW = Math.max(1, Math.min(12, w));
+      bedH = Math.max(1, Math.min(12, h));
+      document.getElementById("bedW").value = bedW;
+      document.getElementById("bedH").value = bedH;
+      ensureGrid();
+      renderGrid();
+      renderSummary();
+      saveState();
+    });
+
+    document.getElementById("exportYaml").addEventListener("click", () => {
+      downloadFile(exportYaml(), "raised-bed-layout.yml");
+    });
+
+    document.getElementById("exportMd").addEventListener("click", () => {
+      downloadFile(exportMarkdown(), "raised-bed-layout.md");
+    });
+
+    document.getElementById("importBtn").addEventListener("click", () => {
+      document.getElementById("importText").value = "";
+      document.getElementById("importError").style.display = "none";
+      document.getElementById("modalOverlay").classList.add("active");
+    });
+
+    document.getElementById("importCancel").addEventListener("click", () => {
+      document.getElementById("modalOverlay").classList.remove("active");
+    });
+
+    document.getElementById("modalOverlay").addEventListener("click", (e) => {
+      if (e.target === e.currentTarget) {
+        e.currentTarget.classList.remove("active");
+      }
+    });
+
+    document.getElementById("importApply").addEventListener("click", () => {
+      const text = document.getElementById("importText").value;
+      const err = importYaml(text);
+      if (err) {
+        const errEl = document.getElementById("importError");
+        errEl.textContent = err;
+        errEl.style.display = "block";
+        return;
+      }
+      document.getElementById("modalOverlay").classList.remove("active");
+      document.getElementById("bedW").value = bedW;
+      document.getElementById("bedH").value = bedH;
+      renderGrid();
+      renderSummary();
+      saveState();
+    });
+
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      if (!grid.flat().some(c => c !== null)) return;
+      if (!confirm("Clear all plants from the bed?")) return;
+      for (let r = 0; r < bedH; r++) {
+        for (let c = 0; c < bedW; c++) {
+          grid[r][c] = null;
+        }
+      }
+      renderGrid();
+      renderSummary();
+      saveState();
+    });
+
+    // ── Start ──
+    init();
+    </script>
+</body>
+</html>
