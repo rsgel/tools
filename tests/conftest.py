@@ -2,6 +2,7 @@ import pathlib
 from http.client import HTTPConnection
 from playwright.sync_api import Page, expect
 import pytest
+import sys
 from subprocess import Popen, PIPE
 import time
 
@@ -13,7 +14,7 @@ root = test_dir.parent.absolute()
 def static_server():
     """Start a local HTTP server for testing."""
     process = Popen(
-        ["python", "-m", "http.server", "8123", "--directory", str(root)],
+        [sys.executable, "-m", "http.server", "8123", "--directory", str(root)],
         stdout=PIPE,
     )
     retries = 5

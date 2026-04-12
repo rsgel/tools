@@ -9,6 +9,7 @@ Each tool is a single, self-contained HTML file. The site is hosted via [GitHub 
 - [Word Counter](word-counter) count words, characters, sentences, and lines in real time
 - [Pace Calculator](pace-calculator) convert between pace, speed, and finish time for distances from 5K to 100 miles
 - [Raised Bed Planner](raised-bed-planner) plan your square foot garden layout with companion planting guidance
+- [Initiative Tracker](initiative-tracker) track D&D combat turn order, HP, conditions, and death saves
 
 <!-- New tools should be added above this line as bullet points:
 - [Tool Name](tool-name) short description

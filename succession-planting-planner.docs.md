@@ -1,0 +1,1 @@
+A succession planting calculator for PNW raised bed gardens. Select crops like lettuce, radishes, beans, and spinach to generate staggered sowing schedules with dates, estimated harvest windows, and visual timelines. Accounts for PNW-specific midsummer heat gaps where bolt-prone cool-season crops should be skipped.

@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Succession Planting Planner</title>
+    <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+      color: #333;
+      background: #fafaf7;
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 28px;
+    }
+    .subtitle {
+      color: #666;
+      margin-top: -12px;
+      margin-bottom: 20px;
+      font-size: 15px;
+    }
+    .config {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .config label {
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .config select, .config input[type="date"] {
+      padding: 6px 10px;
+      font-size: 16px;
+      border: 2px solid #ccc;
+      border-radius: 4px;
+      font-family: inherit;
+      background: white;
+    }
+    .config select:focus, .config input[type="date"]:focus {
+      outline: none;
+      border-color: #5c940d;
+    }
+    .crop-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+    .crop-btn {
+      padding: 8px 12px;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      background: white;
+      font-size: 14px;
+      font-family: inherit;
+      cursor: pointer;
+      text-align: left;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .crop-btn:hover {
+      border-color: #999;
+    }
+    .crop-btn.selected {
+      border-color: #5c940d;
+      background: #f0f7e6;
+    }
+    .crop-btn .crop-emoji {
+      margin-right: 4px;
+    }
+    .crop-btn .crop-season {
+      font-size: 11px;
+      color: #888;
+      display: block;
+      margin-top: 2px;
+    }
+    .actions {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      padding: 8px 20px;
+      background: #5c940d;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background: #4c7a0b;
+    }
+    .btn-outline {
+      background: white;
+      color: #5c940d;
+      border: 2px solid #5c940d;
+    }
+    .btn-outline:hover {
+      background: #f0f7e6;
+    }
+    .results {
+      display: none;
+    }
+    .results.visible {
+      display: block;
+    }
+    .crop-schedule {
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .crop-schedule h3 {
+      margin: 0 0 4px 0;
+      font-size: 18px;
+    }
+    .crop-meta {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 12px;
+    }
+    .crop-meta span {
+      margin-right: 12px;
+    }
+    .crop-note {
+      font-size: 13px;
+      color: #856404;
+      background: #fff8e1;
+      border-radius: 4px;
+      padding: 6px 10px;
+      margin-bottom: 10px;
+    }
+    .timeline {
+      position: relative;
+      overflow-x: auto;
+      margin-top: 8px;
+    }
+    .timeline-bar {
+      display: flex;
+      height: 32px;
+      border-radius: 4px;
+      overflow: hidden;
+      background: #f0f0f0;
+      min-width: 100%;
+      position: relative;
+    }
+    .timeline-months {
+      display: flex;
+      font-size: 11px;
+      color: #888;
+      min-width: 100%;
+    }
+    .timeline-month {
+      flex: 1;
+      text-align: center;
+      padding: 2px 0;
+    }
+    .sowing-markers {
+      position: relative;
+      height: 36px;
+      min-width: 100%;
+    }
+    .sow-mark {
+      position: absolute;
+      top: 0;
+      width: 2px;
+      height: 20px;
+      border-radius: 1px;
+    }
+    .sow-mark.spring {
+      background: #5c940d;
+    }
+    .sow-mark.fall {
+      background: #e67700;
+    }
+    .sow-mark .sow-label {
+      position: absolute;
+      top: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 10px;
+      white-space: nowrap;
+      color: #555;
+    }
+    .gap-region {
+      position: absolute;
+      top: 0;
+      height: 20px;
+      background: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 3px,
+        rgba(200, 50, 50, 0.1) 3px,
+        rgba(200, 50, 50, 0.1) 6px
+      );
+      border: 1px dashed rgba(200, 50, 50, 0.3);
+      border-radius: 2px;
+    }
+    .gap-label {
+      position: absolute;
+      top: 3px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 10px;
+      color: #c92a2a;
+      white-space: nowrap;
+    }
+    .sow-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-top: 8px;
+    }
+    .sow-table th {
+      text-align: left;
+      padding: 6px 8px;
+      border-bottom: 2px solid #e0e0e0;
+      font-weight: 600;
+      font-size: 12px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .sow-table td {
+      padding: 5px 8px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .sow-table tr:last-child td {
+      border-bottom: none;
+    }
+    .sow-table .sow-num {
+      font-weight: 600;
+      color: #5c940d;
+      width: 30px;
+    }
+    .sow-table .sow-num.fall {
+      color: #e67700;
+    }
+    .sow-table .harvest-date {
+      color: #666;
+    }
+    .legend {
+      display: flex;
+      gap: 16px;
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .legend-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+    }
+    .summary-bar {
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      font-size: 14px;
+    }
+    .summary-bar strong {
+      color: #5c940d;
+    }
+    @media (max-width: 600px) {
+      body { padding: 10px; }
+      h1 { font-size: 24px; }
+      .crop-grid {
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      }
+      .config {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .summary-bar {
+        flex-direction: column;
+        gap: 8px;
+      }
+    }
+    </style>
+</head>
+<body>
+    <h1>Succession Planting Planner</h1>
+    <p class="subtitle">Calculate staggered sowing dates for continuous harvests throughout the PNW growing season.</p>
+
+    <div class="config">
+      <label for="last-frost">Last frost date:</label>
+      <input type="date" id="last-frost" value="">
+      <label for="first-frost">First fall frost:</label>
+      <input type="date" id="first-frost" value="">
+    </div>
+
+    <p style="font-size: 14px; margin-bottom: 8px; font-weight: 500;">Select crops to plan:</p>
+    <div class="crop-grid" id="crop-grid"></div>
+
+    <div class="actions">
+      <button class="btn" id="generate-btn">Generate Planting Schedule</button>
+      <button class="btn btn-outline" id="select-all-btn">Select All</button>
+      <button class="btn btn-outline" id="clear-btn">Clear Selection</button>
+    </div>
+
+    <div class="results" id="results">
+      <div class="legend">
+        <div class="legend-item"><div class="legend-swatch" style="background: #5c940d;"></div> Spring sowing</div>
+        <div class="legend-item"><div class="legend-swatch" style="background: #e67700;"></div> Fall sowing</div>
+        <div class="legend-item"><div class="legend-swatch" style="background: repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(200,50,50,0.15) 2px, rgba(200,50,50,0.15) 4px); border: 1px dashed rgba(200,50,50,0.3);"></div> Too hot — skip</div>
+      </div>
+      <div class="summary-bar" id="summary-bar"></div>
+      <div id="schedules"></div>
+    </div>
+
+    <script>
+    const CROPS = [
+      {
+        name: "Lettuce",
+        emoji: "🥬",
+        season: "Cool-season",
+        dtmMin: 28,
+        dtmMax: 60,
+        intervalWeeks: 2,
+        earliestMMDD: [3, 1],
+        latestSpringMMDD: [6, 1],
+        resumeFallMMDD: [7, 15],
+        latestFallMMDD: [9, 1],
+        hasGap: true,
+        note: "Skip midsummer — bolts in heat. Use heat-tolerant varieties for late spring."
+      },
+      {
+        name: "Radishes",
+        emoji: "🔴",
+        season: "Cool-season",
+        dtmMin: 21,
+        dtmMax: 35,
+        intervalWeeks: 2,
+        earliestMMDD: [3, 1],
+        latestSpringMMDD: [6, 1],
+        resumeFallMMDD: [8, 1],
+        latestFallMMDD: [9, 15],
+        hasGap: true,
+        note: "Very fast crop — ideal for beginners. Become pithy in summer heat."
+      },
+      {
+        name: "Bush Beans",
+        emoji: "🫘",
+        season: "Warm-season",
+        dtmMin: 50,
+        dtmMax: 65,
+        intervalWeeks: 3,
+        earliestMMDD: [5, 1],
+        latestSpringMMDD: null,
+        resumeFallMMDD: null,
+        latestFallMMDD: [7, 15],
+        hasGap: false,
+        note: "Needs warm soil (60°F+). Won't germinate in cold, wet soil. Frost-killed in fall."
+      },
+      {
+        name: "Spinach",
+        emoji: "🌿",
+        season: "Cool-season",
+        dtmMin: 28,
+        dtmMax: 45,
+        intervalWeeks: 2,
+        earliestMMDD: [3, 1],
+        latestSpringMMDD: [5, 1],
+        resumeFallMMDD: [8, 1],
+        latestFallMMDD: [9, 15],
+        hasGap: true,
+        note: "Extremely bolt-prone in heat. Fall sowings are the best in PNW — cold-hardy through winter."
+      },
+      {
+        name: "Cilantro",
+        emoji: "🌱",
+        season: "Cool-season",
+        dtmMin: 30,
+        dtmMax: 50,
+        intervalWeeks: 2,
+        earliestMMDD: [3, 15],
+        latestSpringMMDD: [5, 15],
+        resumeFallMMDD: [8, 1],
+        latestFallMMDD: [9, 1],
+        hasGap: true,
+        note: "Bolts very fast in heat. Frequent small sowings are the key. Fall sowings are very productive."
+      },
+      {
+        name: "Arugula",
+        emoji: "🌿",
+        season: "Cool-season",
+        dtmMin: 21,
+        dtmMax: 40,
+        intervalWeeks: 2,
+        earliestMMDD: [3, 1],
+        latestSpringMMDD: [5, 15],
+        resumeFallMMDD: [8, 1],
+        latestFallMMDD: [9, 15],
+        hasGap: true,
+        note: "Gets very peppery and tough in heat. Fall arugula is milder and more tender."
+      },
+      {
+        name: "Carrots",
+        emoji: "🥕",
+        season: "Cool (heat-tolerant)",
+        dtmMin: 55,
+        dtmMax: 80,
+        intervalWeeks: 3,
+        earliestMMDD: [3, 15],
+        latestSpringMMDD: null,
+        resumeFallMMDD: null,
+        latestFallMMDD: [7, 15],
+        hasGap: false,
+        note: "No midsummer gap needed — carrots don't bolt from heat. Frost sweetens roots."
+      },
+      {
+        name: "Beets",
+        emoji: "🟣",
+        season: "Cool (heat-tolerant)",
+        dtmMin: 45,
+        dtmMax: 65,
+        intervalWeeks: 3,
+        earliestMMDD: [3, 15],
+        latestSpringMMDD: null,
+        resumeFallMMDD: null,
+        latestFallMMDD: [7, 15],
+        hasGap: false,
+        note: "No midsummer gap needed. Frost improves sugar content. Greens are edible too."
+      },
+      {
+        name: "Peas",
+        emoji: "🟢",
+        season: "Cool-season",
+        dtmMin: 55,
+        dtmMax: 75,
+        intervalWeeks: 3,
+        earliestMMDD: [2, 15],
+        latestSpringMMDD: [4, 15],
+        resumeFallMMDD: [8, 1],
+        latestFallMMDD: [8, 1],
+        hasGap: true,
+        note: "Classic PNW spring crop. Skip summer entirely. One fall sowing in early August may produce before frost."
+      },
+      {
+        name: "Kale",
+        emoji: "🥬",
+        season: "Cool (year-round)",
+        dtmMin: 50,
+        dtmMax: 70,
+        intervalWeeks: 5,
+        earliestMMDD: [3, 1],
+        latestSpringMMDD: null,
+        resumeFallMMDD: null,
+        latestFallMMDD: [8, 1],
+        hasGap: false,
+        note: "PNW superstar — grows nearly year-round. Typically 2 plantings, not heavy succession."
+      },
+      {
+        name: "Chard",
+        emoji: "🌈",
+        season: "Cool (heat-tolerant)",
+        dtmMin: 50,
+        dtmMax: 60,
+        intervalWeeks: 5,
+        earliestMMDD: [3, 15],
+        latestSpringMMDD: null,
+        resumeFallMMDD: null,
+        latestFallMMDD: [8, 1],
+        hasGap: false,
+        note: "Long-standing crop. One planting produces for months with cut-and-come-again harvest."
+      },
+      {
+        name: "Scallions",
+        emoji: "🧅",
+        season: "Cool (heat-tolerant)",
+        dtmMin: 60,
+        dtmMax: 75,
+        intervalWeeks: 3,
+        earliestMMDD: [3, 1],
+        latestSpringMMDD: null,
+        resumeFallMMDD: null,
+        latestFallMMDD: [8, 1],
+        hasGap: false,
+        note: "Slow to establish from seed — be patient. No midsummer gap needed."
+      },
+      {
+        name: "Turnips",
+        emoji: "🤍",
+        season: "Cool-season",
+        dtmMin: 30,
+        dtmMax: 55,
+        intervalWeeks: 2,
+        earliestMMDD: [3, 15],
+        latestSpringMMDD: [6, 1],
+        resumeFallMMDD: [7, 15],
+        latestFallMMDD: [9, 15],
+        hasGap: true,
+        note: "Hakurei types are fast and mild. Late summer/fall sowings are generally pest-free."
+      },
+      {
+        name: "Bok Choy",
+        emoji: "🥬",
+        season: "Cool-season",
+        dtmMin: 30,
+        dtmMax: 50,
+        intervalWeeks: 2,
+        earliestMMDD: [3, 15],
+        latestSpringMMDD: [5, 15],
+        resumeFallMMDD: [8, 1],
+        latestFallMMDD: [9, 15],
+        hasGap: true,
+        note: "Bolt-prone in heat like lettuce. Excellent fall crop in PNW."
+      },
+      {
+        name: "Kohlrabi",
+        emoji: "💚",
+        season: "Cool-season",
+        dtmMin: 45,
+        dtmMax: 60,
+        intervalWeeks: 3,
+        earliestMMDD: [3, 15],
+        latestSpringMMDD: [6, 1],
+        resumeFallMMDD: [7, 15],
+        latestFallMMDD: [8, 15],
+        hasGap: true,
+        note: "Fast brassica. Harvest at 3\" diameter. Good spring and fall crop."
+      },
+      {
+        name: "Dill",
+        emoji: "🌾",
+        season: "Warm-ish",
+        dtmMin: 40,
+        dtmMax: 60,
+        intervalWeeks: 3,
+        earliestMMDD: [4, 15],
+        latestSpringMMDD: null,
+        resumeFallMMDD: null,
+        latestFallMMDD: [7, 1],
+        hasGap: false,
+        note: "Bolts to flower quickly — succession sowing is the only way to have continuous leaf harvest."
+      }
+    ];
+
+    const currentYear = new Date().getFullYear();
+
+    function makeDate(mmdd, year) {
+      return new Date(year || currentYear, mmdd[0] - 1, mmdd[1]);
+    }
+
+    function formatDate(date) {
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      return `${months[date.getMonth()]} ${date.getDate()}`;
+    }
+
+    function formatDateFull(date) {
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+    }
+
+    function addDays(date, days) {
+      const result = new Date(date);
+      result.setDate(result.getDate() + days);
+      return result;
+    }
+
+    function dayOfYear(date) {
+      const start = new Date(date.getFullYear(), 0, 0);
+      return Math.floor((date - start) / (1000 * 60 * 60 * 24));
+    }
+
+    function isoDate(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    // Set default frost dates for PNW
+    const lastFrostInput = document.getElementById("last-frost");
+    const firstFrostInput = document.getElementById("first-frost");
+    lastFrostInput.value = `${currentYear}-04-15`;
+    firstFrostInput.value = `${currentYear}-10-20`;
+
+    // Render crop buttons
+    const cropGrid = document.getElementById("crop-grid");
+    const selectedCrops = new Set();
+
+    CROPS.forEach((crop, i) => {
+      const btn = document.createElement("button");
+      btn.className = "crop-btn";
+      btn.dataset.index = i;
+      btn.innerHTML = `<span class="crop-emoji">${crop.emoji}</span>${crop.name}<span class="crop-season">${crop.season}</span>`;
+      btn.addEventListener("click", () => {
+        if (selectedCrops.has(i)) {
+          selectedCrops.delete(i);
+          btn.classList.remove("selected");
+        } else {
+          selectedCrops.add(i);
+          btn.classList.add("selected");
+        }
+      });
+      cropGrid.appendChild(btn);
+    });
+
+    // Select/clear all
+    document.getElementById("select-all-btn").addEventListener("click", () => {
+      CROPS.forEach((_, i) => {
+        selectedCrops.add(i);
+        cropGrid.children[i].classList.add("selected");
+      });
+    });
+
+    document.getElementById("clear-btn").addEventListener("click", () => {
+      selectedCrops.clear();
+      Array.from(cropGrid.children).forEach(btn => btn.classList.remove("selected"));
+    });
+
+    // Pre-select common succession crops
+    [0, 1, 2, 3, 4, 5, 6, 7].forEach(i => {
+      selectedCrops.add(i);
+      cropGrid.children[i].classList.add("selected");
+    });
+
+    function computeSowings(crop) {
+      const intervalDays = crop.intervalWeeks * 7;
+      const dtmAvg = Math.round((crop.dtmMin + crop.dtmMax) / 2);
+      const sowings = [];
+
+      const earliest = makeDate(crop.earliestMMDD);
+      const latestEnd = crop.latestSpringMMDD ? makeDate(crop.latestSpringMMDD) : makeDate(crop.latestFallMMDD);
+
+      if (crop.hasGap && crop.latestSpringMMDD && crop.resumeFallMMDD) {
+        // Spring sowings
+        let date = new Date(earliest);
+        while (date <= makeDate(crop.latestSpringMMDD)) {
+          sowings.push({ date: new Date(date), season: "spring" });
+          date = addDays(date, intervalDays);
+        }
+        // Fall sowings
+        date = makeDate(crop.resumeFallMMDD);
+        const latestFall = makeDate(crop.latestFallMMDD);
+        while (date <= latestFall) {
+          sowings.push({ date: new Date(date), season: "fall" });
+          date = addDays(date, intervalDays);
+        }
+      } else {
+        // Continuous — no gap
+        let date = new Date(earliest);
+        const latest = makeDate(crop.latestFallMMDD);
+        while (date <= latest) {
+          sowings.push({ date: new Date(date), season: "spring" });
+          date = addDays(date, intervalDays);
+        }
+      }
+
+      return { sowings, dtmAvg };
+    }
+
+    function renderTimeline(crop, sowings) {
+      const janFirst = new Date(currentYear, 0, 1);
+      const decThirtyFirst = new Date(currentYear, 11, 31);
+      const totalDays = 365;
+      const startMonth = 1; // Feb (0-indexed)
+      const endMonth = 10; // Nov (0-indexed)
+      const monthStart = new Date(currentYear, startMonth, 1);
+      const monthEnd = new Date(currentYear, endMonth + 1, 0);
+      const visibleDays = Math.floor((monthEnd - monthStart) / (1000 * 60 * 60 * 24));
+
+      function pctPos(date) {
+        const diff = Math.floor((date - monthStart) / (1000 * 60 * 60 * 24));
+        return Math.max(0, Math.min(100, (diff / visibleDays) * 100));
+      }
+
+      // Month labels
+      const months = ["Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov"];
+      let monthsHtml = '<div class="timeline-months">';
+      months.forEach(m => {
+        monthsHtml += `<div class="timeline-month">${m}</div>`;
+      });
+      monthsHtml += "</div>";
+
+      // Sowing markers + gap
+      let markersHtml = '<div class="sowing-markers">';
+
+      if (crop.hasGap && crop.latestSpringMMDD && crop.resumeFallMMDD) {
+        const gapStart = pctPos(makeDate(crop.latestSpringMMDD));
+        const gapEnd = pctPos(makeDate(crop.resumeFallMMDD));
+        markersHtml += `<div class="gap-region" style="left: ${gapStart}%; width: ${gapEnd - gapStart}%;"><span class="gap-label">too hot</span></div>`;
+      }
+
+      sowings.forEach(s => {
+        const pos = pctPos(s.date);
+        markersHtml += `<div class="sow-mark ${s.season}" style="left: ${pos}%"><span class="sow-label">${formatDate(s.date)}</span></div>`;
+      });
+
+      markersHtml += "</div>";
+
+      return monthsHtml + markersHtml;
+    }
+
+    function renderSchedule(crop) {
+      const { sowings, dtmAvg } = computeSowings(crop);
+
+      let html = `<div class="crop-schedule">`;
+      html += `<h3>${crop.emoji} ${crop.name}</h3>`;
+      html += `<div class="crop-meta">`;
+      html += `<span>📅 ${crop.dtmMin}–${crop.dtmMax} days to maturity</span>`;
+      html += `<span>🔄 Sow every ${crop.intervalWeeks} weeks</span>`;
+      html += `<span>🌱 ${sowings.length} total sowings</span>`;
+      html += `</div>`;
+
+      if (crop.note) {
+        html += `<div class="crop-note">💡 ${crop.note}</div>`;
+      }
+
+      html += `<div class="timeline">${renderTimeline(crop, sowings)}</div>`;
+
+      // Table of sowings
+      html += `<table class="sow-table">`;
+      html += `<thead><tr><th>#</th><th>Sow Date</th><th>Est. Harvest</th><th>Window</th></tr></thead>`;
+      html += `<tbody>`;
+      sowings.forEach((s, i) => {
+        const harvestMin = addDays(s.date, crop.dtmMin);
+        const harvestMax = addDays(s.date, crop.dtmMax);
+        html += `<tr>`;
+        html += `<td class="sow-num ${s.season}">${i + 1}</td>`;
+        html += `<td>${formatDate(s.date)}</td>`;
+        html += `<td class="harvest-date">${formatDate(harvestMin)}–${formatDate(harvestMax)}</td>`;
+        html += `<td>${s.season === "fall" ? "🍂 Fall" : "🌸 Spring"}</td>`;
+        html += `</tr>`;
+      });
+      html += `</tbody></table>`;
+
+      html += `</div>`;
+      return { html, count: sowings.length };
+    }
+
+    document.getElementById("generate-btn").addEventListener("click", () => {
+      if (selectedCrops.size === 0) return;
+
+      const resultsDiv = document.getElementById("results");
+      const schedulesDiv = document.getElementById("schedules");
+      const summaryBar = document.getElementById("summary-bar");
+      schedulesDiv.innerHTML = "";
+
+      let totalSowings = 0;
+      const cropNames = [];
+
+      const sortedCrops = Array.from(selectedCrops).sort((a, b) => {
+        const ca = CROPS[a];
+        const cb = CROPS[b];
+        const aStart = makeDate(ca.earliestMMDD);
+        const bStart = makeDate(cb.earliestMMDD);
+        return aStart - bStart;
+      });
+
+      sortedCrops.forEach(i => {
+        const crop = CROPS[i];
+        const { html, count } = renderSchedule(crop);
+        schedulesDiv.innerHTML += html;
+        totalSowings += count;
+        cropNames.push(crop.name);
+      });
+
+      summaryBar.innerHTML = `<span><strong>${selectedCrops.size}</strong> crops selected</span><span><strong>${totalSowings}</strong> total sowings</span><span>Season: ${formatDateFull(new Date(lastFrostInput.value + "T12:00:00"))} last frost → ${formatDateFull(new Date(firstFrostInput.value + "T12:00:00"))} first frost</span>`;
+
+      resultsDiv.classList.add("visible");
+      resultsDiv.scrollIntoView({ behavior: "smooth" });
+    });
+    </script>
+</body>
+</html>
