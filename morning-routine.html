@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Morning Routine Simulator</title>
+    <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+      background: #1a1a2e;
+      color: #e0e0e0;
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 28px;
+      color: #fff;
+    }
+    h2 {
+      font-size: 20px;
+      margin-top: 28px;
+      margin-bottom: 12px;
+      color: #ccc;
+    }
+    p.description {
+      color: #999;
+      margin-top: -4px;
+      font-size: 15px;
+    }
+
+    /* Profile tabs */
+    .profile-bar {
+      display: flex;
+      gap: 0;
+      align-items: center;
+      margin-bottom: 0;
+      flex-wrap: wrap;
+    }
+    .profile-bar button {
+      padding: 10px 16px;
+      border: 2px solid #333;
+      border-bottom: none;
+      background: #222;
+      color: #888;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      border-radius: 8px 8px 0 0;
+      margin-right: -1px;
+      white-space: nowrap;
+    }
+    .profile-bar button.active {
+      background: #2a2a3e;
+      color: #fff;
+      border-color: #444;
+      position: relative;
+      z-index: 1;
+    }
+    .profile-bar .add-profile {
+      padding: 10px 14px;
+      background: transparent;
+      border: 2px dashed #444;
+      color: #666;
+      border-radius: 8px 8px 0 0;
+      border-bottom: none;
+    }
+    .profile-bar .add-profile:hover {
+      color: #aaa;
+      border-color: #666;
+    }
+
+    /* Main panel */
+    .panel {
+      background: #2a2a3e;
+      border: 2px solid #444;
+      border-radius: 0 0 12px 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    /* Deadline row */
+    .deadline-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .deadline-row label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #aaa;
+    }
+    .deadline-row input[type="time"] {
+      padding: 8px 12px;
+      border: 2px solid #444;
+      border-radius: 6px;
+      background: #1a1a2e;
+      color: #fff;
+      font-size: 16px;
+      font-family: inherit;
+    }
+    .deadline-row input[type="time"]:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    /* Wake time display */
+    .wake-display {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .wake-display .wake-label {
+      font-size: 14px;
+      font-weight: 600;
+      opacity: 0.9;
+    }
+    .wake-display .wake-time {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -1px;
+    }
+    .wake-display .total-duration {
+      font-size: 14px;
+      opacity: 0.85;
+    }
+
+    /* Sleep calculator */
+    .sleep-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .sleep-row label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #aaa;
+    }
+    .sleep-row input[type="number"] {
+      width: 70px;
+      padding: 8px 10px;
+      border: 2px solid #444;
+      border-radius: 6px;
+      background: #1a1a2e;
+      color: #fff;
+      font-size: 16px;
+      font-family: inherit;
+      text-align: center;
+    }
+    .sleep-row input[type="number"]:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    .bedtime-display {
+      font-size: 15px;
+      color: #b8a9f0;
+      font-weight: 600;
+    }
+
+    /* Blocks list */
+    .blocks-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      margin-bottom: 16px;
+    }
+
+    /* Single block */
+    .block-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: #1e1e32;
+      border: 2px solid transparent;
+      transition: opacity 0.2s, background 0.2s;
+      cursor: grab;
+    }
+    .block-item.disabled {
+      opacity: 0.4;
+    }
+    .block-item.drag-over {
+      border-color: #667eea;
+    }
+    .block-item.dragging {
+      opacity: 0.5;
+    }
+    .block-color {
+      width: 6px;
+      min-height: 36px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    .block-toggle {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      accent-color: #667eea;
+      flex-shrink: 0;
+    }
+    .block-emoji {
+      font-size: 20px;
+      width: 28px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .block-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .block-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #ddd;
+    }
+    .block-slider-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .block-slider-row input[type="range"] {
+      flex: 1;
+      height: 6px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: #333;
+      border-radius: 3px;
+      outline: none;
+      cursor: pointer;
+    }
+    .block-slider-row input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #667eea;
+      cursor: pointer;
+    }
+    .block-slider-row input[type="range"]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #667eea;
+      cursor: pointer;
+      border: none;
+    }
+    .block-duration {
+      font-size: 13px;
+      color: #aaa;
+      min-width: 50px;
+      text-align: right;
+      white-space: nowrap;
+    }
+    .block-time {
+      font-size: 12px;
+      color: #777;
+      min-width: 55px;
+      text-align: right;
+      white-space: nowrap;
+    }
+    .block-delete {
+      background: none;
+      border: none;
+      color: #666;
+      cursor: pointer;
+      font-size: 18px;
+      padding: 4px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .block-delete:hover {
+      color: #e74c3c;
+    }
+
+    /* Add block */
+    .add-block-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .add-block-row input[type="text"] {
+      padding: 8px 12px;
+      border: 2px solid #444;
+      border-radius: 6px;
+      background: #1a1a2e;
+      color: #fff;
+      font-size: 16px;
+      font-family: inherit;
+      flex: 1;
+      min-width: 120px;
+    }
+    .add-block-row input[type="text"]:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      background: #667eea;
+      color: #fff;
+    }
+    .btn:hover {
+      background: #5a6fd6;
+    }
+    .btn-secondary {
+      background: #333;
+      color: #ccc;
+    }
+    .btn-secondary:hover {
+      background: #444;
+    }
+    .btn-danger {
+      background: #c0392b;
+      color: #fff;
+    }
+    .btn-danger:hover {
+      background: #a93226;
+    }
+
+    /* Timeline visualization */
+    .timeline {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .timeline-segment {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 14px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      min-height: 28px;
+      position: relative;
+    }
+    .timeline-segment.disabled-seg {
+      opacity: 0.3;
+    }
+    .timeline-segment .seg-name {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .timeline-segment .seg-time {
+      font-size: 12px;
+      opacity: 0.85;
+    }
+    .timeline-boundary {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 14px;
+      background: #1a1a2e;
+      font-size: 12px;
+      color: #888;
+      border-left: 3px solid #444;
+    }
+    .timeline-boundary.wake-boundary {
+      border-left-color: #667eea;
+      color: #b8a9f0;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .timeline-boundary.deadline-boundary {
+      border-left-color: #e74c3c;
+      color: #e74c3c;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    /* Weekly view */
+    .view-toggle {
+      display: inline-flex;
+      border: 2px solid #444;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .view-toggle button {
+      padding: 8px 16px;
+      border: none;
+      background: #222;
+      color: #888;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .view-toggle button.active {
+      background: #667eea;
+      color: #fff;
+    }
+    .weekly-section {
+      display: none;
+    }
+    .weekly-section.active {
+      display: block;
+    }
+    .daily-section {
+      display: none;
+    }
+    .daily-section.active {
+      display: block;
+    }
+    .weekly-grid {
+      display: grid;
+      grid-template-columns: 100px repeat(7, 1fr);
+      gap: 2px;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+    .weekly-grid .cell {
+      padding: 8px 6px;
+      background: #1e1e32;
+      text-align: center;
+      border-radius: 4px;
+    }
+    .weekly-grid .cell.header {
+      font-weight: 700;
+      color: #aaa;
+      background: #252540;
+      font-size: 12px;
+    }
+    .weekly-grid .cell.row-label {
+      text-align: left;
+      font-weight: 600;
+      color: #aaa;
+    }
+    .weekly-grid select {
+      width: 100%;
+      padding: 4px;
+      border: 1px solid #444;
+      border-radius: 4px;
+      background: #1a1a2e;
+      color: #fff;
+      font-size: 12px;
+      font-family: inherit;
+    }
+    .weekly-summary {
+      background: #1e1e32;
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .weekly-summary h3 {
+      margin: 0 0 12px 0;
+      font-size: 16px;
+      color: #aaa;
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 8px;
+    }
+    .summary-card {
+      background: #252540;
+      border-radius: 6px;
+      padding: 10px 14px;
+    }
+    .summary-card .sc-label {
+      font-size: 12px;
+      color: #888;
+    }
+    .summary-card .sc-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    /* Profile management */
+    .profile-actions {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+      h1 {
+        font-size: 24px;
+      }
+      .wake-display .wake-time {
+        font-size: 26px;
+      }
+      .block-item {
+        gap: 6px;
+        padding: 8px;
+      }
+      .block-time {
+        display: none;
+      }
+      .weekly-grid {
+        grid-template-columns: 80px repeat(7, 1fr);
+        font-size: 11px;
+      }
+      .weekly-grid .cell {
+        padding: 6px 3px;
+      }
+      .profile-bar button {
+        padding: 8px 10px;
+        font-size: 12px;
+      }
+    }
+    </style>
+</head>
+<body>
+    <h1>Morning Routine Simulator</h1>
+    <p class="description">Set your deadline, define routine blocks, and watch your wake-up time back-calculate live. A planning tool for answering "what time do I need to wake up?"</p>
+
+    <div class="view-toggle" id="view-toggle">
+      <button class="active" data-view="daily">Daily</button>
+      <button data-view="weekly">Weekly</button>
+    </div>
+
+    <div class="daily-section active" id="daily-view">
+      <div class="profile-bar" id="profile-bar">
+        <button class="add-profile" id="add-profile-btn" title="Add profile">+</button>
+      </div>
+
+      <div class="panel" id="main-panel">
+        <div class="profile-actions">
+          <button class="btn btn-secondary" id="rename-profile-btn" title="Rename profile">Rename</button>
+          <button class="btn btn-danger" id="delete-profile-btn" title="Delete profile">Delete Profile</button>
+        </div>
+
+        <div class="deadline-row">
+          <label for="deadline-input">🎯 Deadline</label>
+          <input type="time" id="deadline-input" value="09:00">
+        </div>
+
+        <div class="wake-display" id="wake-display">
+          <div>
+            <div class="wake-label">⏰ Wake Up</div>
+            <div class="wake-time" id="wake-time">—</div>
+          </div>
+          <div class="total-duration" id="total-duration">0 min total</div>
+        </div>
+
+        <div class="sleep-row">
+          <label for="sleep-hours">😴 Target sleep</label>
+          <input type="number" id="sleep-hours" min="0" max="24" step="0.5" value="" placeholder="hrs" inputmode="decimal">
+          <span class="bedtime-display" id="bedtime-display"></span>
+        </div>
+
+        <div class="blocks-list" id="blocks-list"></div>
+
+        <div class="add-block-row">
+          <input type="text" id="new-block-name" placeholder="New block name (e.g., Yoga)">
+          <button class="btn" id="add-block-btn">Add Block</button>
+        </div>
+
+        <div class="timeline" id="timeline"></div>
+      </div>
+    </div>
+
+    <div class="weekly-section" id="weekly-view">
+      <h2>Weekly Schedule</h2>
+      <div class="weekly-grid" id="weekly-grid"></div>
+      <div class="weekly-summary" id="weekly-summary">
+        <h3>Weekly Summary</h3>
+        <div class="summary-grid" id="summary-grid"></div>
+      </div>
+    </div>
+
+    <script>
+    const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+    const DEFAULT_BLOCKS = [
+      { name: "Meditation", emoji: "🧘", color: "#667eea", minDur: 5, maxDur: 60, duration: 20, enabled: true },
+      { name: "Run", emoji: "🏃", color: "#e85d75", minDur: 20, maxDur: 150, duration: 60, enabled: true },
+      { name: "Shower", emoji: "🚿", color: "#43b89c", minDur: 5, maxDur: 30, duration: 15, enabled: true },
+      { name: "Breakfast", emoji: "🍳", color: "#f5a623", minDur: 5, maxDur: 45, duration: 20, enabled: true },
+      { name: "Commute", emoji: "🚗", color: "#8e44ad", minDur: 10, maxDur: 90, duration: 30, enabled: true },
+      { name: "Buffer", emoji: "⏳", color: "#95a5a6", minDur: 0, maxDur: 30, duration: 10, enabled: true },
+    ];
+
+    const BLOCK_COLORS = [
+      "#667eea", "#e85d75", "#43b89c", "#f5a623", "#8e44ad",
+      "#95a5a6", "#e67e22", "#1abc9c", "#3498db", "#e74c3c",
+      "#2ecc71", "#9b59b6",
+    ];
+
+    const BLOCK_EMOJIS = ["📋", "🏋️", "📖", "🧘", "🏃", "🚿", "🍳", "🚗", "⏳", "☕", "🎵", "📱", "🐕", "🧹", "💊"];
+
+    // --- State ---
+    let profiles = [];
+    let activeProfileIdx = 0;
+    let weekAssignments = ["", "", "", "", "", "", ""]; // profile id per day
+    let dragSrcIdx = null;
+
+    function generateId() {
+      return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    }
+
+    function createDefaultProfile(name) {
+      return {
+        id: generateId(),
+        name: name,
+        deadline: "09:00",
+        sleepHours: null,
+        blocks: DEFAULT_BLOCKS.map(b => ({ ...b, id: generateId() })),
+      };
+    }
+
+    // --- Persistence ---
+    function saveState() {
+      localStorage.setItem("mr-profiles", JSON.stringify(profiles));
+      localStorage.setItem("mr-active", String(activeProfileIdx));
+      localStorage.setItem("mr-week", JSON.stringify(weekAssignments));
+    }
+
+    function loadState() {
+      try {
+        const stored = localStorage.getItem("mr-profiles");
+        if (stored) {
+          profiles = JSON.parse(stored);
+          activeProfileIdx = parseInt(localStorage.getItem("mr-active")) || 0;
+          if (activeProfileIdx >= profiles.length) activeProfileIdx = 0;
+          const week = localStorage.getItem("mr-week");
+          if (week) weekAssignments = JSON.parse(week);
+        } else {
+          profiles = [
+            createDefaultProfile("Commute Day"),
+            createDefaultProfile("WFH Day"),
+          ];
+          // Customize WFH: disable commute, later deadline
+          const wfh = profiles[1];
+          wfh.deadline = "09:30";
+          const commute = wfh.blocks.find(b => b.name === "Commute");
+          if (commute) commute.enabled = false;
+          activeProfileIdx = 0;
+        }
+      } catch (e) {
+        profiles = [createDefaultProfile("Commute Day")];
+        activeProfileIdx = 0;
+      }
+    }
+
+    function getActiveProfile() {
+      return profiles[activeProfileIdx];
+    }
+
+    // --- Time helpers ---
+    function parseTime(timeStr) {
+      const [h, m] = timeStr.split(":").map(Number);
+      return h * 60 + m;
+    }
+
+    function formatTimeMinutes(totalMin) {
+      let m = ((totalMin % 1440) + 1440) % 1440;
+      const h = Math.floor(m / 60);
+      const min = Math.round(m % 60);
+      const period = h >= 12 ? "PM" : "AM";
+      const displayH = h === 0 ? 12 : h > 12 ? h - 12 : h;
+      return `${displayH}:${String(min).padStart(2, "0")} ${period}`;
+    }
+
+    function formatDuration(minutes) {
+      if (minutes < 60) return `${minutes} min`;
+      const h = Math.floor(minutes / 60);
+      const m = minutes % 60;
+      return m > 0 ? `${h}h ${m}m` : `${h}h`;
+    }
+
+    function calcWakeTime(profile) {
+      const deadlineMin = parseTime(profile.deadline);
+      const totalDur = profile.blocks
+        .filter(b => b.enabled)
+        .reduce((sum, b) => sum + b.duration, 0);
+      return { wakeMin: deadlineMin - totalDur, totalDur };
+    }
+
+    // --- Render profile tabs ---
+    function renderProfileTabs() {
+      const bar = document.getElementById("profile-bar");
+      const addBtn = document.getElementById("add-profile-btn");
+      // Remove all except add button
+      while (bar.firstChild !== addBtn) {
+        bar.removeChild(bar.firstChild);
+      }
+      profiles.forEach((p, i) => {
+        const btn = document.createElement("button");
+        btn.textContent = p.name;
+        btn.dataset.idx = i;
+        if (i === activeProfileIdx) btn.classList.add("active");
+        btn.addEventListener("click", () => {
+          activeProfileIdx = i;
+          saveState();
+          renderAll();
+        });
+        bar.insertBefore(btn, addBtn);
+      });
+    }
+
+    // --- Render blocks ---
+    function renderBlocks() {
+      const profile = getActiveProfile();
+      const list = document.getElementById("blocks-list");
+      list.innerHTML = "";
+
+      const { wakeMin } = calcWakeTime(profile);
+
+      // Calculate start times for each block
+      let runningMin = wakeMin;
+      const startTimes = [];
+      for (const block of profile.blocks) {
+        startTimes.push(runningMin);
+        if (block.enabled) runningMin += block.duration;
+      }
+
+      profile.blocks.forEach((block, i) => {
+        const div = document.createElement("div");
+        div.className = "block-item" + (block.enabled ? "" : " disabled");
+        div.draggable = true;
+        div.dataset.idx = i;
+
+        div.addEventListener("dragstart", (e) => {
+          dragSrcIdx = i;
+          div.classList.add("dragging");
+          e.dataTransfer.effectAllowed = "move";
+        });
+        div.addEventListener("dragend", () => {
+          div.classList.remove("dragging");
+          document.querySelectorAll(".block-item.drag-over").forEach(el => el.classList.remove("drag-over"));
+          dragSrcIdx = null;
+        });
+        div.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "move";
+          div.classList.add("drag-over");
+        });
+        div.addEventListener("dragleave", () => {
+          div.classList.remove("drag-over");
+        });
+        div.addEventListener("drop", (e) => {
+          e.preventDefault();
+          div.classList.remove("drag-over");
+          if (dragSrcIdx !== null && dragSrcIdx !== i) {
+            const blocks = profile.blocks;
+            const [moved] = blocks.splice(dragSrcIdx, 1);
+            blocks.splice(i, 0, moved);
+            saveState();
+            renderBlocks();
+            renderTimeline();
+          }
+        });
+
+        // Touch drag support
+        let touchStartY = 0;
+        let touchCurrentIdx = i;
+        div.addEventListener("touchstart", (e) => {
+          touchStartY = e.touches[0].clientY;
+          dragSrcIdx = i;
+        }, { passive: true });
+        div.addEventListener("touchmove", (e) => {
+          const touch = e.touches[0];
+          const items = list.querySelectorAll(".block-item");
+          for (let j = 0; j < items.length; j++) {
+            const rect = items[j].getBoundingClientRect();
+            if (touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+              touchCurrentIdx = j;
+              items.forEach(it => it.classList.remove("drag-over"));
+              if (j !== dragSrcIdx) items[j].classList.add("drag-over");
+              break;
+            }
+          }
+        }, { passive: true });
+        div.addEventListener("touchend", () => {
+          document.querySelectorAll(".block-item.drag-over").forEach(el => el.classList.remove("drag-over"));
+          if (dragSrcIdx !== null && touchCurrentIdx !== dragSrcIdx) {
+            const blocks = profile.blocks;
+            const [moved] = blocks.splice(dragSrcIdx, 1);
+            blocks.splice(touchCurrentIdx, 0, moved);
+            saveState();
+            renderBlocks();
+            renderTimeline();
+          }
+          dragSrcIdx = null;
+        });
+
+        const colorBar = document.createElement("div");
+        colorBar.className = "block-color";
+        colorBar.style.background = block.color;
+
+        const toggle = document.createElement("input");
+        toggle.type = "checkbox";
+        toggle.className = "block-toggle";
+        toggle.checked = block.enabled;
+        toggle.setAttribute("aria-label", `Toggle ${block.name}`);
+        toggle.addEventListener("change", () => {
+          block.enabled = toggle.checked;
+          saveState();
+          renderBlocks();
+          renderTimeline();
+          updateWakeDisplay();
+        });
+
+        const emoji = document.createElement("span");
+        emoji.className = "block-emoji";
+        emoji.textContent = block.emoji;
+
+        const info = document.createElement("div");
+        info.className = "block-info";
+
+        const nameSpan = document.createElement("div");
+        nameSpan.className = "block-name";
+        nameSpan.textContent = block.name;
+
+        const sliderRow = document.createElement("div");
+        sliderRow.className = "block-slider-row";
+
+        const slider = document.createElement("input");
+        slider.type = "range";
+        slider.min = block.minDur;
+        slider.max = block.maxDur;
+        slider.value = block.duration;
+        slider.setAttribute("aria-label", `${block.name} duration`);
+        slider.addEventListener("input", () => {
+          block.duration = parseInt(slider.value);
+          durLabel.textContent = formatDuration(block.duration);
+          saveState();
+          updateWakeDisplay();
+          renderTimeline();
+          // Update start times on all blocks
+          updateBlockTimes();
+        });
+
+        const durLabel = document.createElement("span");
+        durLabel.className = "block-duration";
+        durLabel.textContent = formatDuration(block.duration);
+
+        sliderRow.appendChild(slider);
+        sliderRow.appendChild(durLabel);
+        info.appendChild(nameSpan);
+        info.appendChild(sliderRow);
+
+        const timeLabel = document.createElement("span");
+        timeLabel.className = "block-time";
+        if (block.enabled) {
+          timeLabel.textContent = formatTimeMinutes(startTimes[i]);
+        }
+
+        const delBtn = document.createElement("button");
+        delBtn.className = "block-delete";
+        delBtn.innerHTML = "×";
+        delBtn.title = "Remove block";
+        delBtn.setAttribute("aria-label", `Remove ${block.name}`);
+        delBtn.addEventListener("click", () => {
+          profile.blocks.splice(i, 1);
+          saveState();
+          renderBlocks();
+          renderTimeline();
+          updateWakeDisplay();
+        });
+
+        div.appendChild(colorBar);
+        div.appendChild(toggle);
+        div.appendChild(emoji);
+        div.appendChild(info);
+        div.appendChild(timeLabel);
+        div.appendChild(delBtn);
+        list.appendChild(div);
+      });
+    }
+
+    function updateBlockTimes() {
+      const profile = getActiveProfile();
+      const { wakeMin } = calcWakeTime(profile);
+      let runningMin = wakeMin;
+      const items = document.querySelectorAll("#blocks-list .block-item");
+      profile.blocks.forEach((block, i) => {
+        if (items[i]) {
+          const timeLabel = items[i].querySelector(".block-time");
+          if (timeLabel) {
+            timeLabel.textContent = block.enabled ? formatTimeMinutes(runningMin) : "";
+          }
+        }
+        if (block.enabled) runningMin += block.duration;
+      });
+    }
+
+    // --- Wake display ---
+    function updateWakeDisplay() {
+      const profile = getActiveProfile();
+      const { wakeMin, totalDur } = calcWakeTime(profile);
+
+      document.getElementById("wake-time").textContent = formatTimeMinutes(wakeMin);
+      document.getElementById("total-duration").textContent = `${formatDuration(totalDur)} total`;
+
+      // Bedtime
+      const sleepInput = document.getElementById("sleep-hours");
+      const sleepHours = parseFloat(sleepInput.value);
+      const bedtimeEl = document.getElementById("bedtime-display");
+      if (sleepHours > 0) {
+        profile.sleepHours = sleepHours;
+        const bedtimeMin = wakeMin - sleepHours * 60;
+        bedtimeEl.textContent = `Bedtime: ${formatTimeMinutes(bedtimeMin)}`;
+      } else {
+        profile.sleepHours = null;
+        bedtimeEl.textContent = "";
+      }
+      saveState();
+    }
+
+    // --- Timeline ---
+    function renderTimeline() {
+      const profile = getActiveProfile();
+      const container = document.getElementById("timeline");
+      container.innerHTML = "";
+
+      const { wakeMin } = calcWakeTime(profile);
+      let runningMin = wakeMin;
+
+      // Wake boundary
+      const wakeBoundary = document.createElement("div");
+      wakeBoundary.className = "timeline-boundary wake-boundary";
+      wakeBoundary.innerHTML = `<span>⏰ Wake Up</span><span>${formatTimeMinutes(wakeMin)}</span>`;
+      container.appendChild(wakeBoundary);
+
+      for (const block of profile.blocks) {
+        const seg = document.createElement("div");
+        seg.className = "timeline-segment" + (block.enabled ? "" : " disabled-seg");
+        seg.style.background = block.color;
+
+        const heightPx = block.enabled ? Math.max(28, block.duration * 1.2) : 28;
+        seg.style.minHeight = `${heightPx}px`;
+
+        const startTime = runningMin;
+        if (block.enabled) runningMin += block.duration;
+        const endTime = runningMin;
+
+        seg.innerHTML = `
+          <span class="seg-name">${block.emoji} ${block.name}</span>
+          <span class="seg-time">${block.enabled ? formatDuration(block.duration) : "off"}</span>
+        `;
+        container.appendChild(seg);
+
+        if (block.enabled) {
+          const boundary = document.createElement("div");
+          boundary.className = "timeline-boundary";
+          boundary.innerHTML = `<span></span><span>${formatTimeMinutes(endTime)}</span>`;
+          container.appendChild(boundary);
+        }
+      }
+
+      // Deadline boundary
+      const deadlineBoundary = document.createElement("div");
+      deadlineBoundary.className = "timeline-boundary deadline-boundary";
+      deadlineBoundary.innerHTML = `<span>🎯 Deadline</span><span>${formatTimeMinutes(parseTime(profile.deadline))}</span>`;
+      container.appendChild(deadlineBoundary);
+    }
+
+    // --- Weekly view ---
+    function renderWeeklyView() {
+      const grid = document.getElementById("weekly-grid");
+      grid.innerHTML = "";
+
+      // Header row
+      const corner = document.createElement("div");
+      corner.className = "cell header";
+      corner.textContent = "";
+      grid.appendChild(corner);
+      for (const day of DAYS) {
+        const hdr = document.createElement("div");
+        hdr.className = "cell header";
+        hdr.textContent = day;
+        grid.appendChild(hdr);
+      }
+
+      // Profile assignment row
+      const profileLabel = document.createElement("div");
+      profileLabel.className = "cell row-label";
+      profileLabel.textContent = "Profile";
+      grid.appendChild(profileLabel);
+      for (let d = 0; d < 7; d++) {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        const sel = document.createElement("select");
+        sel.setAttribute("aria-label", `${DAYS[d]} profile`);
+        const noneOpt = document.createElement("option");
+        noneOpt.value = "";
+        noneOpt.textContent = "—";
+        sel.appendChild(noneOpt);
+        for (const p of profiles) {
+          const opt = document.createElement("option");
+          opt.value = p.id;
+          opt.textContent = p.name;
+          if (weekAssignments[d] === p.id) opt.selected = true;
+          sel.appendChild(opt);
+        }
+        sel.addEventListener("change", () => {
+          weekAssignments[d] = sel.value;
+          saveState();
+          renderWeeklyView();
+        });
+        cell.appendChild(sel);
+        grid.appendChild(cell);
+      }
+
+      // Wake time row
+      const wakeLabel = document.createElement("div");
+      wakeLabel.className = "cell row-label";
+      wakeLabel.textContent = "Wake Up";
+      grid.appendChild(wakeLabel);
+      for (let d = 0; d < 7; d++) {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        const profile = profiles.find(p => p.id === weekAssignments[d]);
+        if (profile) {
+          const { wakeMin } = calcWakeTime(profile);
+          cell.textContent = formatTimeMinutes(wakeMin);
+        } else {
+          cell.textContent = "—";
+        }
+        grid.appendChild(cell);
+      }
+
+      // Deadline row
+      const dlLabel = document.createElement("div");
+      dlLabel.className = "cell row-label";
+      dlLabel.textContent = "Deadline";
+      grid.appendChild(dlLabel);
+      for (let d = 0; d < 7; d++) {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        const profile = profiles.find(p => p.id === weekAssignments[d]);
+        cell.textContent = profile ? formatTimeMinutes(parseTime(profile.deadline)) : "—";
+        grid.appendChild(cell);
+      }
+
+      // Bedtime row
+      const bedLabel = document.createElement("div");
+      bedLabel.className = "cell row-label";
+      bedLabel.textContent = "Bedtime";
+      grid.appendChild(bedLabel);
+      for (let d = 0; d < 7; d++) {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        const profile = profiles.find(p => p.id === weekAssignments[d]);
+        if (profile && profile.sleepHours > 0) {
+          const { wakeMin } = calcWakeTime(profile);
+          const bedtimeMin = wakeMin - profile.sleepHours * 60;
+          cell.textContent = formatTimeMinutes(bedtimeMin);
+        } else {
+          cell.textContent = "—";
+        }
+        grid.appendChild(cell);
+      }
+
+      // Total routine row
+      const totalLabel = document.createElement("div");
+      totalLabel.className = "cell row-label";
+      totalLabel.textContent = "Routine";
+      grid.appendChild(totalLabel);
+      for (let d = 0; d < 7; d++) {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        const profile = profiles.find(p => p.id === weekAssignments[d]);
+        if (profile) {
+          const { totalDur } = calcWakeTime(profile);
+          cell.textContent = formatDuration(totalDur);
+        } else {
+          cell.textContent = "—";
+        }
+        grid.appendChild(cell);
+      }
+
+      // Weekly summary
+      renderWeeklySummary();
+    }
+
+    function renderWeeklySummary() {
+      const summaryGrid = document.getElementById("summary-grid");
+      summaryGrid.innerHTML = "";
+
+      // Collect all activities across the week
+      const activityMinutes = {};
+      let totalSleepMin = 0;
+      let sleepDays = 0;
+
+      for (let d = 0; d < 7; d++) {
+        const profile = profiles.find(p => p.id === weekAssignments[d]);
+        if (!profile) continue;
+
+        for (const block of profile.blocks) {
+          if (!block.enabled) continue;
+          if (!activityMinutes[block.name]) activityMinutes[block.name] = 0;
+          activityMinutes[block.name] += block.duration;
+        }
+
+        if (profile.sleepHours > 0) {
+          totalSleepMin += profile.sleepHours * 60;
+          sleepDays++;
+        }
+      }
+
+      // Activity cards
+      for (const [name, minutes] of Object.entries(activityMinutes)) {
+        const card = document.createElement("div");
+        card.className = "summary-card";
+        const h = Math.floor(minutes / 60);
+        const m = minutes % 60;
+        let display = "";
+        if (h > 0 && m > 0) display = `${h}h ${m}m`;
+        else if (h > 0) display = `${h}h`;
+        else display = `${m} min`;
+        card.innerHTML = `<div class="sc-label">${name} / week</div><div class="sc-value">${display}</div>`;
+        summaryGrid.appendChild(card);
+      }
+
+      // Sleep card
+      if (sleepDays > 0) {
+        const avgSleep = totalSleepMin / sleepDays;
+        const card = document.createElement("div");
+        card.className = "summary-card";
+        card.innerHTML = `<div class="sc-label">Avg sleep / night</div><div class="sc-value">${(avgSleep / 60).toFixed(1)}h</div>`;
+        summaryGrid.appendChild(card);
+      }
+    }
+
+    // --- Render all ---
+    function renderAll() {
+      const profile = getActiveProfile();
+
+      // Sync inputs
+      document.getElementById("deadline-input").value = profile.deadline;
+      document.getElementById("sleep-hours").value = profile.sleepHours || "";
+
+      renderProfileTabs();
+      renderBlocks();
+      updateWakeDisplay();
+      renderTimeline();
+      renderWeeklyView();
+    }
+
+    // --- Event listeners ---
+
+    document.getElementById("deadline-input").addEventListener("input", () => {
+      const profile = getActiveProfile();
+      profile.deadline = document.getElementById("deadline-input").value;
+      saveState();
+      updateWakeDisplay();
+      renderBlocks();
+      renderTimeline();
+    });
+
+    document.getElementById("sleep-hours").addEventListener("input", () => {
+      updateWakeDisplay();
+    });
+
+    document.getElementById("add-block-btn").addEventListener("click", () => {
+      const input = document.getElementById("new-block-name");
+      const name = input.value.trim();
+      if (!name) return;
+      const profile = getActiveProfile();
+      const colorIdx = profile.blocks.length % BLOCK_COLORS.length;
+      const emojiIdx = profile.blocks.length % BLOCK_EMOJIS.length;
+      profile.blocks.push({
+        id: generateId(),
+        name: name,
+        emoji: BLOCK_EMOJIS[emojiIdx],
+        color: BLOCK_COLORS[colorIdx],
+        minDur: 5,
+        maxDur: 60,
+        duration: 15,
+        enabled: true,
+      });
+      input.value = "";
+      saveState();
+      renderBlocks();
+      renderTimeline();
+      updateWakeDisplay();
+    });
+
+    document.getElementById("new-block-name").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        document.getElementById("add-block-btn").click();
+      }
+    });
+
+    document.getElementById("add-profile-btn").addEventListener("click", () => {
+      const name = prompt("Profile name:");
+      if (!name || !name.trim()) return;
+      profiles.push(createDefaultProfile(name.trim()));
+      activeProfileIdx = profiles.length - 1;
+      saveState();
+      renderAll();
+    });
+
+    document.getElementById("rename-profile-btn").addEventListener("click", () => {
+      const profile = getActiveProfile();
+      const name = prompt("Rename profile:", profile.name);
+      if (!name || !name.trim()) return;
+      profile.name = name.trim();
+      saveState();
+      renderAll();
+    });
+
+    document.getElementById("delete-profile-btn").addEventListener("click", () => {
+      if (profiles.length <= 1) {
+        alert("You need at least one profile.");
+        return;
+      }
+      const profile = getActiveProfile();
+      if (!confirm(`Delete "${profile.name}"?`)) return;
+      // Remove from week assignments
+      weekAssignments = weekAssignments.map(id => id === profile.id ? "" : id);
+      profiles.splice(activeProfileIdx, 1);
+      if (activeProfileIdx >= profiles.length) activeProfileIdx = profiles.length - 1;
+      saveState();
+      renderAll();
+    });
+
+    // View toggle
+    document.getElementById("view-toggle").addEventListener("click", (e) => {
+      if (e.target.tagName !== "BUTTON") return;
+      const view = e.target.dataset.view;
+      document.querySelectorAll("#view-toggle button").forEach(b => b.classList.remove("active"));
+      e.target.classList.add("active");
+      document.getElementById("daily-view").classList.toggle("active", view === "daily");
+      document.getElementById("weekly-view").classList.toggle("active", view === "weekly");
+      if (view === "weekly") renderWeeklyView();
+    });
+
+    // --- Init ---
+    loadState();
+    renderAll();
+    </script>
+</body>
+</html>
