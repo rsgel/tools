@@ -414,6 +414,7 @@ layout:
       cabbage:     { name: "Cabbage",      icon: "🥬", per: 1,  cat: "Brassica",    clr: "#c3fae8" },
       kale:        { name: "Kale",         icon: "🥬", per: 1,  cat: "Brassica",    clr: "#b2f2bb" },
       cauliflower: { name: "Cauliflower",  icon: "🥦", per: 1,  cat: "Brassica",    clr: "#e6fcf5" },
+      arugula:     { name: "Arugula",      icon: "🌱", per: 4,  cat: "Brassica",    clr: "#d8f5a2" },
       bushBeans:   { name: "Bush Beans",   icon: "🫘", per: 9,  cat: "Legume",      clr: "#e9fac8" },
       poleBeans:   { name: "Pole Beans",   icon: "🫛", per: 8,  cat: "Legume",      clr: "#f4fce3" },
       peas:        { name: "Peas",         icon: "🫛", per: 8,  cat: "Legume",      clr: "#e9fac8" },
@@ -501,6 +502,8 @@ layout:
                      foes: [] },
       nasturtiums: { friends: ["tomato","cucumber","squash","zucchini","bushBeans","poleBeans","radishes","cabbage","broccoli"],
                      foes: ["cauliflower"] },
+      arugula:     { friends: ["bushBeans","beets","carrots","lettuce","onions","spinach","dill","nasturtiums"],
+                     foes: ["tomato","pepper","eggplant"] },
     };
 
     // ── State ──
