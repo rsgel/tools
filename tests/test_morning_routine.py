@@ -114,7 +114,8 @@ def test_total_duration_displayed(page: Page, static_server):
     page.evaluate("localStorage.clear()")
     page.reload()
     total_text = page.locator("#total-duration").text_content()
-    assert "total" in total_text, "Should display total duration"
+    assert total_text.endswith("total"), "Should display total duration with 'total' suffix"
+    assert "min" in total_text or "h" in total_text, "Should include time unit"
 
 
 def test_slider_updates_wake_time(page: Page, static_server):
