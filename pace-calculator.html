@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pace Calculator</title>
+    <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+      color: #333;
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 28px;
+    }
+    h2 {
+      font-size: 20px;
+      margin-top: 32px;
+      margin-bottom: 12px;
+    }
+    .unit-toggle {
+      display: inline-flex;
+      border: 2px solid #4a90e2;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .unit-toggle button {
+      padding: 8px 20px;
+      border: none;
+      background: white;
+      color: #4a90e2;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .unit-toggle button.active {
+      background: #4a90e2;
+      color: white;
+    }
+    .calc-section {
+      background: #f9f9f9;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .input-row {
+      display: flex;
+      gap: 12px;
+      align-items: end;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .input-group label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #555;
+    }
+    .input-group input {
+      width: 80px;
+      padding: 10px;
+      border: 2px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+      font-family: inherit;
+      text-align: center;
+    }
+    .input-group input:focus {
+      outline: none;
+      border-color: #4a90e2;
+    }
+    .input-group .time-inputs {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    .input-group .time-inputs span {
+      font-size: 14px;
+      color: #888;
+      font-weight: 600;
+    }
+    .result-box {
+      background: white;
+      border-left: 4px solid #4a90e2;
+      border-radius: 4px;
+      padding: 12px 16px;
+      margin-top: 12px;
+      font-size: 18px;
+    }
+    .result-box .label {
+      font-size: 12px;
+      color: #888;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+    .result-box .value {
+      font-weight: 700;
+      font-size: 22px;
+    }
+    .results-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .results-row .result-box {
+      flex: 1;
+      min-width: 140px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 15px;
+    }
+    th {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 2px solid #ddd;
+      font-size: 13px;
+      color: #555;
+      text-transform: uppercase;
+    }
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #eee;
+    }
+    tr:hover td {
+      background: #f0f6ff;
+    }
+    .distance-name {
+      font-weight: 600;
+    }
+    .secondary {
+      color: #888;
+      font-size: 13px;
+    }
+    .tab-bar {
+      display: flex;
+      gap: 0;
+      margin-bottom: 0;
+    }
+    .tab-bar button {
+      flex: 1;
+      padding: 12px 8px;
+      border: 2px solid #ddd;
+      border-bottom: none;
+      background: #f0f0f0;
+      color: #666;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      border-radius: 8px 8px 0 0;
+      margin-right: -1px;
+    }
+    .tab-bar button.active {
+      background: #f9f9f9;
+      color: #333;
+      border-color: #ddd;
+      position: relative;
+      z-index: 1;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .tab-content .calc-section {
+      border-radius: 0 0 8px 8px;
+      margin-top: 0;
+      border: 2px solid #ddd;
+      border-top: none;
+    }
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+      h1 {
+        font-size: 24px;
+      }
+      .input-group input {
+        width: 60px;
+        padding: 8px;
+      }
+      .input-row {
+        gap: 8px;
+      }
+      table {
+        font-size: 13px;
+      }
+      td, th {
+        padding: 8px 6px;
+      }
+      .tab-bar button {
+        font-size: 12px;
+        padding: 10px 4px;
+      }
+    }
+    </style>
+</head>
+<body>
+    <h1>Pace Calculator</h1>
+    <p>Convert between pace, speed, and finish time. See projected race times for common distances.</p>
+
+    <div class="unit-toggle" id="unit-toggle">
+      <button class="active" data-unit="mi">mi</button>
+      <button data-unit="km">km</button>
+    </div>
+
+    <div class="tab-bar" id="tab-bar">
+      <button class="active" data-tab="pace">Pace → Times</button>
+      <button data-tab="time">Time → Pace</button>
+      <button data-tab="speed">Speed ↔ Pace</button>
+    </div>
+
+    <!-- Tab 1: Pace input -->
+    <div class="tab-content active" id="tab-pace">
+      <div class="calc-section">
+        <div class="input-row">
+          <div class="input-group">
+            <label>Pace (<span class="pace-unit">min/mi</span>)</label>
+            <div class="time-inputs">
+              <input type="number" id="pace-min" min="0" max="59" placeholder="mm" inputmode="numeric">
+              <span>:</span>
+              <input type="number" id="pace-sec" min="0" max="59" placeholder="ss" inputmode="numeric">
+            </div>
+          </div>
+        </div>
+        <div class="results-row" id="pace-results">
+          <div class="result-box">
+            <div class="label">Speed</div>
+            <div class="value" id="pace-speed">—</div>
+          </div>
+          <div class="result-box">
+            <div class="label">Pace (<span class="alt-pace-unit">min/km</span>)</div>
+            <div class="value" id="pace-alt">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 2: Time + Distance input -->
+    <div class="tab-content" id="tab-time">
+      <div class="calc-section">
+        <div class="input-row">
+          <div class="input-group">
+            <label>Race Distance</label>
+            <select id="time-distance" style="padding: 10px; border: 2px solid #ddd; border-radius: 4px; font-size: 16px; font-family: inherit;">
+            </select>
+          </div>
+        </div>
+        <div class="input-row">
+          <div class="input-group">
+            <label>Finish Time</label>
+            <div class="time-inputs">
+              <input type="number" id="time-hr" min="0" max="99" placeholder="hh" inputmode="numeric" style="width: 60px;">
+              <span>:</span>
+              <input type="number" id="time-min" min="0" max="59" placeholder="mm" inputmode="numeric" style="width: 60px;">
+              <span>:</span>
+              <input type="number" id="time-sec" min="0" max="59" placeholder="ss" inputmode="numeric" style="width: 60px;">
+            </div>
+          </div>
+        </div>
+        <div class="results-row" id="time-results">
+          <div class="result-box">
+            <div class="label">Pace (<span class="pace-unit">min/mi</span>)</div>
+            <div class="value" id="time-pace">—</div>
+          </div>
+          <div class="result-box">
+            <div class="label">Pace (<span class="alt-pace-unit">min/km</span>)</div>
+            <div class="value" id="time-pace-alt">—</div>
+          </div>
+          <div class="result-box">
+            <div class="label">Speed</div>
+            <div class="value" id="time-speed">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 3: Speed input -->
+    <div class="tab-content" id="tab-speed">
+      <div class="calc-section">
+        <div class="input-row">
+          <div class="input-group">
+            <label>Speed (<span class="speed-unit">mph</span>)</label>
+            <input type="number" id="speed-input" min="0" step="0.1" placeholder="0.0" inputmode="decimal" style="width: 120px;">
+          </div>
+        </div>
+        <div class="results-row" id="speed-results">
+          <div class="result-box">
+            <div class="label">Pace (<span class="pace-unit">min/mi</span>)</div>
+            <div class="value" id="speed-pace">—</div>
+          </div>
+          <div class="result-box">
+            <div class="label">Pace (<span class="alt-pace-unit">min/km</span>)</div>
+            <div class="value" id="speed-pace-alt">—</div>
+          </div>
+          <div class="result-box">
+            <div class="label">Speed (<span class="alt-speed-unit">km/h</span>)</div>
+            <div class="value" id="speed-alt">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2 id="race-table-heading">Race Projections</h2>
+    <table id="race-table">
+      <thead>
+        <tr>
+          <th>Distance</th>
+          <th>Finish Time</th>
+          <th class="pace-col">Pace</th>
+        </tr>
+      </thead>
+      <tbody id="race-tbody">
+      </tbody>
+    </table>
+
+    <script>
+    const MI_TO_KM = 1.60934;
+    const KM_TO_MI = 0.621371;
+
+    const RACES = [
+      { name: "5K", km: 5 },
+      { name: "10K", km: 10 },
+      { name: "15K", km: 15 },
+      { name: "Half Marathon", km: 21.0975 },
+      { name: "Marathon", km: 42.195 },
+      { name: "50K", km: 50 },
+      { name: "50 Mile", km: 50 * MI_TO_KM },
+      { name: "100K", km: 100 },
+      { name: "100 Mile", km: 100 * MI_TO_KM },
+    ];
+
+    let unit = "mi"; // "mi" or "km"
+
+    // --- Utility functions ---
+
+    function paceSecsPerKm(paceSecsPerUnit) {
+      return unit === "km" ? paceSecsPerUnit : paceSecsPerUnit / MI_TO_KM;
+    }
+
+    function paceSecsFromKm(secsPerKm) {
+      return unit === "km" ? secsPerKm : secsPerKm * MI_TO_KM;
+    }
+
+    function altPaceSecsFromKm(secsPerKm) {
+      return unit === "km" ? secsPerKm * MI_TO_KM : secsPerKm;
+    }
+
+    function formatPace(totalSecs) {
+      if (!isFinite(totalSecs) || totalSecs <= 0) return "—";
+      const m = Math.floor(totalSecs / 60);
+      const s = Math.round(totalSecs % 60);
+      return `${m}:${String(s).padStart(2, "0")}`;
+    }
+
+    function formatTime(totalSecs) {
+      if (!isFinite(totalSecs) || totalSecs <= 0) return "—";
+      const h = Math.floor(totalSecs / 3600);
+      const m = Math.floor((totalSecs % 3600) / 60);
+      const s = Math.round(totalSecs % 60);
+      if (h > 0) {
+        return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+      }
+      return `${m}:${String(s).padStart(2, "0")}`;
+    }
+
+    function formatSpeed(secsPerKm) {
+      if (!isFinite(secsPerKm) || secsPerKm <= 0) return "—";
+      if (unit === "mi") {
+        const mph = 3600 / (secsPerKm * MI_TO_KM);
+        return `${mph.toFixed(1)} mph`;
+      }
+      const kph = 3600 / secsPerKm;
+      return `${kph.toFixed(1)} km/h`;
+    }
+
+    function formatAltSpeed(secsPerKm) {
+      if (!isFinite(secsPerKm) || secsPerKm <= 0) return "—";
+      if (unit === "mi") {
+        const kph = 3600 / secsPerKm;
+        return `${kph.toFixed(1)} km/h`;
+      }
+      const mph = 3600 / (secsPerKm * MI_TO_KM);
+      return `${mph.toFixed(1)} mph`;
+    }
+
+    function distanceInUnit(km) {
+      return unit === "km" ? km : km * KM_TO_MI;
+    }
+
+    function formatDistance(km) {
+      const d = distanceInUnit(km);
+      return `${d.toFixed(2)} ${unit}`;
+    }
+
+    // --- Get current pace in secs/km from whichever tab is active ---
+
+    function getPaceFromPaceTab() {
+      const m = parseInt(document.getElementById("pace-min").value) || 0;
+      const s = parseInt(document.getElementById("pace-sec").value) || 0;
+      const total = m * 60 + s;
+      if (total <= 0) return null;
+      return paceSecsPerKm(total);
+    }
+
+    function getPaceFromTimeTab() {
+      const select = document.getElementById("time-distance");
+      const raceIdx = parseInt(select.value);
+      if (isNaN(raceIdx)) return null;
+      const race = RACES[raceIdx];
+      const h = parseInt(document.getElementById("time-hr").value) || 0;
+      const m = parseInt(document.getElementById("time-min").value) || 0;
+      const s = parseInt(document.getElementById("time-sec").value) || 0;
+      const totalSecs = h * 3600 + m * 60 + s;
+      if (totalSecs <= 0) return null;
+      return totalSecs / race.km; // secs per km
+    }
+
+    function getPaceFromSpeedTab() {
+      const speed = parseFloat(document.getElementById("speed-input").value);
+      if (!speed || speed <= 0) return null;
+      if (unit === "mi") {
+        // speed is mph → convert to secs/km
+        const kph = speed * MI_TO_KM;
+        return 3600 / kph;
+      }
+      // speed is km/h
+      return 3600 / speed;
+    }
+
+    // --- Update functions ---
+
+    function getActiveTab() {
+      return document.querySelector(".tab-bar button.active").dataset.tab;
+    }
+
+    function updatePaceTab(secsPerKm) {
+      if (!secsPerKm) {
+        document.getElementById("pace-speed").textContent = "—";
+        document.getElementById("pace-alt").textContent = "—";
+        return;
+      }
+      document.getElementById("pace-speed").textContent = formatSpeed(secsPerKm);
+      document.getElementById("pace-alt").textContent = formatPace(altPaceSecsFromKm(secsPerKm));
+    }
+
+    function updateTimeTab(secsPerKm) {
+      if (!secsPerKm) {
+        document.getElementById("time-pace").textContent = "—";
+        document.getElementById("time-pace-alt").textContent = "—";
+        document.getElementById("time-speed").textContent = "—";
+        return;
+      }
+      document.getElementById("time-pace").textContent = formatPace(paceSecsFromKm(secsPerKm));
+      document.getElementById("time-pace-alt").textContent = formatPace(altPaceSecsFromKm(secsPerKm));
+      document.getElementById("time-speed").textContent = formatSpeed(secsPerKm);
+    }
+
+    function updateSpeedTab(secsPerKm) {
+      if (!secsPerKm) {
+        document.getElementById("speed-pace").textContent = "—";
+        document.getElementById("speed-pace-alt").textContent = "—";
+        document.getElementById("speed-alt").textContent = "—";
+        return;
+      }
+      document.getElementById("speed-pace").textContent = formatPace(paceSecsFromKm(secsPerKm));
+      document.getElementById("speed-pace-alt").textContent = formatPace(altPaceSecsFromKm(secsPerKm));
+      document.getElementById("speed-alt").textContent = formatAltSpeed(secsPerKm);
+    }
+
+    function updateRaceTable(secsPerKm) {
+      const tbody = document.getElementById("race-tbody");
+      tbody.innerHTML = "";
+      for (const race of RACES) {
+        const tr = document.createElement("tr");
+        const finishSecs = secsPerKm ? secsPerKm * race.km : null;
+        const paceInUnit = secsPerKm ? formatPace(paceSecsFromKm(secsPerKm)) : "—";
+        tr.innerHTML = `
+          <td><span class="distance-name">${race.name}</span> <span class="secondary">${formatDistance(race.km)}</span></td>
+          <td>${finishSecs ? formatTime(finishSecs) : "—"}</td>
+          <td>${paceInUnit}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    function recalculate() {
+      const tab = getActiveTab();
+      let secsPerKm = null;
+      if (tab === "pace") {
+        secsPerKm = getPaceFromPaceTab();
+        updatePaceTab(secsPerKm);
+      } else if (tab === "time") {
+        secsPerKm = getPaceFromTimeTab();
+        updateTimeTab(secsPerKm);
+      } else if (tab === "speed") {
+        secsPerKm = getPaceFromSpeedTab();
+        updateSpeedTab(secsPerKm);
+      }
+      updateRaceTable(secsPerKm);
+    }
+
+    // --- Unit toggle ---
+
+    function setUnit(newUnit) {
+      unit = newUnit;
+      document.querySelectorAll("#unit-toggle button").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.unit === newUnit);
+      });
+      // Update labels
+      const paceLabel = newUnit === "mi" ? "min/mi" : "min/km";
+      const altPaceLabel = newUnit === "mi" ? "min/km" : "min/mi";
+      const speedLabel = newUnit === "mi" ? "mph" : "km/h";
+      const altSpeedLabel = newUnit === "mi" ? "km/h" : "mph";
+      document.querySelectorAll(".pace-unit").forEach(el => el.textContent = paceLabel);
+      document.querySelectorAll(".alt-pace-unit").forEach(el => el.textContent = altPaceLabel);
+      document.querySelectorAll(".speed-unit").forEach(el => el.textContent = speedLabel);
+      document.querySelectorAll(".alt-speed-unit").forEach(el => el.textContent = altSpeedLabel);
+      recalculate();
+    }
+
+    document.getElementById("unit-toggle").addEventListener("click", (e) => {
+      if (e.target.tagName === "BUTTON") {
+        setUnit(e.target.dataset.unit);
+      }
+    });
+
+    // --- Tab switching ---
+
+    document.getElementById("tab-bar").addEventListener("click", (e) => {
+      if (e.target.tagName === "BUTTON") {
+        document.querySelectorAll("#tab-bar button").forEach(b => b.classList.remove("active"));
+        e.target.classList.add("active");
+        document.querySelectorAll(".tab-content").forEach(tc => tc.classList.remove("active"));
+        document.getElementById(`tab-${e.target.dataset.tab}`).classList.add("active");
+        recalculate();
+      }
+    });
+
+    // --- Populate distance select ---
+
+    const distSelect = document.getElementById("time-distance");
+    RACES.forEach((race, i) => {
+      const opt = document.createElement("option");
+      opt.value = i;
+      opt.textContent = race.name;
+      distSelect.appendChild(opt);
+    });
+
+    // --- Input listeners ---
+
+    document.querySelectorAll("#tab-pace input").forEach(el => el.addEventListener("input", recalculate));
+    document.querySelectorAll("#tab-time input").forEach(el => el.addEventListener("input", recalculate));
+    document.getElementById("time-distance").addEventListener("change", recalculate);
+    document.getElementById("speed-input").addEventListener("input", recalculate);
+
+    // --- Initial render ---
+
+    updateRaceTable(null);
+    </script>
+</body>
+</html>
