@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Initiative Tracker</title>
+    <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+      color: #333;
+      background: #fafafa;
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 28px;
+    }
+    h2 {
+      font-size: 20px;
+      margin-top: 24px;
+      margin-bottom: 12px;
+    }
+
+    /* Add combatant form */
+    .add-form {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .add-form input {
+      padding: 8px 12px;
+      border: 2px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+      font-family: inherit;
+    }
+    .add-form input[type="text"] {
+      flex: 1;
+      min-width: 140px;
+    }
+    .add-form input[type="number"] {
+      width: 80px;
+    }
+    button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      font-family: inherit;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button:active {
+      transform: scale(0.97);
+    }
+    .btn-add {
+      background: #2d8a4e;
+      color: white;
+    }
+    .btn-add:hover {
+      background: #246e3e;
+    }
+    .btn-next {
+      background: #4a90e2;
+      color: white;
+      font-size: 16px;
+      padding: 10px 24px;
+    }
+    .btn-next:hover {
+      background: #357abd;
+    }
+    .btn-reset {
+      background: #dc3545;
+      color: white;
+    }
+    .btn-reset:hover {
+      background: #c82333;
+    }
+    .btn-small {
+      padding: 4px 8px;
+      font-size: 12px;
+    }
+    .btn-danger {
+      background: #dc3545;
+      color: white;
+    }
+    .btn-condition {
+      background: #e9ecef;
+      color: #333;
+      padding: 3px 8px;
+      font-size: 11px;
+      border-radius: 12px;
+      margin: 2px;
+    }
+    .btn-condition:hover {
+      background: #dee2e6;
+    }
+    .btn-condition.active {
+      background: #ffc107;
+      color: #333;
+    }
+    .btn-condition.active:hover {
+      background: #e0a800;
+    }
+
+    /* Controls bar */
+    .controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .round-display {
+      margin-left: auto;
+      font-weight: 600;
+      font-size: 16px;
+      color: #555;
+    }
+
+    /* Combatant list */
+    .combatant-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .combatant {
+      display: grid;
+      grid-template-columns: 36px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      background: white;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 10px 14px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .combatant.active {
+      border-color: #4a90e2;
+      box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+    }
+    .combatant.dead {
+      opacity: 0.45;
+      background: #f5f5f5;
+    }
+    .initiative-badge {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #6c757d;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    .combatant.active .initiative-badge {
+      background: #4a90e2;
+    }
+    .combatant-info {
+      min-width: 0;
+    }
+    .combatant-name {
+      font-weight: 600;
+      font-size: 16px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .combatant-details {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: #666;
+      margin-top: 2px;
+      flex-wrap: wrap;
+    }
+    .hp-display {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .hp-current {
+      font-weight: 700;
+      cursor: pointer;
+      border-bottom: 1px dashed #999;
+    }
+    .hp-current.bloodied {
+      color: #dc3545;
+    }
+    .hp-current.healthy {
+      color: #2d8a4e;
+    }
+    .hp-adjust {
+      display: inline-flex;
+      gap: 2px;
+      margin-left: 2px;
+    }
+    .hp-adjust button {
+      width: 22px;
+      height: 22px;
+      padding: 0;
+      font-size: 14px;
+      line-height: 22px;
+      text-align: center;
+      border-radius: 3px;
+      background: #e9ecef;
+      color: #333;
+    }
+    .hp-adjust button:hover {
+      background: #dee2e6;
+    }
+    .conditions-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2px;
+    }
+    .condition-tag {
+      background: #ffc107;
+      color: #333;
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .condition-tag.concentrating {
+      background: #9c27b0;
+      color: white;
+    }
+
+    /* Death saves */
+    .death-saves {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+    }
+    .death-saves span {
+      font-weight: 600;
+    }
+    .save-dots {
+      display: flex;
+      gap: 3px;
+    }
+    .save-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 2px solid #ccc;
+      cursor: pointer;
+      background: white;
+    }
+    .save-dot.success {
+      background: #2d8a4e;
+      border-color: #2d8a4e;
+    }
+    .save-dot.fail {
+      background: #dc3545;
+      border-color: #dc3545;
+    }
+
+    /* Combatant actions */
+    .combatant-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: flex-end;
+      flex-shrink: 0;
+    }
+
+    /* Conditions picker */
+    .conditions-picker {
+      display: none;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 6px;
+      padding-top: 8px;
+      border-top: 1px solid #eee;
+    }
+    .conditions-picker.open {
+      display: flex;
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #888;
+    }
+    .empty-state .dice {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+
+    /* HP edit inline */
+    .hp-edit-input {
+      width: 50px;
+      padding: 2px 4px;
+      font-size: 13px;
+      font-family: inherit;
+      border: 1px solid #4a90e2;
+      border-radius: 3px;
+      text-align: center;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+      h1 {
+        font-size: 24px;
+      }
+      .add-form input[type="text"] {
+        min-width: 100%;
+      }
+      .add-form input[type="number"] {
+        width: 70px;
+        flex: 1;
+      }
+      .combatant {
+        grid-template-columns: 32px 1fr auto;
+        padding: 8px 10px;
+        gap: 8px;
+      }
+      .initiative-badge {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
+      }
+      .round-display {
+        margin-left: 0;
+      }
+    }
+    </style>
+</head>
+<body>
+    <h1>Initiative Tracker</h1>
+    <p>Track turn order, HP, conditions, and death saves for D&amp;D combat encounters.</p>
+
+    <h2>Add Combatant</h2>
+    <form class="add-form" id="add-form">
+      <input type="text" id="name-input" placeholder="Name" required autocomplete="off">
+      <input type="number" id="init-input" placeholder="Init" required>
+      <input type="number" id="hp-input" placeholder="HP" min="0">
+      <button type="submit" class="btn-add">Add</button>
+    </form>
+
+    <div class="controls" id="controls" style="display: none;">
+      <button class="btn-next" id="next-btn">Next Turn</button>
+      <button class="btn-reset" id="reset-btn">Clear All</button>
+      <div class="round-display" id="round-display">Round 1</div>
+    </div>
+
+    <div id="combatant-list" class="combatant-list">
+      <div class="empty-state" id="empty-state">
+        <div class="dice">🎲</div>
+        <div>Add combatants to start tracking initiative.</div>
+      </div>
+    </div>
+
+    <script>
+    const CONDITIONS = [
+      "Blinded", "Charmed", "Deafened", "Frightened", "Grappled",
+      "Incapacitated", "Invisible", "Paralyzed", "Petrified", "Poisoned",
+      "Prone", "Restrained", "Stunned", "Unconscious", "Concentrating"
+    ];
+
+    let combatants = [];
+    let activeIndex = -1;
+    let round = 1;
+    let nextId = 1;
+
+    const addForm = document.getElementById("add-form");
+    const nameInput = document.getElementById("name-input");
+    const initInput = document.getElementById("init-input");
+    const hpInput = document.getElementById("hp-input");
+    const listEl = document.getElementById("combatant-list");
+    const emptyState = document.getElementById("empty-state");
+    const controls = document.getElementById("controls");
+    const roundDisplay = document.getElementById("round-display");
+    const nextBtn = document.getElementById("next-btn");
+    const resetBtn = document.getElementById("reset-btn");
+
+    function save() {
+      const state = { combatants, activeIndex, round, nextId };
+      localStorage.setItem("initiative-tracker", JSON.stringify(state));
+    }
+
+    function load() {
+      const raw = localStorage.getItem("initiative-tracker");
+      if (!raw) return;
+      try {
+        const state = JSON.parse(raw);
+        combatants = state.combatants || [];
+        activeIndex = state.activeIndex ?? -1;
+        round = state.round || 1;
+        nextId = state.nextId || 1;
+      } catch (e) {
+        // ignore corrupt data
+      }
+    }
+
+    function sortCombatants() {
+      const activeId = activeIndex >= 0 && combatants[activeIndex]
+        ? combatants[activeIndex].id : null;
+      combatants.sort((a, b) => b.initiative - a.initiative);
+      if (activeId !== null) {
+        activeIndex = combatants.findIndex(c => c.id === activeId);
+      }
+    }
+
+    function render() {
+      controls.style.display = combatants.length > 0 ? "flex" : "none";
+      emptyState.style.display = combatants.length > 0 ? "none" : "block";
+      roundDisplay.textContent = `Round ${round}`;
+
+      // Remove old combatant elements (keep empty state)
+      const oldCards = listEl.querySelectorAll(".combatant");
+      oldCards.forEach(c => c.remove());
+
+      combatants.forEach((c, i) => {
+        const card = document.createElement("div");
+        card.className = "combatant";
+        if (i === activeIndex) card.classList.add("active");
+        if (c.hp !== null && c.hp <= 0) card.classList.add("dead");
+
+        // HP state
+        const hpClass = c.hp === null ? ""
+          : c.hp <= 0 ? "bloodied"
+          : (c.maxHp && c.hp <= Math.floor(c.maxHp / 2)) ? "bloodied"
+          : "healthy";
+
+        const hpText = c.hp !== null
+          ? `${c.hp}${c.maxHp ? ` / ${c.maxHp}` : ""}`
+          : "—";
+
+        // Conditions
+        const conditionTags = c.conditions.map(cond => {
+          const cls = cond === "Concentrating" ? "condition-tag concentrating" : "condition-tag";
+          return `<span class="${cls}">${cond}</span>`;
+        }).join("");
+
+        // Death saves
+        let deathSavesHtml = "";
+        if (c.hp !== null && c.hp <= 0) {
+          deathSavesHtml = `
+            <div class="death-saves">
+              <span style="color: #2d8a4e;">✓</span>
+              <div class="save-dots">
+                ${[0, 1, 2].map(j => `<div class="save-dot ${j < c.deathSuccesses ? "success" : ""}" data-id="${c.id}" data-type="success" data-index="${j}"></div>`).join("")}
+              </div>
+              <span style="color: #dc3545;">✗</span>
+              <div class="save-dots">
+                ${[0, 1, 2].map(j => `<div class="save-dot ${j < c.deathFailures ? "fail" : ""}" data-id="${c.id}" data-type="fail" data-index="${j}"></div>`).join("")}
+              </div>
+            </div>`;
+        }
+
+        card.innerHTML = `
+          <div class="initiative-badge">${c.initiative}</div>
+          <div class="combatant-info">
+            <div class="combatant-name">${escapeHtml(c.name)}</div>
+            <div class="combatant-details">
+              <div class="hp-display">
+                HP: <span class="hp-current ${hpClass}" data-id="${c.id}" title="Click to edit">${hpText}</span>
+                <span class="hp-adjust">
+                  <button data-id="${c.id}" data-action="hp-down" class="btn-small" title="−1 HP">−</button>
+                  <button data-id="${c.id}" data-action="hp-up" class="btn-small" title="+1 HP">+</button>
+                </span>
+              </div>
+              <div class="conditions-list">${conditionTags}</div>
+            </div>
+            ${deathSavesHtml}
+            <div class="conditions-picker" id="cond-picker-${c.id}">
+              ${CONDITIONS.map(cond => {
+                const isActive = c.conditions.includes(cond);
+                return `<button class="btn-condition ${isActive ? "active" : ""}" data-id="${c.id}" data-condition="${cond}">${cond}</button>`;
+              }).join("")}
+            </div>
+          </div>
+          <div class="combatant-actions">
+            <button class="btn-small" data-id="${c.id}" data-action="toggle-conditions" title="Conditions">⚡</button>
+            <button class="btn-small btn-danger" data-id="${c.id}" data-action="remove" title="Remove">✕</button>
+          </div>
+        `;
+
+        listEl.appendChild(card);
+      });
+
+      save();
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement("div");
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function findCombatant(id) {
+      return combatants.find(c => c.id === id);
+    }
+
+    function addCombatant(name, initiative, hp) {
+      combatants.push({
+        id: nextId++,
+        name,
+        initiative,
+        hp: hp !== null ? hp : null,
+        maxHp: hp !== null ? hp : null,
+        conditions: [],
+        deathSuccesses: 0,
+        deathFailures: 0
+      });
+      sortCombatants();
+      if (activeIndex === -1 && combatants.length > 0) {
+        activeIndex = 0;
+      }
+      render();
+    }
+
+    function removeCombatant(id) {
+      const idx = combatants.findIndex(c => c.id === id);
+      if (idx === -1) return;
+      combatants.splice(idx, 1);
+      if (combatants.length === 0) {
+        activeIndex = -1;
+        round = 1;
+      } else if (activeIndex >= combatants.length) {
+        activeIndex = 0;
+        round++;
+      } else if (idx < activeIndex) {
+        activeIndex--;
+      }
+      render();
+    }
+
+    function nextTurn() {
+      if (combatants.length === 0) return;
+      activeIndex++;
+      if (activeIndex >= combatants.length) {
+        activeIndex = 0;
+        round++;
+      }
+      render();
+    }
+
+    function clearAll() {
+      if (!confirm("Clear all combatants and reset?")) return;
+      combatants = [];
+      activeIndex = -1;
+      round = 1;
+      nextId = 1;
+      render();
+    }
+
+    // Event: add form
+    addForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const name = nameInput.value.trim();
+      const init = parseInt(initInput.value, 10);
+      const hpVal = hpInput.value.trim();
+      const hp = hpVal !== "" ? parseInt(hpVal, 10) : null;
+      if (!name || isNaN(init)) return;
+      addCombatant(name, init, hp);
+      nameInput.value = "";
+      initInput.value = "";
+      hpInput.value = "";
+      nameInput.focus();
+    });
+
+    // Event: next turn
+    nextBtn.addEventListener("click", nextTurn);
+
+    // Event: reset
+    resetBtn.addEventListener("click", clearAll);
+
+    // Delegated events on combatant list
+    listEl.addEventListener("click", (e) => {
+      const btn = e.target.closest("button");
+      const dot = e.target.closest(".save-dot");
+
+      if (btn) {
+        const id = parseInt(btn.dataset.id, 10);
+        const action = btn.dataset.action;
+        const condition = btn.dataset.condition;
+
+        if (action === "remove") {
+          removeCombatant(id);
+          return;
+        }
+
+        if (action === "hp-down") {
+          const c = findCombatant(id);
+          if (c && c.hp !== null) {
+            c.hp = Math.max(c.hp - 1, -99);
+            if (c.hp > 0) {
+              c.deathSuccesses = 0;
+              c.deathFailures = 0;
+            }
+            render();
+          }
+          return;
+        }
+
+        if (action === "hp-up") {
+          const c = findCombatant(id);
+          if (c && c.hp !== null) {
+            c.hp++;
+            if (c.hp > 0) {
+              c.deathSuccesses = 0;
+              c.deathFailures = 0;
+            }
+            render();
+          }
+          return;
+        }
+
+        if (action === "toggle-conditions") {
+          const picker = document.getElementById(`cond-picker-${id}`);
+          if (picker) picker.classList.toggle("open");
+          return;
+        }
+
+        if (condition) {
+          const c = findCombatant(id);
+          if (!c) return;
+          const idx = c.conditions.indexOf(condition);
+          if (idx >= 0) {
+            c.conditions.splice(idx, 1);
+          } else {
+            c.conditions.push(condition);
+          }
+          render();
+          // Re-open the picker after render
+          const picker = document.getElementById(`cond-picker-${id}`);
+          if (picker) picker.classList.add("open");
+          return;
+        }
+      }
+
+      if (dot) {
+        const id = parseInt(dot.dataset.id, 10);
+        const type = dot.dataset.type;
+        const index = parseInt(dot.dataset.index, 10);
+        const c = findCombatant(id);
+        if (!c) return;
+
+        if (type === "success") {
+          c.deathSuccesses = c.deathSuccesses === index + 1 ? index : index + 1;
+        } else {
+          c.deathFailures = c.deathFailures === index + 1 ? index : index + 1;
+        }
+        render();
+        return;
+      }
+
+      // Click on HP to edit
+      const hpEl = e.target.closest(".hp-current");
+      if (hpEl) {
+        const id = parseInt(hpEl.dataset.id, 10);
+        const c = findCombatant(id);
+        if (!c || c.hp === null) return;
+
+        const input = document.createElement("input");
+        input.type = "number";
+        input.className = "hp-edit-input";
+        input.value = c.hp;
+        hpEl.replaceWith(input);
+        input.focus();
+        input.select();
+
+        const commit = () => {
+          const val = parseInt(input.value, 10);
+          if (!isNaN(val)) {
+            c.hp = val;
+            if (c.hp > 0) {
+              c.deathSuccesses = 0;
+              c.deathFailures = 0;
+            }
+          }
+          render();
+        };
+
+        input.addEventListener("blur", commit);
+        input.addEventListener("keydown", (ev) => {
+          if (ev.key === "Enter") {
+            ev.preventDefault();
+            commit();
+          }
+          if (ev.key === "Escape") {
+            render();
+          }
+        });
+      }
+    });
+
+    // Keyboard shortcut: Space or N for next turn
+    document.addEventListener("keydown", (e) => {
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+      if (e.key === "n" || e.key === "N") {
+        e.preventDefault();
+        nextTurn();
+      }
+    });
+
+    // Load saved state on start
+    load();
+    render();
+    </script>
+</body>
+</html>

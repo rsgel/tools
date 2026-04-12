@@ -1,0 +1,1 @@
+A D&D combat initiative tracker. Add combatants with name, initiative roll, and optional HP, then track turn order with a sorted list. Supports HP adjustment, conditions (blinded, stunned, concentrating, etc.), and death saving throws. State persists in localStorage to survive page refreshes mid-combat.
