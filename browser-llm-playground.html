@@ -155,12 +155,105 @@
       border-radius: 8px;
       border: 1px solid #d9e2ec;
       background: #ffffff;
-      white-space: pre-wrap;
       word-break: break-word;
+      overflow-x: auto;
     }
-    .meta {
-      color: #52606d;
+    .response-box.raw {
+      white-space: pre-wrap;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Consolas", "Liberation Mono", monospace;
       font-size: 14px;
+    }
+    .response-box p {
+      margin: 0 0 8px;
+    }
+    .response-box p:last-child {
+      margin-bottom: 0;
+    }
+    .response-box h1,
+    .response-box h2,
+    .response-box h3,
+    .response-box h4 {
+      margin: 16px 0 8px;
+      line-height: 1.3;
+    }
+    .response-box h1:first-child,
+    .response-box h2:first-child,
+    .response-box h3:first-child {
+      margin-top: 0;
+    }
+    .response-box ul,
+    .response-box ol {
+      padding-left: 20px;
+      margin: 0 0 8px;
+    }
+    .response-box li {
+      margin-bottom: 4px;
+    }
+    .response-box pre {
+      background: #f0f4f8;
+      border: 1px solid #d9e2ec;
+      border-radius: 6px;
+      padding: 12px;
+      overflow-x: auto;
+      margin: 8px 0;
+    }
+    .response-box pre code {
+      background: none;
+      padding: 0;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Consolas", "Liberation Mono", monospace;
+    }
+    .response-box code {
+      background: #e5edf5;
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Consolas", "Liberation Mono", monospace;
+    }
+    .response-box blockquote {
+      border-left: 4px solid #bcccdc;
+      margin: 8px 0;
+      padding: 4px 12px;
+      color: #52606d;
+    }
+    .response-box table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 8px 0;
+      font-size: 14px;
+    }
+    .response-box th,
+    .response-box td {
+      border: 1px solid #d9e2ec;
+      padding: 6px 10px;
+      text-align: left;
+    }
+    .response-box th {
+      background: #f0f4f8;
+      font-weight: 600;
+    }
+    .response-box hr {
+      border: none;
+      border-top: 1px solid #d9e2ec;
+      margin: 12px 0;
+    }
+    .response-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .response-header .meta {
+      margin: 0;
+      flex: 1;
+    }
+    button.small {
+      min-width: 0;
+      width: auto;
+      padding: 6px 12px;
+      font-size: 13px;
     }
     ul {
       padding-left: 20px;
@@ -246,7 +339,10 @@
       <div class="button-row">
         <button id="run-button" type="button" disabled>Run prompt</button>
       </div>
-      <p class="meta" id="run-meta">Load a model first. Initial download can take a while.</p>
+      <div class="response-header">
+        <p class="meta" id="run-meta">Load a model first. Initial download can take a while.</p>
+        <button id="raw-toggle" class="secondary small" type="button" title="Toggle between rendered markdown and raw text">Raw</button>
+      </div>
       <div class="response-box" id="response-box">Your response will appear here.</div>
     </section>
 
@@ -260,6 +356,38 @@
     </section>
 
     <script type="module">
+    const markedUrl = 'https://cdn.jsdelivr.net/npm/marked@18.0.0/src/marked.js';
+    const purifyUrl = 'https://cdn.jsdelivr.net/npm/dompurify@3.3.3/dist/purify.es.mjs';
+    let markedModule = null;
+    let purifyModule = null;
+
+    async function loadMarked() {
+      if (markedModule) {
+        return markedModule;
+      }
+      try {
+        const mod = await import(markedUrl);
+        mod.marked.setOptions({ breaks: true });
+        markedModule = mod.marked;
+      } catch (_) {
+        markedModule = null;
+      }
+      return markedModule;
+    }
+
+    async function loadPurify() {
+      if (purifyModule) {
+        return purifyModule;
+      }
+      try {
+        const mod = await import(purifyUrl);
+        purifyModule = mod.default;
+      } catch (_) {
+        purifyModule = null;
+      }
+      return purifyModule;
+    }
+
     const secureContextValue = document.getElementById('secure-context-value');
     const webgpuValue = document.getElementById('webgpu-value');
     const memoryValue = document.getElementById('memory-value');
@@ -269,6 +397,7 @@
     const loadButton = document.getElementById('load-button');
     const resetButton = document.getElementById('reset-button');
     const runButton = document.getElementById('run-button');
+    const rawToggle = document.getElementById('raw-toggle');
     const systemPrompt = document.getElementById('system-prompt');
     const userPrompt = document.getElementById('user-prompt');
     const statusBox = document.getElementById('status-box');
@@ -280,6 +409,39 @@
     let engine = null;
     let loadedModelId = '';
     let isBusy = false;
+    let rawMarkdown = '';
+    let showRaw = false;
+
+    let markedParser = null;
+    let purify = null;
+
+    async function renderResponse() {
+      if (showRaw || !rawMarkdown) {
+        responseBox.classList.add('raw');
+        responseBox.textContent = rawMarkdown || 'Your response will appear here.';
+        return;
+      }
+      responseBox.classList.remove('raw');
+      if (!markedParser) {
+        markedParser = await loadMarked();
+      }
+      if (!purify) {
+        purify = await loadPurify();
+      }
+      if (markedParser) {
+        const rawHtml = markedParser.parse(rawMarkdown);
+        responseBox.innerHTML = purify ? purify.sanitize(rawHtml) : rawHtml;
+      } else {
+        responseBox.classList.add('raw');
+        responseBox.textContent = rawMarkdown;
+      }
+    }
+
+    rawToggle.addEventListener('click', async () => {
+      showRaw = !showRaw;
+      rawToggle.textContent = showRaw ? 'Rendered' : 'Raw';
+      await renderResponse();
+    });
 
     function setValueState(element, text, state) {
       element.textContent = text;
@@ -366,7 +528,8 @@
       const modelId = getSelectedModelId();
       isBusy = true;
       updateBusyState();
-      responseBox.textContent = 'Your response will appear here.';
+      rawMarkdown = '';
+      renderResponse();
       runMeta.textContent = 'Loading model…';
 
       try {
@@ -420,7 +583,8 @@
       updateBusyState();
       setStatus(`Running ${loadedModelId} locally…`);
       runMeta.textContent = 'Streaming response…';
-      responseBox.textContent = '';
+      rawMarkdown = '';
+      renderResponse();
       const startedAt = performance.now();
 
       try {
@@ -431,18 +595,22 @@
         });
         for await (const chunk of stream) {
           const token = chunk.choices?.[0]?.delta?.content || '';
-          responseBox.textContent += token;
+          if (token) {
+            rawMarkdown += token;
+            renderResponse();
+          }
         }
         const elapsedMs = Math.round(performance.now() - startedAt);
         setStatus(`Finished locally with ${loadedModelId}.`, 'good');
         runMeta.textContent = `Completed in ${elapsedMs} ms.`;
-        if (!responseBox.textContent) {
+        if (!rawMarkdown) {
+          rawMarkdown = '';
           responseBox.textContent = 'The model finished without returning visible text.';
         }
       } catch (error) {
         setStatus(`Prompt failed: ${error.message}`, 'bad');
         runMeta.textContent = 'Prompt failed.';
-        if (!responseBox.textContent) {
+        if (!rawMarkdown) {
           responseBox.textContent = 'No response produced.';
         }
       } finally {
@@ -456,7 +624,8 @@
       loadedModelId = '';
       customModel.value = '';
       userPrompt.value = '';
-      responseBox.textContent = 'Your response will appear here.';
+      rawMarkdown = '';
+      renderResponse();
       runMeta.textContent = 'Load a model first. Initial download can take a while.';
       setStatus('Waiting to load a model.');
       updateBusyState();
