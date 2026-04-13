@@ -874,8 +874,8 @@
     // Extract time — patterns like "45min", "1hr 30min", "1hr30min", "90min", "1.5hr"
     // Use (?:^|\s) to avoid matching inside patterns like "5x5min"
     const timePatterns = [
-      { re: /(?:^|\s)(\d+\.?\d*)\s*hr?\s*(\d+\.?\d*)\s*min/i, parse: (m) => parseFloat(m[1]) * 60 + parseFloat(m[2]) },
-      { re: /(?:^|\s)(\d+\.?\d*)\s*hr\b/i, parse: (m) => parseFloat(m[1]) * 60 },
+      { re: /(?:^|\s)(\d+\.?\d*)\s*h(?:rs?)?\s*(\d+\.?\d*)\s*min/i, parse: (m) => parseFloat(m[1]) * 60 + parseFloat(m[2]) },
+      { re: /(?:^|\s)(\d+\.?\d*)\s*h(?:rs?)?\b/i, parse: (m) => parseFloat(m[1]) * 60 },
       { re: /(?:^|\s)(\d+\.?\d*)\s*min\b/i, parse: (m) => parseFloat(m[1]) },
     ];
 
@@ -884,7 +884,8 @@
       const m = lower.match(pat.re);
       if (m) {
         timeMinutes = pat.parse(m);
-        notes = text.replace(pat.re, "").trim();
+        notes = text.substring(0, m.index) + text.substring(m.index + m[0].length);
+        notes = notes.trim();
         foundTime = true;
         break;
       }
@@ -1086,6 +1087,7 @@
     document.getElementById("week-label").textContent = formatWeekLabel(currentWeekKey);
 
     const weekTotal = getWeekTotal(currentWeekKey);
+    const weekRunTotal = getWeekRunningTotal(currentWeekKey);
 
     grid.innerHTML = days.map((d, i) => {
       const dayISO = formatDateISO(d);
@@ -1106,7 +1108,7 @@
         // Long run volume bubble
         let volumeHtml = "";
         if (workout.type === "long-run" && workout.distance > 0 && weekTotal > 0) {
-          const pct = Math.round((workout.distance / weekTotal) * 100);
+          const pct = Math.round((workout.distance / (weekRunTotal || weekTotal)) * 100);
           volumeHtml = `<div class="volume-bubble">${pct}% of week</div>`;
         }
 
@@ -1114,7 +1116,7 @@
         let timeHtml = "";
         if (workout.timeMinutes) {
           const hrs = Math.floor(workout.timeMinutes / 60);
-          const mins = Math.round(workout.timeMinutes % 60);
+          const mins = Math.floor(workout.timeMinutes % 60);
           const timeStr = hrs > 0 ? `${hrs}hr ${mins}min` : `${mins}min`;
           timeHtml = `<div class="workout-time">${timeStr}</div>`;
         }
@@ -1344,7 +1346,7 @@
       if (workout.timeMinutes) {
         // Reconstruct time-based input
         const hrs = Math.floor(workout.timeMinutes / 60);
-        const mins = Math.round(workout.timeMinutes % 60);
+        const mins = Math.floor(workout.timeMinutes % 60);
         if (hrs > 0) {
           parts.push(`${hrs}hr ${mins}min`);
         } else {
