@@ -799,8 +799,12 @@
     });
 
     // Generate markdown summary
+    function todayString() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
     function generateMarkdown() {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = todayString();
       const lines = [];
       lines.push(`## Hand and Foot — ${today}`);
       lines.push("");
@@ -866,7 +870,7 @@
       const blob = new Blob([md], { type: "text/markdown" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      const today = new Date().toISOString().slice(0, 10);
+      const today = todayString();
       a.href = url;
       a.download = `hand-and-foot-${today}.md`;
       document.body.appendChild(a);
