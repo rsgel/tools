@@ -1,0 +1,1547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Running Planner</title>
+    <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+      color: #333;
+      background: #fafafa;
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 28px;
+    }
+    p.subtitle {
+      color: #666;
+      margin-top: -8px;
+      margin-bottom: 20px;
+      font-size: 15px;
+    }
+
+    /* Top bar */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .toolbar .spacer {
+      flex: 1;
+    }
+    .week-nav {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .week-nav .week-label {
+      font-weight: 600;
+      font-size: 16px;
+      min-width: 200px;
+      text-align: center;
+    }
+
+    /* Buttons */
+    button {
+      font-family: inherit;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .btn {
+      padding: 8px 14px;
+      border: none;
+      border-radius: 4px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-primary {
+      background: #3182ce;
+      color: #fff;
+    }
+    .btn-primary:hover {
+      background: #2b6cb0;
+    }
+    .btn-secondary {
+      background: #e2e8f0;
+      color: #4a5568;
+    }
+    .btn-secondary:hover {
+      background: #cbd5e0;
+    }
+    .btn-sm {
+      padding: 4px 10px;
+      font-size: 13px;
+    }
+    .btn-icon {
+      padding: 6px 10px;
+      border: 1px solid #cbd5e0;
+      border-radius: 4px;
+      background: #fff;
+      font-size: 16px;
+      line-height: 1;
+    }
+    .btn-icon:hover {
+      background: #edf2f7;
+    }
+
+    /* Unit toggle */
+    .unit-toggle {
+      display: inline-flex;
+      border: 1px solid #cbd5e0;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .unit-toggle button {
+      padding: 6px 12px;
+      border: none;
+      background: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      color: #4a5568;
+    }
+    .unit-toggle button.active {
+      background: #4a5568;
+      color: #fff;
+    }
+
+    /* Info box */
+    .info-box {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-left: 4px solid #3182ce;
+      border-radius: 6px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #4a5568;
+    }
+    .info-box summary {
+      font-weight: 600;
+      font-size: 14px;
+      color: #2d3748;
+      cursor: pointer;
+      user-select: none;
+    }
+    .info-box summary:hover {
+      color: #3182ce;
+    }
+    .info-box h3 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #2d3748;
+      margin: 12px 0 4px;
+    }
+    .info-box h3:first-child {
+      margin-top: 8px;
+    }
+    .info-box ul {
+      margin: 4px 0;
+      padding-left: 20px;
+    }
+    .info-box li {
+      margin-bottom: 2px;
+    }
+    .info-box code {
+      background: #edf2f7;
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-size: 12px;
+    }
+    .info-box .kbd {
+      display: inline-block;
+      background: #edf2f7;
+      border: 1px solid #cbd5e0;
+      border-radius: 3px;
+      padding: 0 4px;
+      font-size: 11px;
+      font-family: inherit;
+      line-height: 1.6;
+    }
+
+    /* Stats bar */
+    .stats-bar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding: 12px 16px;
+      background: #fff;
+      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      margin-bottom: 16px;
+    }
+    .stat-total {
+      font-size: 22px;
+      font-weight: 700;
+      color: #2b6cb0;
+    }
+    .stat-total small {
+      font-size: 13px;
+      font-weight: 400;
+      color: #718096;
+    }
+    .stat-change {
+      font-size: 13px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+    .stat-change.up {
+      background: #c6f6d5;
+      color: #276749;
+    }
+    .stat-change.down {
+      background: #fed7d7;
+      color: #9b2c2c;
+    }
+    .stat-change.warn {
+      background: #fefcbf;
+      color: #975a16;
+    }
+    .stat-change.neutral {
+      background: #e2e8f0;
+      color: #4a5568;
+    }
+    .type-pills {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .type-pill {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 10px;
+      white-space: nowrap;
+    }
+
+    /* Calendar grid */
+    .week-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .day-cell {
+      background: #fff;
+      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      padding: 10px;
+      min-height: 110px;
+      cursor: pointer;
+      transition: box-shadow 0.15s, transform 0.1s;
+      position: relative;
+    }
+    .day-cell:hover {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .day-cell.today {
+      border: 2px solid #3182ce;
+    }
+    .day-cell.drag-over {
+      background: #ebf8ff;
+      box-shadow: 0 0 0 2px #3182ce;
+    }
+    .day-cell.dragging {
+      opacity: 0.4;
+      transform: scale(0.95);
+    }
+    .day-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .day-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: #a0aec0;
+      text-transform: uppercase;
+    }
+    .day-date {
+      font-size: 13px;
+      font-weight: 600;
+      color: #4a5568;
+    }
+    .day-cell.today .day-date {
+      background: #3182ce;
+      color: #fff;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+    }
+    .day-content {
+      min-height: 40px;
+    }
+    .workout-display {
+      position: relative;
+    }
+    .workout-type-pill {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      margin-bottom: 4px;
+    }
+    .workout-distance {
+      font-size: 18px;
+      font-weight: 700;
+      color: #2d3748;
+    }
+    .workout-distance small {
+      font-size: 12px;
+      font-weight: 400;
+      color: #a0aec0;
+    }
+    .workout-notes {
+      font-size: 12px;
+      color: #718096;
+      margin-top: 2px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+    .workout-delete {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      background: #fc8181;
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      font-size: 12px;
+      line-height: 1;
+      padding: 0;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .day-cell:hover .workout-delete {
+      display: flex;
+    }
+
+    /* Workout type colors */
+    .type-easy { background: #c6f6d5; color: #276749; }
+    .type-tempo { background: #fefcbf; color: #975a16; }
+    .type-intervals { background: #fed7d7; color: #9b2c2c; }
+    .type-long-run { background: #bee3f8; color: #2a4365; }
+    .type-race { background: #e9d8fd; color: #553c9a; }
+    .type-cross-train { background: #feebc8; color: #7b341e; }
+    .type-rest { background: #edf2f7; color: #718096; }
+    .type-other { background: #e2e8f0; color: #4a5568; }
+
+    /* Inline editor */
+    .day-editor {
+      display: none;
+    }
+    .day-editor.active {
+      display: block;
+    }
+    .day-editor input {
+      width: 100%;
+      font-size: 14px;
+      font-family: inherit;
+      padding: 6px 8px;
+      border: 2px solid #3182ce;
+      border-radius: 4px;
+      outline: none;
+    }
+    .day-editor .editor-hint {
+      font-size: 11px;
+      color: #a0aec0;
+      margin-top: 2px;
+    }
+
+    /* Month overview */
+    .month-overview {
+      margin-top: 8px;
+    }
+    .month-toggle {
+      font-size: 13px;
+      font-weight: 600;
+      color: #4a5568;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px 0;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .month-toggle:hover {
+      color: #2d3748;
+    }
+    .month-grid {
+      margin-top: 8px;
+      background: #fff;
+      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    .month-grid.collapsed {
+      display: none;
+    }
+    .month-row {
+      display: grid;
+      grid-template-columns: 100px repeat(7, 1fr);
+      border-bottom: 1px solid #edf2f7;
+      cursor: pointer;
+    }
+    .month-row:last-child {
+      border-bottom: none;
+    }
+    .month-row:hover {
+      background: #f7fafc;
+    }
+    .month-row.current-week {
+      background: #ebf8ff;
+    }
+    .month-row-header {
+      font-size: 12px;
+      font-weight: 600;
+      color: #4a5568;
+      display: flex;
+      align-items: center;
+    }
+    .month-cell {
+      padding: 6px 4px;
+      font-size: 12px;
+      text-align: center;
+    }
+    .month-cell-header {
+      font-weight: 600;
+      color: #a0aec0;
+      font-size: 11px;
+      text-transform: uppercase;
+      padding: 6px 4px;
+      text-align: center;
+    }
+    .month-cell .mini-distance {
+      font-weight: 700;
+      font-size: 13px;
+    }
+    .month-cell .mini-type {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-bottom: -1px;
+    }
+    .month-total {
+      font-weight: 700;
+      color: #2b6cb0;
+      font-size: 13px;
+      padding: 6px 8px;
+      display: flex;
+      align-items: center;
+    }
+
+    /* Import/Export */
+    .data-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid #e2e8f0;
+    }
+    .file-input-hidden {
+      display: none;
+    }
+
+    /* Mobile */
+    @media (max-width: 700px) {
+      body {
+        padding: 12px;
+      }
+      h1 {
+        font-size: 24px;
+      }
+      .week-grid {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+      .day-cell {
+        min-height: auto;
+        display: grid;
+        grid-template-columns: 80px 1fr;
+        gap: 8px;
+        align-items: center;
+        padding: 10px 12px;
+      }
+      .day-header {
+        flex-direction: column;
+        align-items: flex-start;
+        margin-bottom: 0;
+      }
+      .day-content {
+        min-height: auto;
+      }
+      .stats-bar {
+        gap: 10px;
+        padding: 10px 12px;
+      }
+      .stat-total {
+        font-size: 18px;
+      }
+      .week-nav .week-label {
+        min-width: 160px;
+        font-size: 14px;
+      }
+      .month-row {
+        grid-template-columns: 80px repeat(7, 1fr);
+      }
+    }
+    </style>
+</head>
+<body>
+    <h1>Running Planner</h1>
+    <p class="subtitle">Plan weekly mileage with natural language entry. Click a day to add a workout.</p>
+
+    <details class="info-box">
+      <summary>How to use this planner</summary>
+
+      <h3>Adding workouts</h3>
+      <ul>
+        <li>Click any day cell to open the editor, then type a workout in natural language.</li>
+        <li>Press <span class="kbd">Enter</span> to save, <span class="kbd">Esc</span> to cancel, <span class="kbd">Tab</span> to save &amp; advance to the next day.</li>
+      </ul>
+
+      <h3>Input examples</h3>
+      <ul>
+        <li><code>8mi easy</code> — 8 miles, Easy type</li>
+        <li><code>5k tempo</code> — auto-converts 5k to miles, Tempo type</li>
+        <li><code>rest</code> or <code>off</code> — rest day</li>
+        <li><code>10 long run</code> — 10 miles, Long Run type</li>
+        <li><code>marathon</code> — 26.2 miles, Race type</li>
+        <li><code>6mi 5x5min uphill at threshold 1min rest</code> — 6 miles, Intervals type, full text kept as notes</li>
+        <li><code>45min bike</code> — Cross-Train type</li>
+      </ul>
+
+      <h3>Workout types</h3>
+      <ul>
+        <li>Detected from keywords: <strong>Easy</strong> (easy, recovery, shakeout), <strong>Tempo</strong> (tempo, threshold, LT), <strong>Intervals</strong> (intervals, repeats, fartlek, speed, track, VO2), <strong>Long Run</strong> (long), <strong>Race</strong> (race, time trial), <strong>Cross-Train</strong> (bike, swim, yoga, strength, gym).</li>
+        <li>Unrecognized inputs default to <strong>Other</strong>. All original text is preserved as notes.</li>
+      </ul>
+
+      <h3>Navigation &amp; editing</h3>
+      <ul>
+        <li><strong>Drag and drop</strong> workouts between days to rearrange your week.</li>
+        <li>Use <span class="kbd">◀</span> / <span class="kbd">▶</span> arrows or keyboard <span class="kbd">←</span> / <span class="kbd">→</span> to switch weeks.</li>
+        <li>The stats bar shows weekly mileage, change vs. last week, and flags increases &gt;10%.</li>
+      </ul>
+
+      <h3>Exporting FIT files for Garmin</h3>
+      <ul>
+        <li><strong>Export FIT</strong> downloads one <code>.fit</code> file per workout this week (rest days are skipped).</li>
+        <li>Import the <code>.fit</code> files into <a href="https://connect.garmin.com/" target="_blank" rel="noopener">Garmin Connect</a> via <em>Training &amp; Planning → Workouts → Import Workout</em>.</li>
+        <li>Once imported, send the workout to your Garmin watch — it will appear under <em>Training → My Workouts</em> on the device.</li>
+        <li>Currently exports simple distance-based workout steps (sport = Running, target = open pace). Structured interval encoding is planned for a future update.</li>
+      </ul>
+
+      <h3>Data &amp; privacy</h3>
+      <ul>
+        <li>All data is stored in your browser's localStorage — nothing is sent to any server.</li>
+        <li><strong>Export JSON</strong> to back up your plan. <strong>Import JSON</strong> to restore or transfer between devices.</li>
+        <li><strong>Export Markdown</strong> downloads the current week as a readable <code>.md</code> table.</li>
+      </ul>
+    </details>
+
+    <div class="toolbar">
+      <div class="week-nav">
+        <button class="btn-icon" id="prev-week" title="Previous week">◀</button>
+        <span class="week-label" id="week-label"></span>
+        <button class="btn-icon" id="next-week" title="Next week">▶</button>
+      </div>
+      <button class="btn btn-sm btn-secondary" id="today-btn">Today</button>
+      <div class="spacer"></div>
+      <div class="unit-toggle">
+        <button id="unit-mi" class="active">mi</button>
+        <button id="unit-km">km</button>
+      </div>
+    </div>
+
+    <div class="stats-bar" id="stats-bar"></div>
+
+    <div class="week-grid" id="week-grid"></div>
+
+    <div class="month-overview">
+      <button class="month-toggle" id="month-toggle">▶ Month overview</button>
+      <div class="month-grid collapsed" id="month-grid"></div>
+    </div>
+
+    <div class="data-actions">
+      <button class="btn btn-sm btn-secondary" id="export-btn">Export JSON</button>
+      <button class="btn btn-sm btn-secondary" id="import-btn">Import JSON</button>
+      <input type="file" accept=".json" class="file-input-hidden" id="import-file">
+      <button class="btn btn-sm btn-secondary" id="export-fit-btn" title="Export this week's workouts as .FIT files">Export FIT</button>
+      <button class="btn btn-sm btn-secondary" id="export-md-btn" title="Export this week as Markdown">Export Markdown</button>
+    </div>
+
+<script>
+  const STORAGE_KEY = "running-planner-data";
+  const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const WORKOUT_TYPES = {
+    easy: { label: "Easy", cssClass: "type-easy" },
+    tempo: { label: "Tempo", cssClass: "type-tempo" },
+    intervals: { label: "Intervals", cssClass: "type-intervals" },
+    "long-run": { label: "Long Run", cssClass: "type-long-run" },
+    race: { label: "Race", cssClass: "type-race" },
+    "cross-train": { label: "Cross-Train", cssClass: "type-cross-train" },
+    rest: { label: "Rest", cssClass: "type-rest" },
+    other: { label: "Other", cssClass: "type-other" },
+  };
+
+  // ─── State ───
+  let state = {
+    weeks: {},
+    settings: { unit: "mi" },
+  };
+  let currentWeekKey = getISOWeekKey(new Date());
+  let editingDay = null;
+  let monthExpanded = false;
+
+  // ─── ISO Week Helpers ───
+  function getISOWeekKey(date) {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+    return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
+  }
+
+  function weekKeyToMonday(weekKey) {
+    const [yr, wk] = weekKey.split("-W").map(Number);
+    const jan4 = new Date(Date.UTC(yr, 0, 4));
+    const dayOfWeek = jan4.getUTCDay() || 7;
+    const monday = new Date(jan4);
+    monday.setUTCDate(jan4.getUTCDate() - dayOfWeek + 1 + (wk - 1) * 7);
+    return monday;
+  }
+
+  function getWeekDays(weekKey) {
+    const monday = weekKeyToMonday(weekKey);
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(monday);
+      d.setUTCDate(monday.getUTCDate() + i);
+      days.push(d);
+    }
+    return days;
+  }
+
+  function formatDateISO(d) {
+    return d.toISOString().slice(0, 10);
+  }
+
+  function offsetWeekKey(weekKey, offset) {
+    const monday = weekKeyToMonday(weekKey);
+    monday.setUTCDate(monday.getUTCDate() + offset * 7);
+    // weekKeyToMonday returns a UTC date; convert to local so getISOWeekKey
+    // (which uses local getters) reads the correct calendar date.
+    const local = new Date(monday.getUTCFullYear(), monday.getUTCMonth(), monday.getUTCDate());
+    return getISOWeekKey(local);
+  }
+
+  function formatWeekLabel(weekKey) {
+    const days = getWeekDays(weekKey);
+    const start = days[0];
+    const end = days[6];
+    const opts = { month: "short", day: "numeric" };
+    const startStr = start.toLocaleDateString("en-US", { ...opts, timeZone: "UTC" });
+    const endStr = end.toLocaleDateString("en-US", { ...opts, year: "numeric", timeZone: "UTC" });
+    return `${startStr} – ${endStr}`;
+  }
+
+  function isToday(d) {
+    const now = new Date();
+    return d.getUTCFullYear() === now.getFullYear() &&
+      d.getUTCMonth() === now.getMonth() &&
+      d.getUTCDate() === now.getDate();
+  }
+
+  // ─── Natural Language Parser ───
+  function parseWorkoutInput(raw) {
+    const text = raw.trim();
+    if (!text) return null;
+
+    const lower = text.toLowerCase();
+
+    // Rest / off
+    if (/^(rest|off|rest day)$/i.test(lower)) {
+      return { distance: 0, type: "rest", notes: "" };
+    }
+
+    let distance = 0;
+    let type = "other";
+    let notes = text;
+    const unit = state.settings.unit;
+
+    // Extract distance — patterns like "8mi", "8 miles", "8.5 km", "5k", "half marathon", "marathon"
+    const distPatterns = [
+      { re: /(\d+\.?\d*)\s*(mi|mile|miles)\b/i, factor: 1, toUnit: "mi" },
+      { re: /(\d+\.?\d*)\s*(km|kilometer|kilometers)\b/i, factor: 1, toUnit: "km" },
+      { re: /(\d+\.?\d*)\s*k\b/i, factor: 1, toUnit: "km" },
+      { re: /\bhalf\s*marathon\b/i, factor: null, fixed: 13.1, toUnit: "mi" },
+      { re: /\bmarathon\b/i, factor: null, fixed: 26.2, toUnit: "mi" },
+    ];
+
+    let foundDist = false;
+    for (const pat of distPatterns) {
+      const m = lower.match(pat.re);
+      if (m) {
+        let rawDist = pat.fixed != null ? pat.fixed : parseFloat(m[1]);
+        // Convert to user's preferred unit
+        if (pat.toUnit !== unit) {
+          rawDist = pat.toUnit === "km" ? rawDist * 0.621371 : rawDist * 1.60934;
+        }
+        distance = Math.round(rawDist * 10) / 10;
+        // Remove matched distance from notes
+        if (pat.fixed != null) {
+          notes = text.replace(pat.re, "").trim();
+        } else {
+          notes = text.replace(m[0], "").trim();
+        }
+        foundDist = true;
+        break;
+      }
+    }
+
+    // Type detection from keywords
+    const typeKeywords = [
+      { keys: ["easy", "recovery", "shake-out", "shakeout"], type: "easy" },
+      { keys: ["tempo", "threshold", "lt", "lactate"], type: "tempo" },
+      { keys: ["interval", "intervals", "repeat", "repeats", "fartlek", "speed", "track", "vo2", "vo2max"], type: "intervals" },
+      { keys: ["long run", "long", "lr"], type: "long-run" },
+      { keys: ["race", "5k race", "10k race", "half race", "marathon race", "time trial", "tt"], type: "race" },
+      { keys: ["cross-train", "cross train", "xt", "bike", "swim", "yoga", "strength", "gym", "elliptical"], type: "cross-train" },
+    ];
+
+    for (const tk of typeKeywords) {
+      for (const kw of tk.keys) {
+        if (lower.includes(kw)) {
+          type = tk.type;
+          break;
+        }
+      }
+      if (type !== "other") break;
+    }
+
+    // If no distance found but has a number at the start, assume it's distance in user's unit
+    if (!foundDist) {
+      const m = text.match(/^(\d+\.?\d*)\b/);
+      if (m) {
+        distance = parseFloat(m[1]);
+        notes = text.slice(m[0].length).trim();
+        foundDist = true;
+      }
+    }
+
+    // Clean up notes — remove type keywords that were used for classification
+    const cleanedNotes = notes
+      .replace(/^[\s,\-–—]+/, "")
+      .replace(/[\s,\-–—]+$/, "")
+      .trim();
+
+    return { distance, type, notes: cleanedNotes };
+  }
+
+  // ─── Persistence ───
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.weeks) {
+          state = parsed;
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load state:", e);
+    }
+  }
+
+  let saveTimeout;
+  function saveState() {
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }, 300);
+  }
+
+  function getWorkout(dayISO) {
+    for (const wk of Object.values(state.weeks)) {
+      if (wk[dayISO]) return wk[dayISO];
+    }
+    return null;
+  }
+
+  function setWorkout(weekKey, dayISO, workout) {
+    if (!state.weeks[weekKey]) state.weeks[weekKey] = {};
+    if (workout) {
+      state.weeks[weekKey][dayISO] = workout;
+    } else {
+      delete state.weeks[weekKey][dayISO];
+      if (Object.keys(state.weeks[weekKey]).length === 0) {
+        delete state.weeks[weekKey];
+      }
+    }
+    saveState();
+  }
+
+  function getWeekTotal(weekKey) {
+    const week = state.weeks[weekKey];
+    if (!week) return 0;
+    return Object.values(week).reduce((sum, w) => sum + (w.distance || 0), 0);
+  }
+
+  function getWeekTypeTotals(weekKey) {
+    const week = state.weeks[weekKey];
+    if (!week) return {};
+    const totals = {};
+    for (const w of Object.values(week)) {
+      const t = w.type || "other";
+      totals[t] = (totals[t] || 0) + (w.distance || 0);
+    }
+    return totals;
+  }
+
+  // ─── Render: Stats Bar ───
+  function renderStats() {
+    const bar = document.getElementById("stats-bar");
+    const unit = state.settings.unit;
+    const total = getWeekTotal(currentWeekKey);
+    const prevKey = offsetWeekKey(currentWeekKey, -1);
+    const prevTotal = getWeekTotal(prevKey);
+    const typeTotals = getWeekTypeTotals(currentWeekKey);
+
+    let changeHtml = "";
+    if (prevTotal > 0 || total > 0) {
+      const prevRound = Math.round(prevTotal * 10) / 10;
+      if (prevTotal > 0) {
+        const pct = ((total - prevTotal) / prevTotal) * 100;
+        const sign = pct >= 0 ? "+" : "";
+        let cls = "neutral";
+        if (pct > 10) cls = "warn";
+        else if (pct > 0) cls = "up";
+        else if (pct < 0) cls = "down";
+        const title = pct > 10 ? "↑ Weekly increase >10% — watch for injury risk" : "";
+        changeHtml = `<span class="stat-change ${cls}" title="${title}">${sign}${Math.round(pct)}%</span>`;
+      }
+      changeHtml += `<span style="font-size:12px;color:#a0aec0;">prev: ${prevRound} ${unit}</span>`;
+    }
+
+    let pillsHtml = "";
+    for (const [t, dist] of Object.entries(typeTotals).sort((a, b) => b[1] - a[1])) {
+      const wt = WORKOUT_TYPES[t] || WORKOUT_TYPES.other;
+      pillsHtml += `<span class="type-pill ${wt.cssClass}">${wt.label} ${Math.round(dist * 10) / 10}</span>`;
+    }
+
+    bar.innerHTML = `
+      <span class="stat-total">${Math.round(total * 10) / 10} <small>${unit}</small></span>
+      ${changeHtml}
+      <div class="type-pills">${pillsHtml}</div>
+    `;
+  }
+
+  // ─── Render: Week Grid ───
+  function renderWeek() {
+    const grid = document.getElementById("week-grid");
+    const days = getWeekDays(currentWeekKey);
+    document.getElementById("week-label").textContent = formatWeekLabel(currentWeekKey);
+
+    grid.innerHTML = days.map((d, i) => {
+      const dayISO = formatDateISO(d);
+      const workout = getWorkout(dayISO);
+      const todayClass = isToday(d) ? " today" : "";
+      const dateNum = d.getUTCDate();
+
+      let contentHtml = "";
+      if (workout) {
+        const wt = WORKOUT_TYPES[workout.type] || WORKOUT_TYPES.other;
+        const distDisplay = workout.distance > 0
+          ? `<div class="workout-distance">${workout.distance}<small> ${state.settings.unit}</small></div>`
+          : "";
+        const notesDisplay = workout.notes
+          ? `<div class="workout-notes">${escapeHtml(workout.notes)}</div>`
+          : "";
+        contentHtml = `
+          <div class="workout-display">
+            <button class="workout-delete" data-day="${dayISO}" title="Remove workout">×</button>
+            <span class="workout-type-pill ${wt.cssClass}">${wt.label}</span>
+            ${distDisplay}
+            ${notesDisplay}
+          </div>
+        `;
+      }
+
+      const dateHtml = isToday(d)
+        ? `<span class="day-date">${dateNum}</span>`
+        : `<span class="day-date">${dateNum}</span>`;
+
+      return `
+        <div class="day-cell${todayClass}" data-day="${dayISO}" data-index="${i}" draggable="true">
+          <div class="day-header">
+            <span class="day-name">${DAY_NAMES[i]}</span>
+            ${dateHtml}
+          </div>
+          <div class="day-content" data-day="${dayISO}">
+            ${contentHtml}
+          </div>
+          <div class="day-editor" data-day="${dayISO}">
+            <input type="text" placeholder="e.g. 8mi tempo" data-day="${dayISO}">
+            <div class="editor-hint">distance + type, or &quot;rest&quot;</div>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    renderStats();
+    if (monthExpanded) renderMonth();
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // ─── Render: Month Overview ───
+  function renderMonth() {
+    const grid = document.getElementById("month-grid");
+    // Show 5 weeks centered on current week
+    const weekKeys = [];
+    for (let offset = -2; offset <= 2; offset++) {
+      weekKeys.push(offsetWeekKey(currentWeekKey, offset));
+    }
+
+    const unit = state.settings.unit;
+    let html = `
+      <div class="month-row" style="border-bottom: 2px solid #e2e8f0;">
+        <div class="month-cell-header" style="padding-left: 8px; text-align: left;">Week</div>
+        ${DAY_NAMES.map(d => `<div class="month-cell-header">${d}</div>`).join("")}
+      </div>
+    `;
+
+    for (const wk of weekKeys) {
+      const days = getWeekDays(wk);
+      const isCurrent = wk === currentWeekKey;
+      const total = getWeekTotal(wk);
+
+      let dayCells = "";
+      for (const d of days) {
+        const dayISO = formatDateISO(d);
+        const workout = getWorkout(dayISO);
+        if (workout) {
+          const wt = WORKOUT_TYPES[workout.type] || WORKOUT_TYPES.other;
+          const dist = workout.distance > 0 ? workout.distance : "";
+          dayCells += `<div class="month-cell"><span class="mini-type ${wt.cssClass}" style="background: currentColor;"></span> <span class="mini-distance">${dist}</span></div>`;
+        } else {
+          dayCells += `<div class="month-cell">–</div>`;
+        }
+      }
+
+      html += `
+        <div class="month-row${isCurrent ? " current-week" : ""}" data-week="${wk}">
+          <div class="month-total" style="padding-left: 8px;">${Math.round(total * 10) / 10} ${unit}</div>
+          ${dayCells}
+        </div>
+      `;
+    }
+
+    grid.innerHTML = html;
+  }
+
+  // ─── Event Handlers ───
+
+  // Week navigation
+  document.getElementById("prev-week").addEventListener("click", () => {
+    currentWeekKey = offsetWeekKey(currentWeekKey, -1);
+    renderWeek();
+  });
+  document.getElementById("next-week").addEventListener("click", () => {
+    currentWeekKey = offsetWeekKey(currentWeekKey, 1);
+    renderWeek();
+  });
+  document.getElementById("today-btn").addEventListener("click", () => {
+    currentWeekKey = getISOWeekKey(new Date());
+    renderWeek();
+  });
+
+  // Unit toggle
+  document.getElementById("unit-mi").addEventListener("click", () => {
+    if (state.settings.unit === "mi") return;
+    convertUnits("mi");
+  });
+  document.getElementById("unit-km").addEventListener("click", () => {
+    if (state.settings.unit === "km") return;
+    convertUnits("km");
+  });
+
+  function convertUnits(newUnit) {
+    const factor = newUnit === "km" ? 1.60934 : 0.621371;
+    for (const wk of Object.values(state.weeks)) {
+      for (const w of Object.values(wk)) {
+        if (w.distance) {
+          w.distance = Math.round(w.distance * factor * 10) / 10;
+        }
+      }
+    }
+    state.settings.unit = newUnit;
+    document.getElementById("unit-mi").classList.toggle("active", newUnit === "mi");
+    document.getElementById("unit-km").classList.toggle("active", newUnit === "km");
+    saveState();
+    renderWeek();
+  }
+
+  // Click to edit day
+  document.getElementById("week-grid").addEventListener("click", (e) => {
+    const deleteBtn = e.target.closest(".workout-delete");
+    if (deleteBtn) {
+      const dayISO = deleteBtn.dataset.day;
+      setWorkout(currentWeekKey, dayISO, null);
+      renderWeek();
+      return;
+    }
+
+    const cell = e.target.closest(".day-cell");
+    if (!cell) return;
+    const dayISO = cell.dataset.day;
+
+    // Don't re-open if already editing this day
+    if (editingDay === dayISO) return;
+
+    startEditing(dayISO);
+  });
+
+  function startEditing(dayISO) {
+    // Close any existing editor
+    closeEditor();
+
+    editingDay = dayISO;
+    const cell = document.querySelector(`.day-cell[data-day="${dayISO}"]`);
+    if (!cell) return;
+
+    const content = cell.querySelector(".day-content");
+    const editor = cell.querySelector(".day-editor");
+    const input = editor.querySelector("input");
+
+    content.style.display = "none";
+    editor.classList.add("active");
+
+    // Pre-fill with existing workout text
+    const workout = getWorkout(dayISO);
+    if (workout) {
+      const parts = [];
+      if (workout.distance > 0) parts.push(`${workout.distance}${state.settings.unit}`);
+      const typeLabel = (WORKOUT_TYPES[workout.type] || WORKOUT_TYPES.other).label.toLowerCase();
+      if (workout.type !== "other") parts.push(typeLabel);
+      if (workout.notes) parts.push(workout.notes);
+      input.value = parts.join(" ");
+    } else {
+      input.value = "";
+    }
+
+    input.focus();
+  }
+
+  function closeEditor() {
+    if (!editingDay) return;
+    const cell = document.querySelector(`.day-cell[data-day="${editingDay}"]`);
+    if (cell) {
+      const content = cell.querySelector(".day-content");
+      const editor = cell.querySelector(".day-editor");
+      content.style.display = "";
+      editor.classList.remove("active");
+    }
+    editingDay = null;
+  }
+
+  // Handle input keydown
+  document.getElementById("week-grid").addEventListener("keydown", (e) => {
+    if (e.target.tagName !== "INPUT") return;
+    const dayISO = e.target.dataset.day;
+
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const parsed = parseWorkoutInput(e.target.value);
+      if (parsed) {
+        setWorkout(currentWeekKey, dayISO, parsed);
+      } else {
+        setWorkout(currentWeekKey, dayISO, null);
+      }
+      editingDay = null;
+      renderWeek();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      editingDay = null;
+      renderWeek();
+    } else if (e.key === "Tab") {
+      e.preventDefault();
+      // Save current and move to next/prev day
+      const parsed = parseWorkoutInput(e.target.value);
+      if (parsed) {
+        setWorkout(currentWeekKey, dayISO, parsed);
+      } else {
+        setWorkout(currentWeekKey, dayISO, null);
+      }
+      renderWeek();
+
+      const days = getWeekDays(currentWeekKey).map(formatDateISO);
+      const idx = days.indexOf(dayISO);
+      const nextIdx = e.shiftKey ? idx - 1 : idx + 1;
+      if (nextIdx >= 0 && nextIdx < 7) {
+        startEditing(days[nextIdx]);
+      }
+    }
+  });
+
+  // Close editor on outside click
+  document.addEventListener("click", (e) => {
+    if (!editingDay) return;
+    if (e.target.closest(".day-cell")) return;
+    // Save on blur
+    const input = document.querySelector(`.day-editor[data-day="${editingDay}"] input`);
+    if (input) {
+      const parsed = parseWorkoutInput(input.value);
+      if (parsed) {
+        setWorkout(currentWeekKey, editingDay, parsed);
+      } else {
+        setWorkout(currentWeekKey, editingDay, null);
+      }
+    }
+    editingDay = null;
+    renderWeek();
+  });
+
+  // ─── Drag and Drop ───
+  let dragSourceDay = null;
+  let dragSourceWeek = null;
+
+  document.getElementById("week-grid").addEventListener("dragstart", (e) => {
+    const cell = e.target.closest(".day-cell");
+    if (!cell) return;
+    dragSourceDay = cell.dataset.day;
+    dragSourceWeek = currentWeekKey;
+    cell.classList.add("dragging");
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", dragSourceDay);
+  });
+
+  document.getElementById("week-grid").addEventListener("dragend", (e) => {
+    const cell = e.target.closest(".day-cell");
+    if (cell) cell.classList.remove("dragging");
+    document.querySelectorAll(".day-cell.drag-over").forEach(c => c.classList.remove("drag-over"));
+    dragSourceDay = null;
+    dragSourceWeek = null;
+  });
+
+  document.getElementById("week-grid").addEventListener("dragover", (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    const cell = e.target.closest(".day-cell");
+    if (cell && cell.dataset.day !== dragSourceDay) {
+      cell.classList.add("drag-over");
+    }
+  });
+
+  document.getElementById("week-grid").addEventListener("dragleave", (e) => {
+    const cell = e.target.closest(".day-cell");
+    if (cell) cell.classList.remove("drag-over");
+  });
+
+  document.getElementById("week-grid").addEventListener("drop", (e) => {
+    e.preventDefault();
+    const cell = e.target.closest(".day-cell");
+    if (!cell || !dragSourceDay) return;
+
+    const targetDay = cell.dataset.day;
+    if (targetDay === dragSourceDay) return;
+
+    const sourceWorkout = getWorkout(dragSourceDay);
+    const targetWorkout = getWorkout(targetDay);
+
+    // Swap workouts
+    setWorkout(dragSourceWeek, dragSourceDay, targetWorkout || null);
+    setWorkout(currentWeekKey, targetDay, sourceWorkout || null);
+
+    cell.classList.remove("drag-over");
+    renderWeek();
+  });
+
+  // ─── Month Overview Toggle ───
+  document.getElementById("month-toggle").addEventListener("click", () => {
+    monthExpanded = !monthExpanded;
+    const grid = document.getElementById("month-grid");
+    const btn = document.getElementById("month-toggle");
+    grid.classList.toggle("collapsed", !monthExpanded);
+    btn.textContent = monthExpanded ? "▼ Month overview" : "▶ Month overview";
+    if (monthExpanded) renderMonth();
+  });
+
+  // Click month row to navigate to that week
+  document.getElementById("month-grid").addEventListener("click", (e) => {
+    const row = e.target.closest(".month-row[data-week]");
+    if (!row) return;
+    currentWeekKey = row.dataset.week;
+    renderWeek();
+  });
+
+  // ─── Keyboard Navigation ───
+  document.addEventListener("keydown", (e) => {
+    // Only when not editing
+    if (editingDay) return;
+    if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      currentWeekKey = offsetWeekKey(currentWeekKey, -1);
+      renderWeek();
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      currentWeekKey = offsetWeekKey(currentWeekKey, 1);
+      renderWeek();
+    }
+  });
+
+  // ─── JSON Export / Import ───
+  document.getElementById("export-btn").addEventListener("click", () => {
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `running-planner-${currentWeekKey}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  document.getElementById("import-btn").addEventListener("click", () => {
+    document.getElementById("import-file").click();
+  });
+
+  document.getElementById("import-file").addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const imported = JSON.parse(ev.target.result);
+        if (imported && imported.weeks) {
+          // Merge imported weeks into current state
+          for (const [wk, days] of Object.entries(imported.weeks)) {
+            if (!state.weeks[wk]) state.weeks[wk] = {};
+            Object.assign(state.weeks[wk], days);
+          }
+          if (imported.settings) {
+            state.settings = { ...state.settings, ...imported.settings };
+            document.getElementById("unit-mi").classList.toggle("active", state.settings.unit === "mi");
+            document.getElementById("unit-km").classList.toggle("active", state.settings.unit === "km");
+          }
+          saveState();
+          renderWeek();
+        }
+      } catch (err) {
+        alert("Invalid JSON file");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  });
+
+  // ─── FIT File Export ───
+  // Minimal FIT binary encoder for workout files
+  const FIT = {
+    HEADER_SIZE: 14,
+    PROTOCOL_VERSION: 0x20,
+    PROFILE_VERSION: 2132, // 21.32
+    MESG_FILE_ID: 0,
+    MESG_WORKOUT: 26,
+    MESG_WORKOUT_STEP: 27,
+
+    // CRC lookup table
+    crcTable: (() => {
+      const table = new Uint16Array(256);
+      for (let i = 0; i < 256; i++) {
+        let crc = i;
+        for (let j = 0; j < 8; j++) {
+          crc = (crc & 1) ? (crc >> 1) ^ 0xA001 : crc >> 1;
+        }
+        table[i] = crc;
+      }
+      return table;
+    })(),
+
+    crc16(bytes) {
+      let crc = 0;
+      for (const b of bytes) {
+        crc = (crc >> 8) ^ this.crcTable[(crc ^ b) & 0xFF];
+      }
+      return crc;
+    },
+
+    encodeWorkout(name, steps) {
+      const records = [];
+      let localMsgIndex = 0;
+
+      // Definition + Data: File ID
+      const fileIdDef = this.definitionMessage(localMsgIndex, this.MESG_FILE_ID, [
+        { fieldNum: 0, size: 1, baseType: 0 },   // type (enum)
+        { fieldNum: 1, size: 2, baseType: 132 },  // manufacturer (uint16)
+        { fieldNum: 2, size: 2, baseType: 132 },  // product (uint16)
+        { fieldNum: 4, size: 4, baseType: 134 },  // time_created (uint32)
+      ]);
+      records.push(fileIdDef);
+
+      const now = Math.floor(Date.now() / 1000) - 631065600; // Garmin epoch (Dec 31, 1989)
+      const fileIdData = this.dataMessage(localMsgIndex, [
+        { value: 5, size: 1 },    // type = workout
+        { value: 1, size: 2 },    // manufacturer = Garmin
+        { value: 0, size: 2 },    // product
+        { value: now, size: 4 },  // time_created
+      ]);
+      records.push(fileIdData);
+      localMsgIndex++;
+
+      // Definition + Data: Workout
+      const nameBytes = new TextEncoder().encode(name.slice(0, 40));
+      const nameFieldSize = nameBytes.length + 1; // null-terminated
+      const workoutDef = this.definitionMessage(localMsgIndex, this.MESG_WORKOUT, [
+        { fieldNum: 8, size: nameFieldSize, baseType: 7 }, // wkt_name (string)
+        { fieldNum: 4, size: 1, baseType: 0 },             // sport (enum)
+        { fieldNum: 6, size: 2, baseType: 132 },           // num_valid_steps (uint16)
+      ]);
+      records.push(workoutDef);
+
+      const nameArr = new Uint8Array(nameFieldSize);
+      nameArr.set(nameBytes);
+      const workoutData = this.dataMessage(localMsgIndex, [
+        { value: nameArr, size: nameFieldSize },
+        { value: 1, size: 1 },                   // sport = running
+        { value: steps.length, size: 2 },
+      ]);
+      records.push(workoutData);
+      localMsgIndex++;
+
+      // Definition: Workout Step
+      const stepDef = this.definitionMessage(localMsgIndex, this.MESG_WORKOUT_STEP, [
+        { fieldNum: 254, size: 2, baseType: 132 }, // message_index (uint16)
+        { fieldNum: 1, size: 4, baseType: 134 },   // duration_value (uint32)
+        { fieldNum: 0, size: 1, baseType: 0 },     // duration_type (enum)
+        { fieldNum: 3, size: 4, baseType: 134 },   // target_value (uint32)
+        { fieldNum: 2, size: 1, baseType: 0 },     // target_type (enum)
+        { fieldNum: 5, size: 1, baseType: 0 },     // intensity (enum)
+      ]);
+      records.push(stepDef);
+
+      // Data: Workout Steps
+      steps.forEach((step, i) => {
+        const stepData = this.dataMessage(localMsgIndex, [
+          { value: i, size: 2 },                             // message_index
+          { value: step.durationValue, size: 4 },            // duration_value (distance in 100ths of meter)
+          { value: step.durationType, size: 1 },             // duration_type (0=time, 1=distance, 14=open)
+          { value: step.targetValue || 0, size: 4 },         // target_value
+          { value: step.targetType || 0, size: 1 },          // target_type (0=speed, 1=heart_rate, 2=open)
+          { value: step.intensity || 0, size: 1 },           // intensity (0=active, 1=rest, 3=warmup, 4=cooldown)
+        ]);
+        records.push(stepData);
+      });
+
+      // Build complete file
+      const dataBytes = this.concatArrays(records);
+      const dataCrc = this.crc16(dataBytes);
+
+      // File header
+      const header = new Uint8Array(this.HEADER_SIZE);
+      const headerView = new DataView(header.buffer);
+      header[0] = this.HEADER_SIZE;
+      header[1] = this.PROTOCOL_VERSION;
+      headerView.setUint16(2, this.PROFILE_VERSION, true);
+      headerView.setUint32(4, dataBytes.length, true);
+      header[8] = 0x2E; // '.'
+      header[9] = 0x46; // 'F'
+      header[10] = 0x49; // 'I'
+      header[11] = 0x54; // 'T'
+      const headerCrc = this.crc16(header.subarray(0, 12));
+      headerView.setUint16(12, headerCrc, true);
+
+      // Full file: header + data + data CRC
+      const file = new Uint8Array(header.length + dataBytes.length + 2);
+      file.set(header, 0);
+      file.set(dataBytes, header.length);
+      const fileView = new DataView(file.buffer);
+      fileView.setUint16(header.length + dataBytes.length, dataCrc, true);
+
+      return file;
+    },
+
+    definitionMessage(localMsgIndex, globalMsgNum, fields) {
+      const size = 6 + fields.length * 3;
+      const buf = new Uint8Array(size);
+      const view = new DataView(buf.buffer);
+      buf[0] = 0x40 | localMsgIndex; // record header: definition
+      buf[1] = 0;                    // reserved
+      buf[2] = 0;                    // architecture: little-endian
+      view.setUint16(3, globalMsgNum, true);
+      buf[5] = fields.length;
+      fields.forEach((f, i) => {
+        const offset = 6 + i * 3;
+        buf[offset] = f.fieldNum;
+        buf[offset + 1] = f.size;
+        buf[offset + 2] = f.baseType;
+      });
+      return buf;
+    },
+
+    dataMessage(localMsgIndex, fields) {
+      const totalSize = 1 + fields.reduce((s, f) => s + f.size, 0);
+      const buf = new Uint8Array(totalSize);
+      const view = new DataView(buf.buffer);
+      buf[0] = localMsgIndex; // record header: data
+      let offset = 1;
+      for (const f of fields) {
+        if (f.value instanceof Uint8Array) {
+          buf.set(f.value, offset);
+        } else if (f.size === 1) {
+          buf[offset] = f.value & 0xFF;
+        } else if (f.size === 2) {
+          view.setUint16(offset, f.value, true);
+        } else if (f.size === 4) {
+          view.setUint32(offset, f.value, true);
+        }
+        offset += f.size;
+      }
+      return buf;
+    },
+
+    concatArrays(arrays) {
+      const totalLen = arrays.reduce((s, a) => s + a.length, 0);
+      const result = new Uint8Array(totalLen);
+      let offset = 0;
+      for (const a of arrays) {
+        result.set(a, offset);
+        offset += a.length;
+      }
+      return result;
+    },
+  };
+
+  function workoutToFitSteps(workout) {
+    if (!workout || workout.type === "rest") return null;
+
+    const distMeters = workout.distance * (state.settings.unit === "km" ? 1000 : 1609.34);
+    if (distMeters <= 0) return null;
+
+    // Simple distance-based workout step
+    return [{
+      durationValue: Math.round(distMeters * 100), // hundredths of meter
+      durationType: 1, // distance
+      targetType: 2,   // open (no pace target)
+      targetValue: 0,
+      intensity: 0,    // active
+    }];
+  }
+
+  document.getElementById("export-fit-btn").addEventListener("click", () => {
+    const days = getWeekDays(currentWeekKey);
+    let exported = 0;
+
+    for (const d of days) {
+      const dayISO = formatDateISO(d);
+      const workout = getWorkout(dayISO);
+      const steps = workoutToFitSteps(workout);
+      if (!steps) continue;
+
+      const wt = WORKOUT_TYPES[workout.type] || WORKOUT_TYPES.other;
+      const name = `${wt.label} ${workout.distance}${state.settings.unit}${workout.notes ? " " + workout.notes : ""}`;
+
+      const fitBytes = FIT.encodeWorkout(name.slice(0, 40), steps);
+      const blob = new Blob([fitBytes], { type: "application/octet-stream" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `workout-${dayISO}.fit`;
+      a.click();
+      URL.revokeObjectURL(url);
+      exported++;
+    }
+
+    if (exported === 0) {
+      alert("No exportable workouts this week (rest days are skipped).");
+    }
+  });
+
+  // ─── Markdown Export ───
+  document.getElementById("export-md-btn").addEventListener("click", () => {
+    const days = getWeekDays(currentWeekKey);
+    const unit = state.settings.unit;
+    const total = getWeekTotal(currentWeekKey);
+    const prevKey = offsetWeekKey(currentWeekKey, -1);
+    const prevTotal = getWeekTotal(prevKey);
+
+    let md = `# Running Plan: ${formatWeekLabel(currentWeekKey)}\n\n`;
+    md += `| Day | Date | Type | Distance | Notes |\n`;
+    md += `|-----|------|------|----------|-------|\n`;
+
+    for (let i = 0; i < days.length; i++) {
+      const d = days[i];
+      const dayISO = formatDateISO(d);
+      const workout = getWorkout(dayISO);
+      const dayName = DAY_NAMES[i];
+      const dateStr = d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+      if (workout) {
+        const wt = (WORKOUT_TYPES[workout.type] || WORKOUT_TYPES.other).label;
+        const dist = workout.distance > 0 ? `${workout.distance} ${unit}` : "–";
+        const notes = workout.notes || "";
+        md += `| ${dayName} | ${dateStr} | ${wt} | ${dist} | ${notes} |\n`;
+      } else {
+        md += `| ${dayName} | ${dateStr} | | | |\n`;
+      }
+    }
+
+    md += `\n**Total: ${Math.round(total * 10) / 10} ${unit}**`;
+    if (prevTotal > 0) {
+      const pct = Math.round(((total - prevTotal) / prevTotal) * 100);
+      const sign = pct >= 0 ? "+" : "";
+      md += ` (${sign}${pct}% vs. last week)`;
+    }
+    md += "\n";
+
+    const blob = new Blob([md], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `running-plan-${currentWeekKey}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  // ─── Init ───
+  loadState();
+  renderWeek();
+</script>
+</body>
+</html>
