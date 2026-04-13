@@ -608,7 +608,7 @@
 
         <div class="field-group">
           <div class="field-group-title">Penalties</div>
-          <div class="field-group-hint">Cards left in hand or foot</div>
+          <div class="field-group-hint">Cards left in hand or foot — enter points as negative values</div>
           <div class="field-row">
             <div class="field">
               <label>Black 3s (−100 ea.)</label>
@@ -623,7 +623,7 @@
                 value="${round.penalties.redThrees}" ${submitted ? "disabled" : ""}>
             </div>
             <div class="field">
-              <label>Remaining pts</label>
+              <label>Other card pts (−)</label>
               <input type="number" inputmode="numeric"
                 data-team="${teamIdx}" data-cat="penalties" data-key="remainingCards"
                 value="${round.penalties.remainingCards}" ${submitted ? "disabled" : ""}>
