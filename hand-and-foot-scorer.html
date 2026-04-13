@@ -353,6 +353,7 @@
 
     <div class="top-actions">
       <button class="btn-small" id="copy-link-btn">📋 Copy Game Link</button>
+      <button class="btn-small" id="download-md-btn">📥 Download Markdown</button>
       <button class="btn-small" id="new-game-btn">🔄 New Game</button>
     </div>
 
@@ -795,6 +796,86 @@
         btn.textContent = "Copied!";
         setTimeout(() => { btn.textContent = "📋 Copy Game Link"; }, 2000);
       });
+    });
+
+    // Generate markdown summary
+    function generateMarkdown() {
+      const today = new Date().toISOString().slice(0, 10);
+      const lines = [];
+      lines.push(`## Hand and Foot — ${today}`);
+      lines.push("");
+
+      // Scoreboard table
+      lines.push("| Team | R1 | R2 | R3 | R4 | Total |");
+      lines.push("| --- | ---: | ---: | ---: | ---: | ---: |");
+      for (let i = 0; i < 2; i++) {
+        const name = state.teams[i].name;
+        const scores = getRoundScores(i);
+        const total = scores.reduce((a, b) => a + b, 0);
+        lines.push(`| ${name} | ${scores.map(s => s.toLocaleString()).join(" | ")} | **${total.toLocaleString()}** |`);
+      }
+      lines.push("");
+
+      // Per-round detail for each team
+      for (let i = 0; i < 2; i++) {
+        const name = state.teams[i].name;
+        lines.push(`### ${name}`);
+        lines.push("");
+        for (let r = 0; r < NUM_ROUNDS; r++) {
+          if (!state.submitted[i][r]) continue;
+          const round = state.rounds[i][r];
+          const score = calculateRoundScore(round);
+          lines.push(`**Round ${r + 1}** (meld ${MELD_REQUIREMENTS[r]}) — ${score.toLocaleString()} pts`);
+
+          const details = [];
+          if (round.books.sevens) details.push(`7s books: ${round.books.sevens}`);
+          if (round.books.fives) details.push(`5s books: ${round.books.fives}`);
+          if (round.books.wilds) details.push(`Wild books: ${round.books.wilds}`);
+          if (round.books.red) details.push(`Red books: ${round.books.red}`);
+          if (round.books.black) details.push(`Black books: ${round.books.black}`);
+          if (round.meldedCards) details.push(`Card pts: ${round.meldedCards.toLocaleString()}`);
+          if (round.penalties.blackThrees) details.push(`Black 3s penalty: ${round.penalties.blackThrees}`);
+          if (round.penalties.redThrees) details.push(`Red 3s penalty: ${round.penalties.redThrees}`);
+          if (round.penalties.remainingCards) details.push(`Other penalty pts: ${round.penalties.remainingCards}`);
+          if (round.bonuses.goingOut) details.push(`Going out: yes`);
+          if (round.bonuses.redThrees) details.push(`Red 3s collected: ${round.bonuses.redThrees}`);
+
+          if (details.length) {
+            lines.push(details.map(d => `- ${d}`).join("\n"));
+          }
+          lines.push("");
+        }
+      }
+
+      // Winner
+      const totals = [0, 1].map(i => getRoundScores(i).reduce((a, b) => a + b, 0));
+      if (totals[0] !== totals[1]) {
+        const winnerIdx = totals[0] > totals[1] ? 0 : 1;
+        lines.push(`**Winner: ${state.teams[winnerIdx].name}** (${totals[winnerIdx].toLocaleString()} to ${totals[1 - winnerIdx].toLocaleString()})`);
+      } else if (totals[0] !== 0) {
+        lines.push(`**Tie: ${totals[0].toLocaleString()} each**`);
+      }
+      lines.push("");
+
+      return lines.join("\n");
+    }
+
+    // Download markdown
+    document.getElementById("download-md-btn").addEventListener("click", () => {
+      const md = generateMarkdown();
+      const blob = new Blob([md], { type: "text/markdown" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const today = new Date().toISOString().slice(0, 10);
+      a.href = url;
+      a.download = `hand-and-foot-${today}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      const btn = document.getElementById("download-md-btn");
+      btn.textContent = "Downloaded!";
+      setTimeout(() => { btn.textContent = "📥 Download Markdown"; }, 2000);
     });
 
     // New game

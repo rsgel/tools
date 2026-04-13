@@ -91,3 +91,25 @@ def test_red_threes_bonus_with_all_seven(page: Page, static_server):
     # 7 red threes = 700 + 300 extra = 1000
     panel.locator("input[data-cat='bonuses'][data-key='redThrees']").fill("7")
     expect(panel.locator(".live-score")).to_contain_text("1,000")
+
+
+def test_download_markdown_button_exists(page: Page, static_server):
+    page.goto(URL)
+    expect(page.locator("#download-md-btn")).to_be_visible()
+    expect(page.locator("#download-md-btn")).to_contain_text("Download Markdown")
+
+
+def test_generate_markdown_content(page: Page, static_server):
+    page.goto(URL)
+    panel = page.locator("#team-0")
+    # Enter 1 red book = 500 and submit
+    panel.locator("input[data-key='red']").fill("1")
+    panel.locator("button[data-action='submit']").click()
+    # Call generateMarkdown() from JS and check content
+    md = page.evaluate("generateMarkdown()")
+    assert "Hand and Foot" in md
+    assert "Team 1" in md
+    assert "Team 2" in md
+    assert "500" in md
+    assert "Red books: 1" in md
+    assert "| R1 | R2 | R3 | R4 | Total |" in md
