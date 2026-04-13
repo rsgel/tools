@@ -885,7 +885,7 @@
       if (m) {
         timeMinutes = pat.parse(m);
         notes = text.substring(0, m.index) + text.substring(m.index + m[0].length);
-        notes = notes.trim();
+        notes = notes.replace(/\s{2,}/g, " ").trim();
         foundTime = true;
         break;
       }
@@ -1107,8 +1107,8 @@
 
         // Long run volume bubble
         let volumeHtml = "";
-        if (workout.type === "long-run" && workout.distance > 0 && weekTotal > 0) {
-          const pct = Math.round((workout.distance / (weekRunTotal || weekTotal)) * 100);
+        if (workout.type === "long-run" && workout.distance > 0 && weekRunTotal > 0) {
+          const pct = Math.round((workout.distance / weekRunTotal) * 100);
           volumeHtml = `<div class="volume-bubble">${pct}% of week</div>`;
         }
 
