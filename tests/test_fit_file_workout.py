@@ -323,3 +323,147 @@ def test_summary_with_records_only(page: Page, static_server):
     }""")
     assert result["visible"] is True
     assert result["statCount"] >= 2  # distance + avg HR at minimum
+
+
+def test_copy_md_btn_exists(page: Page, static_server):
+    """Copy Markdown button exists in the viewer."""
+    page.goto(BASE_URL)
+    expect(page.locator("#copy-md-btn")).to_be_attached()
+
+
+def test_copy_md_btn_copies_to_clipboard(page: Page, static_server):
+    """Copy Markdown button copies summary text and shows feedback."""
+    page.goto(BASE_URL)
+    page.context.grant_permissions(["clipboard-read", "clipboard-write"])
+    page.evaluate("""() => {
+        parsedData = { messages: {
+            session: [{
+                total_distance: 500000,
+                total_elapsed_time: 1200000,
+                avg_speed: 4000,
+                avg_heart_rate: 150
+            }],
+            record: [],
+            lap: []
+        }};
+        displaySummary(parsedData.messages);
+    }""")
+    page.click("#copy-md-btn")
+    expect(page.locator("#copy-md-btn")).to_have_text("Copied!")
+    # Check clipboard content
+    clipboard = page.evaluate("() => navigator.clipboard.readText()")
+    assert "# Workout Summary" in clipboard
+    # Should revert after 2 seconds
+    page.wait_for_timeout(2200)
+    expect(page.locator("#copy-md-btn")).to_have_text("Copy Markdown")
+
+
+def test_chart_overlay_select_exists(page: Page, static_server):
+    """Overlay field selector exists in chart section."""
+    page.goto(BASE_URL)
+    expect(page.locator("#chart-overlay-select")).to_be_attached()
+
+
+def test_chart_show_splits_checkbox_exists(page: Page, static_server):
+    """Show splits checkbox exists in chart section."""
+    page.goto(BASE_URL)
+    expect(page.locator("#chart-show-splits")).to_be_attached()
+
+
+def test_chart_pace_field_available(page: Page, static_server):
+    """Pace appears as a chartable field when speed data exists."""
+    page.goto(BASE_URL)
+    result = page.evaluate("""() => {
+        const records = [];
+        for (let i = 0; i < 10; i++) {
+            records.push({ timestamp: 1000000 + i, speed: 3000 + i * 10, heart_rate: 140 + i });
+        }
+        const messages = { record: records };
+        displayChart(messages);
+        const opts = Array.from(document.getElementById('chart-field-select').options).map(o => o.value);
+        return opts;
+    }""")
+    assert "pace" in result
+    assert "heart_rate" in result
+
+
+def test_chart_overlay_populates_fields(page: Page, static_server):
+    """Overlay select is populated with available chart fields."""
+    page.goto(BASE_URL)
+    result = page.evaluate("""() => {
+        const records = [];
+        for (let i = 0; i < 10; i++) {
+            records.push({ timestamp: 1000000 + i, speed: 3000, heart_rate: 140, cadence: 85 });
+        }
+        displayChart({ record: records });
+        const opts = Array.from(document.getElementById('chart-overlay-select').options).map(o => o.value);
+        return opts;
+    }""")
+    assert "" in result  # "None" option
+    assert "heart_rate" in result
+    assert "cadence" in result
+
+
+def test_chart_legend_hidden_without_overlay(page: Page, static_server):
+    """Chart legend is hidden when no overlay is selected."""
+    page.goto(BASE_URL)
+    page.evaluate("""() => {
+        const records = [];
+        for (let i = 0; i < 10; i++) {
+            records.push({ timestamp: 1000000 + i, speed: 3000, heart_rate: 140 });
+        }
+        displayChart({ record: records });
+    }""")
+    expect(page.locator("#chart-legend")).to_be_hidden()
+
+
+def test_chart_legend_visible_with_overlay(page: Page, static_server):
+    """Chart legend shows when overlay field is selected."""
+    page.goto(BASE_URL)
+    result = page.evaluate("""() => {
+        const records = [];
+        for (let i = 0; i < 10; i++) {
+            records.push({ timestamp: 1000000 + i, speed: 3000 + i * 10, heart_rate: 140 + i, cadence: 80 + i });
+        }
+        displayChart({ record: records });
+        // Select overlay
+        const sel = document.getElementById('chart-overlay-select');
+        sel.value = 'cadence';
+        sel.dispatchEvent(new Event('change'));
+        return document.getElementById('chart-legend').style.display;
+    }""")
+    assert result == "flex"
+
+
+def test_chart_splits_toggle_hidden_without_laps(page: Page, static_server):
+    """Splits toggle is hidden when no lap data exists."""
+    page.goto(BASE_URL)
+    result = page.evaluate("""() => {
+        const records = [];
+        for (let i = 0; i < 10; i++) {
+            records.push({ timestamp: 1000000 + i, speed: 3000 });
+        }
+        displayChart({ record: records });
+        const label = document.getElementById('chart-show-splits').closest('label');
+        return label.style.display;
+    }""")
+    assert result == "none"
+
+
+def test_chart_splits_toggle_visible_with_laps(page: Page, static_server):
+    """Splits toggle is visible when lap data exists."""
+    page.goto(BASE_URL)
+    result = page.evaluate("""() => {
+        const records = [];
+        for (let i = 0; i < 100; i++) {
+            records.push({ timestamp: 1000000 + i * 10, speed: 3000 });
+        }
+        const laps = [
+            { timestamp: 1000300 },
+            { timestamp: 1000600 }
+        ];
+        displayChart({ record: records, lap: laps });
+        const label = document.getElementById('chart-show-splits').closest('label');
+        return label.style.display;
+    }""")
+    assert result != "none"

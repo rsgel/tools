@@ -165,6 +165,30 @@
       border: 1px solid #ddd;
       border-radius: 4px;
     }
+    .chart-controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+    .chart-controls select {
+      font-size: 14px;
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-family: inherit;
+    }
+    .chart-controls label {
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+    }
+    .chart-controls input[type="checkbox"] {
+      cursor: pointer;
+    }
     .chart-select-row {
       display: flex;
       gap: 10px;
@@ -178,6 +202,23 @@
       border: 1px solid #ccc;
       border-radius: 4px;
       font-family: inherit;
+    }
+    .chart-legend {
+      display: flex;
+      gap: 16px;
+      margin-top: 6px;
+      font-size: 12px;
+      color: #666;
+    }
+    .chart-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .chart-legend-swatch {
+      width: 14px;
+      height: 3px;
+      border-radius: 1px;
     }
     .chart-tooltip {
       position: absolute;
@@ -491,12 +532,18 @@
         <div class="chart-select-row">
           <label>Field: </label>
           <select id="chart-field-select"></select>
+          <label>Overlay: </label>
+          <select id="chart-overlay-select"><option value="">None</option></select>
           <button class="chart-reset-btn" id="chart-reset-btn">Reset Zoom</button>
+        </div>
+        <div class="chart-controls">
+          <label><input type="checkbox" id="chart-show-splits"> Show splits</label>
         </div>
         <div class="chart-container">
           <canvas id="chart-canvas"></canvas>
           <div class="chart-tooltip" id="chart-tooltip"></div>
         </div>
+        <div class="chart-legend" id="chart-legend" style="display:none"></div>
       </div>
 
       <div id="summary-section" class="summary-section" style="display:none">
@@ -504,6 +551,7 @@
         <div id="summary-grid" class="summary-grid"></div>
         <div class="btn-row-viewer">
           <button class="btn btn-secondary" id="download-md-btn">Download Markdown Summary</button>
+          <button class="btn btn-secondary" id="copy-md-btn">Copy Markdown</button>
         </div>
       </div>
 
@@ -1595,6 +1643,16 @@ cooldown 1 mile easy
       URL.revokeObjectURL(url);
     });
 
+    document.getElementById("copy-md-btn").addEventListener("click", () => {
+      if (!parsedData) return;
+      const md = generateMarkdownSummary(parsedData.messages);
+      const btn = document.getElementById("copy-md-btn");
+      navigator.clipboard.writeText(md).then(() => {
+        btn.textContent = "Copied!";
+        setTimeout(() => { btn.textContent = "Copy Markdown"; }, 2000);
+      });
+    });
+
     // ═══════════════════════════════════════════════
     // VIEWER: Interactive Chart
     // ═══════════════════════════════════════════════
@@ -1602,16 +1660,57 @@ cooldown 1 mile easy
     const chartCtx = chartCanvas.getContext("2d");
     const chartTooltip = document.getElementById("chart-tooltip");
     const chartFieldSelect = document.getElementById("chart-field-select");
+    const chartOverlaySelect = document.getElementById("chart-overlay-select");
     const chartResetBtn = document.getElementById("chart-reset-btn");
+    const chartShowSplits = document.getElementById("chart-show-splits");
+    const chartLegend = document.getElementById("chart-legend");
 
     let chartData = [];
     let chartField = "";
+    let chartOverlayField = "";
     let chartZoomStart = null;
     let chartZoomEnd = null;
     let chartDragStart = null;
     let chartIsDragging = false;
+    let chartLapTimestamps = [];
 
-    const CHART_FIELDS = ["heart_rate", "speed", "enhanced_speed", "cadence", "power", "altitude", "enhanced_altitude", "temperature", "distance"];
+    const CHART_FIELDS = ["heart_rate", "speed", "enhanced_speed", "pace", "cadence", "power", "altitude", "enhanced_altitude", "temperature", "distance"];
+    const CHART_COLORS = { primary: "#4a90e2", overlay: "#e2744a" };
+
+    function getChartValue(record, field) {
+      if (field === "pace") {
+        const raw = record.speed !== undefined ? record.speed : record.enhanced_speed;
+        if (raw === undefined || raw === 0xFF || raw === 0xFFFF || raw === 0xFFFFFFFF || raw === 0) return null;
+        if (typeof raw !== "number") return null;
+        const speedMs = raw / 1000;
+        if (speedMs <= 0) return null;
+        const paceSecPerMi = 1609.34 / speedMs;
+        if (paceSecPerMi > 1800) return null; // cap at 30 min/mi
+        return paceSecPerMi;
+      }
+      const raw = record[field];
+      if (raw === undefined || raw === 0xFF || raw === 0xFFFF || raw === 0xFFFFFFFF) return null;
+      return typeof raw === "number" ? raw : null;
+    }
+
+    function scaleChartValue(v, field) {
+      if (v === null) return null;
+      if (field === "pace") return v; // already in sec/mi
+      if (field.includes("speed")) return v / 1000;
+      if (field === "altitude" || field === "enhanced_altitude") return (v / 5) - 500;
+      if (field === "distance") return v / 100;
+      return v;
+    }
+
+    function isFieldAvailable(records, field) {
+      if (field === "pace") {
+        return records.some(r => {
+          const v = r.speed !== undefined ? r.speed : r.enhanced_speed;
+          return v !== undefined && v !== null && v !== 0xFF && v !== 0xFFFF && v !== 0xFFFFFFFF && v > 0;
+        });
+      }
+      return records.some(r => r[field] !== undefined && r[field] !== null && r[field] !== 0xFF && r[field] !== 0xFFFF && r[field] !== 0xFFFFFFFF);
+    }
 
     function displayChart(messages) {
       const records = messages.record;
@@ -1621,15 +1720,14 @@ cooldown 1 mile easy
       }
 
       // Determine available fields
-      const availableFields = CHART_FIELDS.filter(f =>
-        records.some(r => r[f] !== undefined && r[f] !== null && r[f] !== 0xFF && r[f] !== 0xFFFF && r[f] !== 0xFFFFFFFF)
-      );
+      const availableFields = CHART_FIELDS.filter(f => isFieldAvailable(records, f));
 
       if (availableFields.length === 0) {
         document.getElementById("chart-section").style.display = "none";
         return;
       }
 
+      // Populate primary select
       chartFieldSelect.innerHTML = "";
       availableFields.forEach(f => {
         const opt = document.createElement("option");
@@ -1638,10 +1736,33 @@ cooldown 1 mile easy
         chartFieldSelect.appendChild(opt);
       });
 
+      // Populate overlay select
+      chartOverlaySelect.innerHTML = '<option value="">None</option>';
+      availableFields.forEach(f => {
+        const opt = document.createElement("option");
+        opt.value = f;
+        opt.textContent = f.replace(/_/g, " ");
+        chartOverlaySelect.appendChild(opt);
+      });
+
       chartField = availableFields[0];
+      chartOverlayField = "";
       chartData = records;
       chartZoomStart = null;
       chartZoomEnd = null;
+
+      // Extract lap timestamps for split lines
+      chartLapTimestamps = [];
+      if (messages.lap && messages.lap.length > 0) {
+        messages.lap.forEach(lap => {
+          if (isValidFitNum(lap.timestamp)) {
+            chartLapTimestamps.push(lap.timestamp);
+          }
+        });
+      }
+
+      // Show splits toggle only if laps exist
+      chartShowSplits.closest("label").style.display = chartLapTimestamps.length > 0 ? "" : "none";
 
       document.getElementById("chart-section").style.display = "block";
       drawChart();
@@ -1651,6 +1772,15 @@ cooldown 1 mile easy
       chartField = chartFieldSelect.value;
       chartZoomStart = null;
       chartZoomEnd = null;
+      drawChart();
+    });
+
+    chartOverlaySelect.addEventListener("change", () => {
+      chartOverlayField = chartOverlaySelect.value;
+      drawChart();
+    });
+
+    chartShowSplits.addEventListener("change", () => {
       drawChart();
     });
 
@@ -1669,7 +1799,8 @@ cooldown 1 mile easy
 
       const W = rect.width;
       const H = rect.height;
-      const pad = { top: 20, right: 20, bottom: 30, left: 55 };
+      const hasOverlay = chartOverlayField && chartOverlayField !== chartField;
+      const pad = { top: 20, right: hasOverlay ? 55 : 20, bottom: 30, left: 55 };
 
       chartCtx.clearRect(0, 0, W, H);
 
@@ -1681,40 +1812,52 @@ cooldown 1 mile easy
         data = chartData.slice(s, e + 1);
       }
 
-      // Extract values
-      const values = data.map(r => {
-        const raw = r[chartField];
-        if (raw === undefined || raw === 0xFF || raw === 0xFFFF || raw === 0xFFFFFFFF) return null;
-        return typeof raw === "number" ? raw : null;
-      });
+      const plotW = W - pad.left - pad.right;
+      const plotH = H - pad.top - pad.bottom;
 
-      // Scale values for display
-      const scaledValues = values.map(v => {
-        if (v === null) return null;
-        if (chartField.includes("speed")) return v / 1000;
-        if (chartField === "altitude" || chartField === "enhanced_altitude") return (v / 5) - 500;
-        if (chartField === "distance") return v / 100;
-        return v;
-      });
-
-      const validValues = scaledValues.filter(v => v !== null);
+      // Extract and scale primary values
+      const values = data.map(r => scaleChartValue(getChartValue(r, chartField), chartField));
+      const validValues = values.filter(v => v !== null);
       if (validValues.length === 0) return;
 
       const minVal = Math.min(...validValues);
       const maxVal = Math.max(...validValues);
       const range = maxVal - minVal || 1;
 
-      const plotW = W - pad.left - pad.right;
-      const plotH = H - pad.top - pad.bottom;
-
       // Background
       chartCtx.fillStyle = "#fafafa";
       chartCtx.fillRect(pad.left, pad.top, plotW, plotH);
+
+      // Draw split lines if enabled
+      if (chartShowSplits.checked && chartLapTimestamps.length > 0 && data.length > 0 && data[0].timestamp) {
+        const dataStartTs = data[0].timestamp;
+        const dataEndTs = data[data.length - 1].timestamp;
+        chartCtx.strokeStyle = "rgba(180, 180, 180, 0.6)";
+        chartCtx.lineWidth = 1;
+        chartCtx.setLineDash([4, 4]);
+        chartLapTimestamps.forEach((ts, i) => {
+          if (ts <= dataStartTs || ts > dataEndTs) return;
+          // Find record index closest to this timestamp
+          const frac = (ts - dataStartTs) / (dataEndTs - dataStartTs);
+          const x = pad.left + frac * plotW;
+          chartCtx.beginPath();
+          chartCtx.moveTo(x, pad.top);
+          chartCtx.lineTo(x, pad.top + plotH);
+          chartCtx.stroke();
+          // Label
+          chartCtx.fillStyle = "#aaa";
+          chartCtx.font = "10px -apple-system, sans-serif";
+          chartCtx.textAlign = "center";
+          chartCtx.fillText(`${i + 1}`, x, pad.top - 2);
+        });
+        chartCtx.setLineDash([]);
+      }
 
       // Grid lines
       chartCtx.strokeStyle = "#eee";
       chartCtx.lineWidth = 1;
       const numGridLines = 5;
+      const isPace = chartField === "pace";
       for (let i = 0; i <= numGridLines; i++) {
         const y = pad.top + (plotH / numGridLines) * i;
         chartCtx.beginPath();
@@ -1722,45 +1865,97 @@ cooldown 1 mile easy
         chartCtx.lineTo(pad.left + plotW, y);
         chartCtx.stroke();
 
-        // Y-axis labels
-        const val = maxVal - (range / numGridLines) * i;
+        // Y-axis labels (left)
+        const val = isPace
+          ? minVal + (range / numGridLines) * i  // pace: top = slower (higher), bottom = faster (lower) — inverted
+          : maxVal - (range / numGridLines) * i;
         chartCtx.fillStyle = "#888";
         chartCtx.font = "11px -apple-system, sans-serif";
         chartCtx.textAlign = "right";
-        chartCtx.fillText(val.toFixed(1), pad.left - 6, y + 4);
+        chartCtx.fillText(isPace ? formatPaceLabel(val) : val.toFixed(1), pad.left - 6, y + 4);
       }
 
-      // Draw line
+      // Draw primary line
       chartCtx.beginPath();
-      chartCtx.strokeStyle = "#4a90e2";
+      chartCtx.strokeStyle = CHART_COLORS.primary;
       chartCtx.lineWidth = 1.5;
       let started = false;
-      scaledValues.forEach((v, i) => {
+      values.forEach((v, i) => {
         if (v === null) return;
-        const x = pad.left + (i / (scaledValues.length - 1)) * plotW;
-        const y = pad.top + plotH - ((v - minVal) / range) * plotH;
+        const x = pad.left + (i / (values.length - 1)) * plotW;
+        const yFrac = isPace
+          ? (v - minVal) / range  // pace: inverted — higher value at top
+          : 1 - (v - minVal) / range;
+        const y = pad.top + yFrac * plotH;
         if (!started) { chartCtx.moveTo(x, y); started = true; }
         else chartCtx.lineTo(x, y);
       });
       chartCtx.stroke();
 
-      // Fill under line
+      // Fill under primary line
       if (started) {
-        const lastValidIdx = scaledValues.length - 1;
-        const firstValidIdx = scaledValues.findIndex(v => v !== null);
-        chartCtx.lineTo(pad.left + (lastValidIdx / (scaledValues.length - 1)) * plotW, pad.top + plotH);
-        chartCtx.lineTo(pad.left + (firstValidIdx / (scaledValues.length - 1)) * plotW, pad.top + plotH);
+        const lastValidIdx = values.length - 1;
+        const firstValidIdx = values.findIndex(v => v !== null);
+        chartCtx.lineTo(pad.left + (lastValidIdx / (values.length - 1)) * plotW, pad.top + plotH);
+        chartCtx.lineTo(pad.left + (firstValidIdx / (values.length - 1)) * plotW, pad.top + plotH);
         chartCtx.closePath();
         chartCtx.fillStyle = "rgba(74, 144, 226, 0.1)";
         chartCtx.fill();
       }
 
-      // Field label
-      chartCtx.fillStyle = "#666";
+      // Draw overlay line
+      if (hasOverlay) {
+        const ovValues = data.map(r => scaleChartValue(getChartValue(r, chartOverlayField), chartOverlayField));
+        const ovValid = ovValues.filter(v => v !== null);
+        if (ovValid.length > 0) {
+          const ovMin = Math.min(...ovValid);
+          const ovMax = Math.max(...ovValid);
+          const ovRange = ovMax - ovMin || 1;
+          const isOvPace = chartOverlayField === "pace";
+
+          // Right Y-axis labels
+          for (let i = 0; i <= numGridLines; i++) {
+            const y = pad.top + (plotH / numGridLines) * i;
+            const val = isOvPace
+              ? ovMin + (ovRange / numGridLines) * i
+              : ovMax - (ovRange / numGridLines) * i;
+            chartCtx.fillStyle = CHART_COLORS.overlay;
+            chartCtx.font = "11px -apple-system, sans-serif";
+            chartCtx.textAlign = "left";
+            chartCtx.fillText(isOvPace ? formatPaceLabel(val) : val.toFixed(1), W - pad.right + 6, y + 4);
+          }
+
+          // Draw overlay line
+          chartCtx.beginPath();
+          chartCtx.strokeStyle = CHART_COLORS.overlay;
+          chartCtx.lineWidth = 1.5;
+          let ovStarted = false;
+          ovValues.forEach((v, i) => {
+            if (v === null) return;
+            const x = pad.left + (i / (ovValues.length - 1)) * plotW;
+            const yFrac = isOvPace
+              ? (v - ovMin) / ovRange
+              : 1 - (v - ovMin) / ovRange;
+            const y = pad.top + yFrac * plotH;
+            if (!ovStarted) { chartCtx.moveTo(x, y); ovStarted = true; }
+            else chartCtx.lineTo(x, y);
+          });
+          chartCtx.stroke();
+        }
+      }
+
+      // Field label (left)
+      chartCtx.fillStyle = CHART_COLORS.primary;
       chartCtx.font = "12px -apple-system, sans-serif";
       chartCtx.textAlign = "left";
-      const unitLabel = getChartUnit(chartField);
-      chartCtx.fillText(unitLabel, pad.left, pad.top - 6);
+      chartCtx.fillText(getChartUnit(chartField), pad.left, pad.top - 6);
+
+      // Field label (right, overlay)
+      if (hasOverlay) {
+        chartCtx.fillStyle = CHART_COLORS.overlay;
+        chartCtx.textAlign = "right";
+        chartCtx.fillText(getChartUnit(chartOverlayField), W - pad.right, pad.top - 6);
+      }
 
       // X-axis labels
       chartCtx.fillStyle = "#888";
@@ -1789,9 +1984,27 @@ cooldown 1 mile easy
         chartCtx.fillStyle = "rgba(74, 144, 226, 0.2)";
         chartCtx.fillRect(Math.min(startX, endX), pad.top, Math.abs(endX - startX), plotH);
       }
+
+      // Update legend
+      if (hasOverlay) {
+        chartLegend.style.display = "flex";
+        chartLegend.innerHTML = `
+          <span class="chart-legend-item"><span class="chart-legend-swatch" style="background:${CHART_COLORS.primary}"></span>${getChartUnit(chartField)}</span>
+          <span class="chart-legend-item"><span class="chart-legend-swatch" style="background:${CHART_COLORS.overlay}"></span>${getChartUnit(chartOverlayField)}</span>
+        `;
+      } else {
+        chartLegend.style.display = "none";
+      }
+    }
+
+    function formatPaceLabel(secPerMi) {
+      const m = Math.floor(secPerMi / 60);
+      const s = Math.round(secPerMi % 60);
+      return `${m}:${String(s).padStart(2, "0")}`;
     }
 
     function getChartUnit(field) {
+      if (field === "pace") return "Pace (min/mi)";
       if (field.includes("speed")) return "Speed (m/s)";
       if (field === "heart_rate") return "Heart Rate (bpm)";
       if (field === "cadence") return "Cadence (rpm)";
@@ -1809,7 +2022,8 @@ cooldown 1 mile easy
       const rect = chartCanvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      const pad = { top: 20, right: 20, bottom: 30, left: 55 };
+      const hasOverlay = chartOverlayField && chartOverlayField !== chartField;
+      const pad = { top: 20, right: hasOverlay ? 55 : 20, bottom: 30, left: 55 };
       const plotW = rect.width - pad.left - pad.right;
 
       if (chartIsDragging) {
@@ -1835,10 +2049,29 @@ cooldown 1 mile easy
       const record = data[Math.max(0, Math.min(idx, data.length - 1))];
       if (!record) return;
 
-      const raw = record[chartField];
-      if (raw === undefined) { chartTooltip.style.display = "none"; return; }
+      const parts = [];
+      // Primary field
+      if (chartField === "pace") {
+        const paceVal = getChartValue(record, "pace");
+        if (paceVal !== null) parts.push(`pace: ${formatPaceLabel(paceVal)} /mi`);
+      } else {
+        const raw = record[chartField];
+        if (raw !== undefined) parts.push(`${chartField}: ${formatValue("record", chartField, raw)}`);
+      }
+      // Overlay field
+      if (hasOverlay) {
+        if (chartOverlayField === "pace") {
+          const paceVal = getChartValue(record, "pace");
+          if (paceVal !== null) parts.push(`pace: ${formatPaceLabel(paceVal)} /mi`);
+        } else {
+          const raw2 = record[chartOverlayField];
+          if (raw2 !== undefined) parts.push(`${chartOverlayField}: ${formatValue("record", chartOverlayField, raw2)}`);
+        }
+      }
 
-      chartTooltip.textContent = `${chartField}: ${formatValue("record", chartField, raw)}`;
+      if (parts.length === 0) { chartTooltip.style.display = "none"; return; }
+
+      chartTooltip.textContent = parts.join(" | ");
       chartTooltip.style.display = "block";
       chartTooltip.style.left = (x + 12) + "px";
       chartTooltip.style.top = (y - 10) + "px";
@@ -1862,7 +2095,8 @@ cooldown 1 mile easy
 
       const rect = chartCanvas.getBoundingClientRect();
       const endX = e.clientX - rect.left;
-      const pad = { top: 20, right: 20, bottom: 30, left: 55 };
+      const hasOverlay = chartOverlayField && chartOverlayField !== chartField;
+      const pad = { top: 20, right: hasOverlay ? 55 : 20, bottom: 30, left: 55 };
       const plotW = rect.width - pad.left - pad.right;
 
       const startFrac = Math.max(0, Math.min(1, (chartDragStart - pad.left) / plotW));
