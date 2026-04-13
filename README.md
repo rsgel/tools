@@ -15,6 +15,7 @@ Each tool is a single, self-contained HTML file. The site is hosted via [GitHub 
 - [Hand and Foot Scorer](hand-and-foot-scorer) track scores for the card game Hand and Foot across four rounds
 - [Ultra Race Planner](ultra-race-planner) plan ultrarunning race logistics with splits, aid stations, drop bags, and nutrition strategy
 - [Running Planner](running-planner) plan weekly running mileage with natural language entry, drag-and-drop, and FIT export
+- [FIT File Workout](fit-file-workout) view FIT activity files with charts and tables, or create structured workouts from natural language
 
 <!-- New tools should be added above this line as bullet points:
 - [Tool Name](tool-name) short description

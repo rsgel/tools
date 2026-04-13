@@ -1540,36 +1540,64 @@
     document.getElementById("import-file").click();
   });
 
+  function importJSON(text) {
+    try {
+      const imported = JSON.parse(text);
+      if (imported && imported.weeks) {
+        for (const [wk, days] of Object.entries(imported.weeks)) {
+          if (!state.weeks[wk]) state.weeks[wk] = {};
+          Object.assign(state.weeks[wk], days);
+        }
+        if (imported.settings) {
+          state.settings = { ...state.settings, ...imported.settings };
+          document.getElementById("unit-mi").classList.toggle("active", state.settings.unit === "mi");
+          document.getElementById("unit-km").classList.toggle("active", state.settings.unit === "km");
+        }
+        if (!state.settings.runPace) state.settings.runPace = "10:00";
+        if (state.settings.xtRatio == null) state.settings.xtRatio = 33;
+        syncSettingsUI();
+        saveState();
+        renderWeek();
+        return true;
+      }
+    } catch (err) { /* handled by caller */ }
+    return false;
+  }
+
   document.getElementById("import-file").addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (ev) => {
-      try {
-        const imported = JSON.parse(ev.target.result);
-        if (imported && imported.weeks) {
-          // Merge imported weeks into current state
-          for (const [wk, days] of Object.entries(imported.weeks)) {
-            if (!state.weeks[wk]) state.weeks[wk] = {};
-            Object.assign(state.weeks[wk], days);
-          }
-          if (imported.settings) {
-            state.settings = { ...state.settings, ...imported.settings };
-            document.getElementById("unit-mi").classList.toggle("active", state.settings.unit === "mi");
-            document.getElementById("unit-km").classList.toggle("active", state.settings.unit === "km");
-          }
-          if (!state.settings.runPace) state.settings.runPace = "10:00";
-          if (state.settings.xtRatio == null) state.settings.xtRatio = 33;
-          syncSettingsUI();
-          saveState();
-          renderWeek();
-        }
-      } catch (err) {
+      if (!importJSON(ev.target.result)) {
         alert("Invalid JSON file");
       }
     };
     reader.readAsText(file);
     e.target.value = "";
+  });
+
+  // ─── JSON Drag and Drop Import ───
+  document.body.addEventListener("dragover", (e) => {
+    if (dragSourceDay) return; // ignore internal workout drags
+    if (e.dataTransfer.types.includes("Files")) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "copy";
+    }
+  });
+
+  document.body.addEventListener("drop", (e) => {
+    if (dragSourceDay) return;
+    const file = e.dataTransfer.files[0];
+    if (!file || !file.name.endsWith(".json")) return;
+    e.preventDefault();
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      if (!importJSON(ev.target.result)) {
+        alert("Invalid JSON file");
+      }
+    };
+    reader.readAsText(file);
   });
 
   // ─── FIT File Export ───

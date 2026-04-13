@@ -1,0 +1,2418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FIT File Workout Creator</title>
+    <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+      color: #333;
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 28px;
+    }
+    h2 {
+      font-size: 20px;
+      margin-top: 32px;
+      margin-bottom: 12px;
+    }
+    h3 {
+      font-size: 16px;
+      margin-top: 20px;
+      margin-bottom: 8px;
+    }
+    .tabs {
+      display: flex;
+      border-bottom: 2px solid #ddd;
+      margin-bottom: 20px;
+      gap: 0;
+    }
+    .tab-btn {
+      padding: 10px 24px;
+      border: none;
+      background: none;
+      font-size: 15px;
+      font-weight: 600;
+      color: #666;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      font-family: inherit;
+    }
+    .tab-btn.active {
+      color: #4a90e2;
+      border-bottom-color: #4a90e2;
+    }
+    .tab-btn:hover {
+      color: #333;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Drop zone */
+    .drop-zone {
+      border: 2px dashed #ccc;
+      border-radius: 8px;
+      padding: 40px 20px;
+      text-align: center;
+      color: #888;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      margin-bottom: 20px;
+    }
+    .drop-zone.drag-over {
+      border-color: #4a90e2;
+      background: #f0f7ff;
+    }
+    .drop-zone input[type="file"] {
+      display: none;
+    }
+
+    /* Message list */
+    .message-list {
+      margin-top: 16px;
+    }
+    .message-header {
+      background: #f5f5f5;
+      padding: 10px 16px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin-bottom: 4px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+      font-size: 14px;
+      transition: background 0.15s;
+    }
+    .message-header:hover {
+      background: #eaeaea;
+    }
+    .message-header .badge {
+      background: #4a90e2;
+      color: white;
+      border-radius: 12px;
+      padding: 2px 10px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .message-body {
+      display: none;
+      overflow-x: auto;
+      margin-bottom: 12px;
+    }
+    .message-body.open {
+      display: block;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 6px 10px;
+      text-align: left;
+      white-space: nowrap;
+    }
+    th {
+      background: #f9f9f9;
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+    }
+    .csv-btn {
+      display: inline-block;
+      padding: 4px 12px;
+      font-size: 12px;
+      border: 1px solid #4a90e2;
+      color: #4a90e2;
+      background: white;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-bottom: 8px;
+      font-family: inherit;
+    }
+    .csv-btn:hover {
+      background: #f0f7ff;
+    }
+
+    /* Chart */
+    .chart-container {
+      position: relative;
+      width: 100%;
+      margin-top: 16px;
+      margin-bottom: 24px;
+    }
+    .chart-container canvas {
+      width: 100%;
+      height: 300px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .chart-controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+    .chart-controls select {
+      font-size: 14px;
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-family: inherit;
+    }
+    .chart-controls label {
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+    }
+    .chart-controls input[type="checkbox"] {
+      cursor: pointer;
+    }
+    .chart-select-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+    .chart-select-row select {
+      font-size: 14px;
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-family: inherit;
+    }
+    .chart-legend {
+      display: flex;
+      gap: 16px;
+      margin-top: 6px;
+      font-size: 12px;
+      color: #666;
+    }
+    .chart-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .chart-legend-swatch {
+      width: 14px;
+      height: 3px;
+      border-radius: 1px;
+    }
+    .chart-tooltip {
+      position: absolute;
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      pointer-events: none;
+      display: none;
+      white-space: nowrap;
+      z-index: 10;
+    }
+    .chart-reset-btn {
+      padding: 4px 10px;
+      font-size: 12px;
+      border: 1px solid #ccc;
+      background: white;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .chart-reset-btn:hover {
+      background: #f5f5f5;
+    }
+
+    /* Creator section */
+    textarea {
+      width: 100%;
+      min-height: 180px;
+      padding: 12px;
+      border: 2px solid #ddd;
+      border-radius: 4px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      font-size: 16px;
+      resize: vertical;
+    }
+    textarea:focus {
+      outline: none;
+      border-color: #4a90e2;
+    }
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn-primary {
+      background: #4a90e2;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #357abd;
+    }
+    .btn-primary:disabled {
+      background: #a8c8f0;
+      cursor: not-allowed;
+    }
+    .btn-secondary {
+      background: #f0f0f0;
+      color: #333;
+      border: 1px solid #ccc;
+    }
+    .btn-secondary:hover {
+      background: #e0e0e0;
+    }
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    .preview-section {
+      margin-top: 20px;
+    }
+    .step-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      margin-bottom: 6px;
+      background: #fafafa;
+    }
+    .step-num {
+      font-weight: 700;
+      color: #888;
+      font-size: 13px;
+      min-width: 24px;
+    }
+    .step-detail {
+      flex: 1;
+      font-size: 14px;
+    }
+    .step-type {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .type-warmup { background: #fff3cd; color: #856404; }
+    .type-active { background: #d4edda; color: #155724; }
+    .type-rest { background: #e2e3e5; color: #383d41; }
+    .type-cooldown { background: #cce5ff; color: #004085; }
+    .type-repeat { background: #f8d7da; color: #721c24; }
+
+    .error {
+      color: #e74c3c;
+      padding: 12px;
+      background: #fef5f5;
+      border-radius: 4px;
+      margin-top: 10px;
+    }
+    .help-section {
+      background: #f9f9f9;
+      border: 1px solid #eee;
+      border-radius: 6px;
+      padding: 16px;
+      margin-top: 20px;
+      font-size: 14px;
+    }
+    .help-section h3 {
+      margin-top: 0;
+    }
+    .help-section code {
+      background: #eee;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 13px;
+    }
+    .help-section ul {
+      margin: 8px 0;
+      padding-left: 20px;
+    }
+    .help-section li {
+      margin-bottom: 4px;
+    }
+    .workout-settings {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .workout-settings label {
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .workout-settings input,
+    .workout-settings select {
+      font-size: 14px;
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-family: inherit;
+    }
+    .workout-settings input {
+      width: 200px;
+    }
+
+    /* File info banner */
+    .file-info {
+      background: #e8f4fd;
+      border: 1px solid #b8daef;
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+    .file-info strong {
+      color: #2c6faa;
+    }
+
+    /* Workout summary */
+    .summary-section {
+      margin-top: 20px;
+      margin-bottom: 24px;
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .summary-stat {
+      background: #f9f9f9;
+      border-radius: 6px;
+      padding: 12px;
+      border-left: 4px solid #4a90e2;
+    }
+    .summary-stat .stat-label {
+      font-size: 11px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 2px;
+    }
+    .summary-stat .stat-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: #333;
+    }
+    .summary-stat .stat-sub {
+      font-size: 12px;
+      color: #888;
+      margin-top: 1px;
+    }
+
+    /* Splits table */
+    .splits-section {
+      margin-top: 20px;
+      margin-bottom: 24px;
+    }
+    .splits-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .splits-table th,
+    .splits-table td {
+      border: 1px solid #ddd;
+      padding: 8px 10px;
+      text-align: right;
+      white-space: nowrap;
+    }
+    .splits-table th {
+      background: #f5f5f5;
+      font-weight: 600;
+      text-align: center;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .splits-table td:first-child,
+    .splits-table th:first-child {
+      text-align: center;
+      font-weight: 600;
+    }
+    .splits-table tbody tr:hover {
+      background: #f0f7ff;
+    }
+    .splits-table .fastest {
+      color: #155724;
+      font-weight: 700;
+    }
+    .splits-table .slowest {
+      color: #721c24;
+      font-weight: 700;
+    }
+    .btn-row-viewer {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+      h1 {
+        font-size: 24px;
+      }
+      .tabs {
+        gap: 0;
+      }
+      .tab-btn {
+        padding: 8px 14px;
+        font-size: 13px;
+      }
+      .drop-zone {
+        padding: 24px 12px;
+      }
+      .chart-container canvas {
+        height: 220px;
+      }
+      .workout-settings {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+    </style>
+</head>
+<body>
+    <h1>FIT File Workout Creator</h1>
+    <p>View FIT activity files or create structured workouts from natural language and export as FIT files.</p>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="viewer">Viewer</button>
+      <button class="tab-btn" data-tab="creator">Creator</button>
+    </div>
+
+    <!-- ═══ VIEWER TAB ═══ -->
+    <div id="tab-viewer" class="tab-content active">
+      <div class="drop-zone" id="drop-zone">
+        <p><strong>Drop a .fit file here</strong> or click to browse</p>
+        <p style="font-size:13px;">FIT files from Garmin, Wahoo, Zwift, and other devices</p>
+        <input type="file" id="file-input" accept=".fit,.FIT">
+      </div>
+
+      <div id="file-info" class="file-info" style="display:none"></div>
+
+      <div id="chart-section" style="display:none">
+        <h2>Chart</h2>
+        <div class="chart-select-row">
+          <label>Field: </label>
+          <select id="chart-field-select"></select>
+          <label>Overlay: </label>
+          <select id="chart-overlay-select"><option value="">None</option></select>
+          <button class="chart-reset-btn" id="chart-reset-btn">Reset Zoom</button>
+        </div>
+        <div class="chart-controls">
+          <label><input type="checkbox" id="chart-show-splits"> Show splits</label>
+        </div>
+        <div class="chart-container">
+          <canvas id="chart-canvas"></canvas>
+          <div class="chart-tooltip" id="chart-tooltip"></div>
+        </div>
+        <div class="chart-legend" id="chart-legend" style="display:none"></div>
+      </div>
+
+      <div id="summary-section" class="summary-section" style="display:none">
+        <h2>Workout Summary</h2>
+        <div id="summary-grid" class="summary-grid"></div>
+        <div class="btn-row-viewer">
+          <button class="btn btn-secondary" id="download-md-btn">Download Markdown Summary</button>
+          <button class="btn btn-secondary" id="copy-md-btn">Copy Markdown</button>
+        </div>
+      </div>
+
+      <div id="splits-section" class="splits-section" style="display:none">
+        <h2>Splits</h2>
+        <div id="splits-container"></div>
+      </div>
+
+      <div id="messages-section" style="display:none">
+        <h2>Messages</h2>
+        <div id="message-list" class="message-list"></div>
+      </div>
+    </div>
+
+    <!-- ═══ CREATOR TAB ═══ -->
+    <div id="tab-creator" class="tab-content">
+      <div class="workout-settings">
+        <label>Workout Name:
+          <input type="text" id="workout-name" value="My Workout" placeholder="Workout name">
+        </label>
+        <label>Sport:
+          <select id="workout-sport">
+            <option value="1">Running</option>
+            <option value="2">Cycling</option>
+            <option value="5">Swimming</option>
+            <option value="0">Generic</option>
+          </select>
+        </label>
+        <label>Units:
+          <select id="workout-unit">
+            <option value="mi">Miles</option>
+            <option value="km">Kilometers</option>
+          </select>
+        </label>
+      </div>
+
+      <textarea id="workout-input" placeholder="Describe your workout in plain language, one step per line. Examples:
+
+warmup 10 minutes
+run 3 miles at 7:30 pace
+rest 2 minutes
+4x800m at 5k pace with 400m recovery
+cooldown 1 mile easy
+"></textarea>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="parse-btn">Parse Workout</button>
+        <button class="btn btn-primary" id="download-btn" disabled>Download .FIT</button>
+      </div>
+
+      <div id="parse-error" class="error" style="display:none"></div>
+
+      <div id="preview-section" class="preview-section" style="display:none">
+        <h3>Workout Steps</h3>
+        <div id="step-list"></div>
+      </div>
+
+      <div class="help-section">
+        <h3>Natural Language Syntax</h3>
+        <p>Write one step per line. The parser understands:</p>
+        <ul>
+          <li><strong>Duration:</strong> <code>10 minutes</code>, <code>3 miles</code>, <code>5 km</code>, <code>800m</code>, <code>lap button</code></li>
+          <li><strong>Intensity:</strong> <code>warmup</code>, <code>cooldown</code>, <code>rest</code>, <code>recover</code>, <code>easy</code>, <code>tempo</code>, <code>hard</code></li>
+          <li><strong>Pace target:</strong> <code>at 7:30 pace</code>, <code>@ 4:00/km</code></li>
+          <li><strong>Heart rate zone:</strong> <code>hr zone 3</code>, <code>zone 2</code></li>
+          <li><strong>Repeats:</strong> <code>4x800m at 3:20 with 400m recovery</code>, <code>3 x 1 mile at 6:30 with 90s rest</code></li>
+        </ul>
+      </div>
+    </div>
+
+    <script>
+    // ─── Tab switching ───
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById(`tab-${btn.dataset.tab}`).classList.add("active");
+      });
+    });
+
+    // ═══════════════════════════════════════════════
+    // FIT BINARY ENCODER
+    // ═══════════════════════════════════════════════
+    const FIT = {
+      HEADER_SIZE: 14,
+      PROTOCOL_VERSION: 0x20,
+      PROFILE_VERSION: 2132,
+      MESG_FILE_ID: 0,
+      MESG_WORKOUT: 26,
+      MESG_WORKOUT_STEP: 27,
+
+      crcTable: (() => {
+        const table = new Uint16Array(256);
+        for (let i = 0; i < 256; i++) {
+          let crc = i;
+          for (let j = 0; j < 8; j++) {
+            crc = (crc & 1) ? (crc >> 1) ^ 0xA001 : crc >> 1;
+          }
+          table[i] = crc;
+        }
+        return table;
+      })(),
+
+      crc16(bytes) {
+        let crc = 0;
+        for (const b of bytes) {
+          crc = (crc >> 8) ^ this.crcTable[(crc ^ b) & 0xFF];
+        }
+        return crc;
+      },
+
+      encodeWorkout(name, steps, sport) {
+        const records = [];
+        let localMsgIndex = 0;
+
+        // File ID definition + data
+        const fileIdDef = this.definitionMessage(localMsgIndex, this.MESG_FILE_ID, [
+          { fieldNum: 0, size: 1, baseType: 0 },
+          { fieldNum: 1, size: 2, baseType: 132 },
+          { fieldNum: 2, size: 2, baseType: 132 },
+          { fieldNum: 4, size: 4, baseType: 134 },
+        ]);
+        records.push(fileIdDef);
+
+        const now = Math.floor(Date.now() / 1000) - 631065600;
+        const fileIdData = this.dataMessage(localMsgIndex, [
+          { value: 5, size: 1 },
+          { value: 1, size: 2 },
+          { value: 0, size: 2 },
+          { value: now, size: 4 },
+        ]);
+        records.push(fileIdData);
+        localMsgIndex++;
+
+        // Workout definition + data
+        const nameBytes = new TextEncoder().encode(name.slice(0, 40));
+        const nameFieldSize = nameBytes.length + 1;
+        const workoutDef = this.definitionMessage(localMsgIndex, this.MESG_WORKOUT, [
+          { fieldNum: 8, size: nameFieldSize, baseType: 7 },
+          { fieldNum: 4, size: 1, baseType: 0 },
+          { fieldNum: 6, size: 2, baseType: 132 },
+        ]);
+        records.push(workoutDef);
+
+        const nameArr = new Uint8Array(nameFieldSize);
+        nameArr.set(nameBytes);
+        const workoutData = this.dataMessage(localMsgIndex, [
+          { value: nameArr, size: nameFieldSize },
+          { value: sport || 1, size: 1 },
+          { value: steps.length, size: 2 },
+        ]);
+        records.push(workoutData);
+        localMsgIndex++;
+
+        // Workout step definition
+        const stepDef = this.definitionMessage(localMsgIndex, this.MESG_WORKOUT_STEP, [
+          { fieldNum: 254, size: 2, baseType: 132 },
+          { fieldNum: 1, size: 4, baseType: 134 },
+          { fieldNum: 0, size: 1, baseType: 0 },
+          { fieldNum: 3, size: 4, baseType: 134 },
+          { fieldNum: 2, size: 1, baseType: 0 },
+          { fieldNum: 5, size: 1, baseType: 0 },
+        ]);
+        records.push(stepDef);
+
+        // Step data
+        steps.forEach((step, i) => {
+          const stepData = this.dataMessage(localMsgIndex, [
+            { value: i, size: 2 },
+            { value: step.durationValue, size: 4 },
+            { value: step.durationType, size: 1 },
+            { value: step.targetValue || 0, size: 4 },
+            { value: step.targetType || 0, size: 1 },
+            { value: step.intensity || 0, size: 1 },
+          ]);
+          records.push(stepData);
+        });
+
+        // Build file
+        const dataBytes = this.concatArrays(records);
+        const dataCrc = this.crc16(dataBytes);
+
+        const header = new Uint8Array(this.HEADER_SIZE);
+        const headerView = new DataView(header.buffer);
+        header[0] = this.HEADER_SIZE;
+        header[1] = this.PROTOCOL_VERSION;
+        headerView.setUint16(2, this.PROFILE_VERSION, true);
+        headerView.setUint32(4, dataBytes.length, true);
+        header[8] = 0x2E;
+        header[9] = 0x46;
+        header[10] = 0x49;
+        header[11] = 0x54;
+        const headerCrc = this.crc16(header.subarray(0, 12));
+        headerView.setUint16(12, headerCrc, true);
+
+        const file = new Uint8Array(header.length + dataBytes.length + 2);
+        file.set(header, 0);
+        file.set(dataBytes, header.length);
+        const fileView = new DataView(file.buffer);
+        fileView.setUint16(header.length + dataBytes.length, dataCrc, true);
+
+        return file;
+      },
+
+      definitionMessage(localMsgIndex, globalMsgNum, fields) {
+        const size = 6 + fields.length * 3;
+        const buf = new Uint8Array(size);
+        const view = new DataView(buf.buffer);
+        buf[0] = 0x40 | localMsgIndex;
+        buf[1] = 0;
+        buf[2] = 0;
+        view.setUint16(3, globalMsgNum, true);
+        buf[5] = fields.length;
+        fields.forEach((f, i) => {
+          const offset = 6 + i * 3;
+          buf[offset] = f.fieldNum;
+          buf[offset + 1] = f.size;
+          buf[offset + 2] = f.baseType;
+        });
+        return buf;
+      },
+
+      dataMessage(localMsgIndex, fields) {
+        const totalSize = 1 + fields.reduce((s, f) => s + f.size, 0);
+        const buf = new Uint8Array(totalSize);
+        const view = new DataView(buf.buffer);
+        buf[0] = localMsgIndex;
+        let offset = 1;
+        for (const f of fields) {
+          if (f.value instanceof Uint8Array) {
+            buf.set(f.value, offset);
+          } else if (f.size === 1) {
+            buf[offset] = f.value & 0xFF;
+          } else if (f.size === 2) {
+            view.setUint16(offset, f.value, true);
+          } else if (f.size === 4) {
+            view.setUint32(offset, f.value, true);
+          }
+          offset += f.size;
+        }
+        return buf;
+      },
+
+      concatArrays(arrays) {
+        const totalLen = arrays.reduce((s, a) => s + a.length, 0);
+        const result = new Uint8Array(totalLen);
+        let off = 0;
+        for (const a of arrays) {
+          result.set(a, off);
+          off += a.length;
+        }
+        return result;
+      },
+    };
+
+    // ═══════════════════════════════════════════════
+    // FIT BINARY PARSER
+    // ═══════════════════════════════════════════════
+    const FIT_BASE_TYPES = {
+      0: { name: "enum", size: 1 },
+      1: { name: "sint8", size: 1 },
+      2: { name: "uint8", size: 1 },
+      7: { name: "string", size: 1 },
+      131: { name: "sint16", size: 2 },
+      132: { name: "uint16", size: 2 },
+      133: { name: "sint32", size: 4 },
+      134: { name: "uint32", size: 4 },
+      136: { name: "float32", size: 4 },
+      137: { name: "float64", size: 8 },
+      139: { name: "uint16z", size: 2 },
+      140: { name: "uint32z", size: 4 },
+      10: { name: "uint8z", size: 1 },
+      13: { name: "bytes", size: 1 },
+      142: { name: "sint64", size: 8 },
+      143: { name: "uint64", size: 8 },
+      144: { name: "uint64z", size: 8 },
+    };
+
+    // Known FIT message type names
+    const FIT_MESG_NAMES = {
+      0: "file_id", 2: "capabilities", 3: "device_settings", 4: "user_profile",
+      5: "hrm_profile", 6: "sdm_profile", 7: "bike_profile", 12: "sport",
+      15: "goal", 18: "session", 19: "lap", 20: "record", 21: "event",
+      23: "device_info", 26: "workout", 27: "workout_step", 29: "weight_scale",
+      33: "totals", 34: "activity", 35: "software", 49: "file_creator",
+      55: "monitoring", 72: "training_file", 78: "hrv", 101: "length",
+      103: "monitoring_info", 104: "pad", 105: "slave_device", 113: "cadence_zone",
+      131: "weather_conditions", 132: "weather_alert", 142: "segment_lap",
+      145: "memo_glob", 148: "segment_id", 149: "segment_leaderboard_entry",
+      150: "segment_point", 160: "segment_file", 206: "field_description",
+      207: "developer_field_description", 227: "three_d_sensor_calibration",
+    };
+
+    // Known field names for common message types
+    const FIT_FIELD_NAMES = {
+      0: { 0: "type", 1: "manufacturer", 2: "product", 3: "serial_number", 4: "time_created", 5: "number" },
+      18: {
+        0: "event", 1: "event_type", 2: "start_time", 5: "sport", 6: "sub_sport",
+        7: "total_elapsed_time", 8: "total_timer_time", 9: "total_distance",
+        11: "total_calories", 14: "avg_speed", 15: "max_speed",
+        16: "avg_heart_rate", 17: "max_heart_rate", 18: "avg_cadence", 19: "max_cadence",
+        20: "avg_power", 21: "max_power", 22: "total_ascent", 23: "total_descent",
+        25: "first_lap_index", 26: "num_laps", 28: "trigger", 29: "nec_lat", 30: "nec_long",
+        31: "swc_lat", 32: "swc_long", 34: "normalized_power", 44: "avg_altitude",
+        48: "max_altitude", 49: "avg_grade", 253: "timestamp", 254: "message_index",
+      },
+      19: {
+        0: "event", 1: "event_type", 2: "start_time", 7: "total_elapsed_time",
+        8: "total_timer_time", 9: "total_distance", 11: "total_calories",
+        13: "avg_speed", 14: "max_speed", 15: "avg_heart_rate", 16: "max_heart_rate",
+        17: "avg_cadence", 19: "avg_power", 20: "max_power",
+        21: "total_ascent", 22: "total_descent", 23: "intensity", 24: "lap_trigger",
+        25: "sport", 253: "timestamp", 254: "message_index",
+      },
+      20: {
+        0: "position_lat", 1: "position_long", 2: "altitude", 3: "heart_rate",
+        4: "cadence", 5: "distance", 6: "speed", 7: "power", 13: "temperature",
+        30: "left_right_balance", 39: "vertical_oscillation", 41: "stance_time",
+        46: "vertical_ratio", 53: "fractional_cadence", 62: "enhanced_altitude",
+        73: "enhanced_speed", 253: "timestamp",
+      },
+      21: { 0: "event", 1: "event_type", 3: "data", 253: "timestamp" },
+      23: {
+        0: "device_index", 1: "device_type", 2: "manufacturer", 3: "serial_number",
+        4: "product", 5: "software_version", 253: "timestamp",
+      },
+      26: { 4: "sport", 5: "capabilities", 6: "num_valid_steps", 8: "wkt_name" },
+      27: {
+        0: "duration_type", 1: "duration_value", 2: "target_type",
+        3: "target_value", 4: "custom_target_value_low", 5: "custom_target_value_high",
+        254: "message_index", 6: "intensity",
+      },
+      34: { 0: "total_timer_time", 1: "num_sessions", 2: "type", 3: "event", 4: "event_type", 5: "local_timestamp", 253: "timestamp" },
+    };
+
+    function parseFitFile(buffer) {
+      const data = new DataView(buffer);
+      const bytes = new Uint8Array(buffer);
+
+      // Validate header
+      const headerSize = bytes[0];
+      if (headerSize < 12) throw new Error("Invalid FIT header size");
+      const sig = String.fromCharCode(bytes[8], bytes[9], bytes[10], bytes[11]);
+      if (sig !== ".FIT") throw new Error("Not a valid FIT file (missing .FIT signature)");
+
+      const dataSize = data.getUint32(4, true);
+      const dataStart = headerSize;
+      const dataEnd = dataStart + dataSize;
+
+      // Parse records
+      const definitions = {};
+      const messages = {};
+      let offset = dataStart;
+
+      while (offset < dataEnd) {
+        const recordHeader = bytes[offset];
+        offset++;
+
+        // Compressed timestamp header
+        if (recordHeader & 0x80) {
+          const localMsg = (recordHeader >> 5) & 0x3;
+          const def = definitions[localMsg];
+          if (!def) { offset += 1; continue; }
+          const fields = readDataFields(data, bytes, offset, def);
+          offset += def.recordSize;
+          addMessage(messages, def.globalMsgNum, fields);
+          continue;
+        }
+
+        const isDefinition = !!(recordHeader & 0x40);
+        const localMsg = recordHeader & 0x0F;
+
+        if (isDefinition) {
+          // Definition message
+          offset++; // reserved
+          const arch = bytes[offset]; offset++;
+          const isLittleEndian = arch === 0;
+          const globalMsgNum = isLittleEndian ? data.getUint16(offset, true) : data.getUint16(offset, false);
+          offset += 2;
+          const numFields = bytes[offset]; offset++;
+
+          const fields = [];
+          let recordSize = 0;
+          for (let i = 0; i < numFields; i++) {
+            const fieldNum = bytes[offset]; offset++;
+            const size = bytes[offset]; offset++;
+            const baseType = bytes[offset]; offset++;
+            fields.push({ fieldNum, size, baseType });
+            recordSize += size;
+          }
+
+          // Developer fields (if bit 5 set in header)
+          let devFields = [];
+          if (recordHeader & 0x20) {
+            const numDevFields = bytes[offset]; offset++;
+            for (let i = 0; i < numDevFields; i++) {
+              const devFieldNum = bytes[offset]; offset++;
+              const devSize = bytes[offset]; offset++;
+              const devIndex = bytes[offset]; offset++;
+              devFields.push({ devFieldNum, size: devSize, devIndex });
+              recordSize += devSize;
+            }
+          }
+
+          definitions[localMsg] = { globalMsgNum, fields, devFields, recordSize, isLittleEndian };
+        } else {
+          // Data message
+          const def = definitions[localMsg];
+          if (!def) {
+            continue;
+          }
+          const fields = readDataFields(data, bytes, offset, def);
+          offset += def.recordSize;
+          addMessage(messages, def.globalMsgNum, fields);
+        }
+      }
+
+      return {
+        headerSize,
+        dataSize,
+        messages,
+      };
+    }
+
+    function readDataFields(dataView, bytes, offset, def) {
+      const result = {};
+      const le = def.isLittleEndian;
+
+      for (const f of def.fields) {
+        const fieldName = getFieldName(def.globalMsgNum, f.fieldNum);
+        const baseInfo = FIT_BASE_TYPES[f.baseType & 0x7F] || { name: "unknown", size: 1 };
+        let value;
+
+        if (baseInfo.name === "string") {
+          const strBytes = bytes.slice(offset, offset + f.size);
+          const nullIdx = strBytes.indexOf(0);
+          value = new TextDecoder().decode(nullIdx >= 0 ? strBytes.slice(0, nullIdx) : strBytes);
+        } else if (f.size === 1) {
+          value = baseInfo.name.startsWith("sint") ? dataView.getInt8(offset) : bytes[offset];
+        } else if (f.size === 2) {
+          value = baseInfo.name.startsWith("sint") ? dataView.getInt16(offset, le) : dataView.getUint16(offset, le);
+        } else if (f.size === 4) {
+          if (baseInfo.name === "float32") {
+            value = dataView.getFloat32(offset, le);
+          } else {
+            value = baseInfo.name.startsWith("sint") ? dataView.getInt32(offset, le) : dataView.getUint32(offset, le);
+          }
+        } else if (f.size === 8) {
+          if (baseInfo.name === "float64") {
+            value = dataView.getFloat64(offset, le);
+          } else {
+            // Read as two uint32s for display
+            const lo = dataView.getUint32(offset, le);
+            const hi = dataView.getUint32(offset + 4, le);
+            value = le ? (hi * 0x100000000 + lo) : (lo * 0x100000000 + hi);
+          }
+        } else {
+          // Multi-byte field, show as hex
+          value = Array.from(bytes.slice(offset, offset + f.size)).map(b => b.toString(16).padStart(2, "0")).join(" ");
+        }
+
+        offset += f.size;
+        result[fieldName] = value;
+      }
+
+      // Skip dev fields
+      if (def.devFields) {
+        for (const df of def.devFields) {
+          offset += df.size;
+        }
+      }
+
+      return result;
+    }
+
+    function getFieldName(globalMsgNum, fieldNum) {
+      const mesgFields = FIT_FIELD_NAMES[globalMsgNum];
+      if (mesgFields && mesgFields[fieldNum]) return mesgFields[fieldNum];
+      return `field_${fieldNum}`;
+    }
+
+    function getMesgName(globalMsgNum) {
+      return FIT_MESG_NAMES[globalMsgNum] || `unknown_${globalMsgNum}`;
+    }
+
+    function addMessage(messages, globalMsgNum, fields) {
+      const name = getMesgName(globalMsgNum);
+      if (!messages[name]) messages[name] = [];
+      messages[name].push(fields);
+    }
+
+    // ═══════════════════════════════════════════════
+    // VIEWER: File drop & parse
+    // ═══════════════════════════════════════════════
+    const dropZone = document.getElementById("drop-zone");
+    const fileInput = document.getElementById("file-input");
+
+    dropZone.addEventListener("click", () => fileInput.click());
+    dropZone.addEventListener("dragover", e => {
+      e.preventDefault();
+      dropZone.classList.add("drag-over");
+    });
+    dropZone.addEventListener("dragleave", () => dropZone.classList.remove("drag-over"));
+    dropZone.addEventListener("drop", e => {
+      e.preventDefault();
+      dropZone.classList.remove("drag-over");
+      if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener("change", () => {
+      if (fileInput.files.length) handleFile(fileInput.files[0]);
+    });
+
+    let parsedData = null;
+    let parsedFileName = "";
+
+    function handleFile(file) {
+      if (!file.name.toLowerCase().endsWith(".fit")) {
+        alert("Please select a .fit file");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          parsedData = parseFitFile(reader.result);
+          parsedFileName = file.name;
+          displayFileInfo(file, parsedData);
+          displayMessages(parsedData.messages);
+          displayChart(parsedData.messages);
+          displaySummary(parsedData.messages);
+          displaySplits(parsedData.messages);
+        } catch (err) {
+          alert(`Error parsing FIT file: ${err.message}`);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function displayFileInfo(file, parsed) {
+      const infoEl = document.getElementById("file-info");
+      const mesgCount = Object.values(parsed.messages).reduce((s, arr) => s + arr.length, 0);
+      const mesgTypes = Object.keys(parsed.messages).length;
+      infoEl.innerHTML = `<strong>${file.name}</strong> — ${(file.size / 1024).toFixed(1)} KB — ${mesgCount} messages across ${mesgTypes} types`;
+      infoEl.style.display = "block";
+    }
+
+    function displayMessages(messages) {
+      const container = document.getElementById("message-list");
+      container.innerHTML = "";
+      document.getElementById("messages-section").style.display = "block";
+
+      for (const [name, records] of Object.entries(messages)) {
+        const wrapper = document.createElement("div");
+
+        // Header
+        const header = document.createElement("div");
+        header.className = "message-header";
+        header.innerHTML = `<span>${name}</span><span class="badge">${records.length}</span>`;
+        wrapper.appendChild(header);
+
+        // Body
+        const body = document.createElement("div");
+        body.className = "message-body";
+
+        // CSV button
+        const csvBtn = document.createElement("button");
+        csvBtn.className = "csv-btn";
+        csvBtn.textContent = "Download CSV";
+        csvBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          downloadCSV(name, records);
+        });
+        body.appendChild(csvBtn);
+
+        // Table
+        if (records.length > 0) {
+          const allKeys = [...new Set(records.flatMap(r => Object.keys(r)))];
+          const table = document.createElement("table");
+          const thead = document.createElement("thead");
+          const headRow = document.createElement("tr");
+          allKeys.forEach(key => {
+            const th = document.createElement("th");
+            th.textContent = key;
+            headRow.appendChild(th);
+          });
+          thead.appendChild(headRow);
+          table.appendChild(thead);
+
+          const tbody = document.createElement("tbody");
+          const maxRows = 500;
+          const displayRecords = records.slice(0, maxRows);
+          displayRecords.forEach(record => {
+            const row = document.createElement("tr");
+            allKeys.forEach(key => {
+              const td = document.createElement("td");
+              const val = record[key];
+              td.textContent = val !== undefined ? formatValue(name, key, val) : "";
+              row.appendChild(td);
+            });
+            tbody.appendChild(row);
+          });
+          table.appendChild(tbody);
+
+          if (records.length > maxRows) {
+            const note = document.createElement("p");
+            note.style.cssText = "font-size:12px;color:#888;margin:4px 0";
+            note.textContent = `Showing first ${maxRows} of ${records.length} records. Download CSV for all data.`;
+            body.appendChild(note);
+          }
+
+          body.appendChild(table);
+        }
+
+        wrapper.appendChild(body);
+
+        header.addEventListener("click", () => {
+          body.classList.toggle("open");
+        });
+
+        container.appendChild(wrapper);
+      }
+    }
+
+    function formatValue(mesgName, fieldName, value) {
+      if (typeof value === "string") return value;
+
+      // Timestamps (FIT epoch = Dec 31, 1989 00:00:00 UTC)
+      if (fieldName === "timestamp" || fieldName === "start_time" || fieldName === "time_created") {
+        if (typeof value === "number" && value > 600000000) {
+          const date = new Date((value + 631065600) * 1000);
+          return date.toISOString().replace("T", " ").replace(/\.000Z$/, " UTC");
+        }
+      }
+
+      // Semicircles to degrees
+      if (fieldName.includes("lat") || fieldName.includes("long") || fieldName === "position_lat" || fieldName === "position_long") {
+        if (typeof value === "number" && Math.abs(value) > 1000) {
+          return (value * (180 / Math.pow(2, 31))).toFixed(6) + "°";
+        }
+      }
+
+      // Distance in meters (stored as 100ths)
+      if (fieldName === "distance" || fieldName === "total_distance") {
+        if (typeof value === "number") {
+          return (value / 100).toFixed(2) + " m";
+        }
+      }
+
+      // Speed (stored as mm/s → m/s)
+      if (fieldName.includes("speed")) {
+        if (typeof value === "number") {
+          return (value / 1000).toFixed(2) + " m/s";
+        }
+      }
+
+      // Altitude (stored with 5m offset and /5 scale)
+      if (fieldName === "altitude" || fieldName === "enhanced_altitude" || fieldName.includes("altitude")) {
+        if (typeof value === "number" && value > 100) {
+          return ((value / 5) - 500).toFixed(1) + " m";
+        }
+      }
+
+      // Elapsed time (in ms → s)
+      if (fieldName.includes("elapsed_time") || fieldName.includes("timer_time")) {
+        if (typeof value === "number") {
+          return (value / 1000).toFixed(1) + " s";
+        }
+      }
+
+      return value;
+    }
+
+    function downloadCSV(name, records) {
+      if (!records.length) return;
+      const allKeys = [...new Set(records.flatMap(r => Object.keys(r)))];
+      const rows = [allKeys.join(",")];
+      records.forEach(record => {
+        const row = allKeys.map(key => {
+          const val = record[key];
+          if (val === undefined) return "";
+          const str = String(val);
+          return str.includes(",") || str.includes('"') || str.includes("\n")
+            ? `"${str.replace(/"/g, '""')}"` : str;
+        });
+        rows.push(row.join(","));
+      });
+      const blob = new Blob([rows.join("\n")], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${name}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // ═══════════════════════════════════════════════
+    // VIEWER: Workout Summary & Splits
+    // ═══════════════════════════════════════════════
+
+    // Helper: convert raw FIT speed (mm/s) to pace string (min:sec /mi)
+    function speedToPace(speedMmS) {
+      if (!speedMmS || speedMmS === 0 || speedMmS === 0xFFFF || speedMmS === 0xFFFFFFFF) return "—";
+      const speedMs = speedMmS / 1000;
+      const paceSecPerMi = 1609.34 / speedMs;
+      if (paceSecPerMi > 3600) return "—";
+      const m = Math.floor(paceSecPerMi / 60);
+      const s = Math.round(paceSecPerMi % 60);
+      return `${m}:${String(s).padStart(2, "0")}`;
+    }
+
+    // Helper: format elapsed time (ms as stored in FIT) to readable
+    function formatElapsed(ms) {
+      if (!ms || ms === 0xFFFFFFFF) return "—";
+      const totalSec = Math.round(ms / 1000);
+      const h = Math.floor(totalSec / 3600);
+      const m = Math.floor((totalSec % 3600) / 60);
+      const s = totalSec % 60;
+      if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+      return `${m}:${String(s).padStart(2, "0")}`;
+    }
+
+    // Helper: format distance (hundredths of meters) to mi
+    function formatDistMi(hundredths) {
+      if (!hundredths || hundredths === 0xFFFFFFFF) return "—";
+      return (hundredths / 100 / 1609.34).toFixed(2);
+    }
+
+    // Helper: format altitude value
+    function formatAlt(raw) {
+      if (raw === undefined || raw === null || raw === 0xFFFF || raw === 0xFFFFFFFF) return null;
+      if (raw > 100) return ((raw / 5) - 500).toFixed(0);
+      return raw;
+    }
+
+    // Helper: check if value is valid FIT numeric (not invalid sentinel)
+    function isValidFitNum(v) {
+      return v !== undefined && v !== null && v !== 0xFF && v !== 0xFFFF && v !== 0xFFFFFFFF && typeof v === "number";
+    }
+
+    function extractSessionSummary(messages) {
+      const session = messages.session && messages.session[0];
+      const records = messages.record || [];
+      const summary = {};
+
+      if (session) {
+        if (isValidFitNum(session.total_distance)) summary.distance = session.total_distance;
+        if (isValidFitNum(session.total_elapsed_time)) summary.elapsed = session.total_elapsed_time;
+        if (isValidFitNum(session.total_timer_time)) summary.timer = session.total_timer_time;
+        if (isValidFitNum(session.avg_speed)) summary.avgSpeed = session.avg_speed;
+        if (isValidFitNum(session.max_speed)) summary.maxSpeed = session.max_speed;
+        if (isValidFitNum(session.avg_heart_rate)) summary.avgHR = session.avg_heart_rate;
+        if (isValidFitNum(session.max_heart_rate)) summary.maxHR = session.max_heart_rate;
+        if (isValidFitNum(session.avg_cadence)) summary.avgCadence = session.avg_cadence;
+        if (isValidFitNum(session.max_cadence)) summary.maxCadence = session.max_cadence;
+        if (isValidFitNum(session.avg_power)) summary.avgPower = session.avg_power;
+        if (isValidFitNum(session.max_power)) summary.maxPower = session.max_power;
+        if (isValidFitNum(session.total_ascent)) summary.ascent = session.total_ascent;
+        if (isValidFitNum(session.total_descent)) summary.descent = session.total_descent;
+        if (isValidFitNum(session.total_calories)) summary.calories = session.total_calories;
+      }
+
+      // Compute min HR from records if not in session
+      if (records.length > 0) {
+        const hrs = records.map(r => r.heart_rate).filter(v => isValidFitNum(v) && v > 0);
+        if (hrs.length > 0) {
+          summary.minHR = Math.min(...hrs);
+          if (!summary.avgHR) summary.avgHR = Math.round(hrs.reduce((a, b) => a + b, 0) / hrs.length);
+          if (!summary.maxHR) summary.maxHR = Math.max(...hrs);
+        }
+        // Compute cadence from records if not in session
+        const cads = records.map(r => r.cadence).filter(v => isValidFitNum(v) && v > 0);
+        if (cads.length > 0) {
+          if (!summary.avgCadence) summary.avgCadence = Math.round(cads.reduce((a, b) => a + b, 0) / cads.length);
+          if (!summary.maxCadence) summary.maxCadence = Math.max(...cads);
+        }
+      }
+
+      return summary;
+    }
+
+    function displaySummary(messages) {
+      const section = document.getElementById("summary-section");
+      const grid = document.getElementById("summary-grid");
+      grid.innerHTML = "";
+
+      const summary = extractSessionSummary(messages);
+      if (Object.keys(summary).length === 0) {
+        section.style.display = "none";
+        return;
+      }
+
+      const stats = [];
+
+      if (summary.distance !== undefined) {
+        stats.push({ label: "Distance", value: formatDistMi(summary.distance) + " mi", sub: (summary.distance / 100 / 1000).toFixed(2) + " km" });
+      }
+      if (summary.elapsed !== undefined) {
+        stats.push({ label: "Elapsed Time", value: formatElapsed(summary.elapsed) });
+      }
+      if (summary.avgSpeed !== undefined) {
+        stats.push({ label: "Avg Pace", value: speedToPace(summary.avgSpeed) + " /mi" });
+      }
+      if (summary.avgHR !== undefined) {
+        let sub = "";
+        if (summary.minHR !== undefined && summary.maxHR !== undefined) sub = `${summary.minHR} – ${summary.maxHR} bpm`;
+        stats.push({ label: "Avg Heart Rate", value: summary.avgHR + " bpm", sub });
+      }
+      if (summary.avgCadence !== undefined) {
+        let sub = "";
+        if (summary.maxCadence !== undefined) sub = `max ${summary.maxCadence} spm`;
+        stats.push({ label: "Avg Cadence", value: (summary.avgCadence * 2) + " spm", sub });
+      }
+      if (summary.ascent !== undefined) {
+        const sub = summary.descent !== undefined ? `↓ ${summary.descent} m descent` : "";
+        stats.push({ label: "Elevation Gain", value: summary.ascent + " m", sub });
+      }
+      if (summary.avgPower !== undefined) {
+        const sub = summary.maxPower !== undefined ? `max ${summary.maxPower} W` : "";
+        stats.push({ label: "Avg Power", value: summary.avgPower + " W", sub });
+      }
+      if (summary.calories !== undefined) {
+        stats.push({ label: "Calories", value: summary.calories.toLocaleString() });
+      }
+
+      stats.forEach(s => {
+        const div = document.createElement("div");
+        div.className = "summary-stat";
+        div.innerHTML = `<div class="stat-label">${s.label}</div><div class="stat-value">${s.value}</div>${s.sub ? `<div class="stat-sub">${s.sub}</div>` : ""}`;
+        grid.appendChild(div);
+      });
+
+      section.style.display = "block";
+    }
+
+    function extractLapData(messages) {
+      const laps = messages.lap;
+      if (!laps || laps.length < 1) return [];
+
+      return laps.map((lap, i) => {
+        const data = { num: i + 1 };
+        if (isValidFitNum(lap.total_distance)) data.distance = lap.total_distance;
+        if (isValidFitNum(lap.total_elapsed_time)) data.elapsed = lap.total_elapsed_time;
+        if (isValidFitNum(lap.total_timer_time)) data.timer = lap.total_timer_time;
+        if (isValidFitNum(lap.avg_speed)) data.avgSpeed = lap.avg_speed;
+        if (isValidFitNum(lap.max_speed)) data.maxSpeed = lap.max_speed;
+        if (isValidFitNum(lap.avg_heart_rate)) data.avgHR = lap.avg_heart_rate;
+        if (isValidFitNum(lap.max_heart_rate)) data.maxHR = lap.max_heart_rate;
+        if (isValidFitNum(lap.avg_cadence)) data.avgCadence = lap.avg_cadence;
+        if (isValidFitNum(lap.total_ascent)) data.ascent = lap.total_ascent;
+        if (isValidFitNum(lap.total_descent)) data.descent = lap.total_descent;
+        if (isValidFitNum(lap.avg_power)) data.avgPower = lap.avg_power;
+        if (isValidFitNum(lap.max_power)) data.maxPower = lap.max_power;
+        return data;
+      });
+    }
+
+    function displaySplits(messages) {
+      const section = document.getElementById("splits-section");
+      const container = document.getElementById("splits-container");
+      container.innerHTML = "";
+
+      const lapData = extractLapData(messages);
+      if (lapData.length < 1) {
+        section.style.display = "none";
+        return;
+      }
+
+      // Determine which columns have data
+      const hasDistance = lapData.some(l => l.distance !== undefined);
+      const hasElapsed = lapData.some(l => l.elapsed !== undefined);
+      const hasPace = lapData.some(l => l.avgSpeed !== undefined);
+      const hasHR = lapData.some(l => l.avgHR !== undefined);
+      const hasCadence = lapData.some(l => l.avgCadence !== undefined);
+      const hasElevation = lapData.some(l => l.ascent !== undefined);
+      const hasPower = lapData.some(l => l.avgPower !== undefined);
+
+      // Find fastest / slowest pace laps (by avgSpeed — higher speed = faster pace)
+      let fastestIdx = -1;
+      let slowestIdx = -1;
+      if (hasPace && lapData.length > 1) {
+        let maxSpeed = -1;
+        let minSpeed = Infinity;
+        lapData.forEach((l, i) => {
+          if (l.avgSpeed !== undefined && l.avgSpeed > 0) {
+            if (l.avgSpeed > maxSpeed) { maxSpeed = l.avgSpeed; fastestIdx = i; }
+            if (l.avgSpeed < minSpeed) { minSpeed = l.avgSpeed; slowestIdx = i; }
+          }
+        });
+        if (fastestIdx === slowestIdx) { fastestIdx = -1; slowestIdx = -1; }
+      }
+
+      const table = document.createElement("table");
+      table.className = "splits-table";
+
+      // Header
+      const thead = document.createElement("thead");
+      const headRow = document.createElement("tr");
+      const headers = ["Split"];
+      if (hasDistance) headers.push("Distance");
+      if (hasElapsed) headers.push("Time");
+      if (hasPace) headers.push("Pace");
+      if (hasHR) headers.push("Avg HR", "Max HR");
+      if (hasCadence) headers.push("Cadence");
+      if (hasElevation) headers.push("Elev ↑", "Elev ↓");
+      if (hasPower) headers.push("Avg Power");
+      headers.forEach(h => {
+        const th = document.createElement("th");
+        th.textContent = h;
+        headRow.appendChild(th);
+      });
+      thead.appendChild(headRow);
+      table.appendChild(thead);
+
+      // Body
+      const tbody = document.createElement("tbody");
+      lapData.forEach((lap, i) => {
+        const row = document.createElement("tr");
+
+        const addCell = (text, cls) => {
+          const td = document.createElement("td");
+          td.textContent = text;
+          if (cls) td.className = cls;
+          row.appendChild(td);
+        };
+
+        addCell(lap.num);
+        if (hasDistance) addCell(lap.distance !== undefined ? formatDistMi(lap.distance) + " mi" : "—");
+        if (hasElapsed) addCell(lap.elapsed !== undefined ? formatElapsed(lap.elapsed) : "—");
+        if (hasPace) {
+          const paceStr = lap.avgSpeed !== undefined ? speedToPace(lap.avgSpeed) : "—";
+          const cls = i === fastestIdx ? "fastest" : (i === slowestIdx ? "slowest" : "");
+          addCell(paceStr, cls);
+        }
+        if (hasHR) {
+          addCell(lap.avgHR !== undefined ? lap.avgHR + " bpm" : "—");
+          addCell(lap.maxHR !== undefined ? lap.maxHR + " bpm" : "—");
+        }
+        if (hasCadence) addCell(lap.avgCadence !== undefined ? (lap.avgCadence * 2) + " spm" : "—");
+        if (hasElevation) {
+          addCell(lap.ascent !== undefined ? lap.ascent + " m" : "—");
+          addCell(lap.descent !== undefined ? lap.descent + " m" : "—");
+        }
+        if (hasPower) addCell(lap.avgPower !== undefined ? lap.avgPower + " W" : "—");
+
+        tbody.appendChild(row);
+      });
+      table.appendChild(tbody);
+      container.appendChild(table);
+
+      section.style.display = "block";
+    }
+
+    // ─── Markdown Summary Export ───
+    function generateMarkdownSummary(messages) {
+      const summary = extractSessionSummary(messages);
+      const lapData = extractLapData(messages);
+      const lines = [];
+
+      lines.push(`# Workout Summary`);
+      if (parsedFileName) lines.push(`\n**File:** ${parsedFileName}`);
+
+      // Session summary from session message
+      const session = messages.session && messages.session[0];
+      if (session && isValidFitNum(session.timestamp)) {
+        const date = new Date((session.timestamp + 631065600) * 1000);
+        lines.push(`**Date:** ${date.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}`);
+      }
+
+      lines.push("");
+      lines.push("## Overall");
+      lines.push("");
+
+      const overallRows = [];
+      if (summary.distance !== undefined) {
+        overallRows.push(`| Distance | ${formatDistMi(summary.distance)} mi (${(summary.distance / 100 / 1000).toFixed(2)} km) |`);
+      }
+      if (summary.elapsed !== undefined) {
+        overallRows.push(`| Elapsed Time | ${formatElapsed(summary.elapsed)} |`);
+      }
+      if (summary.timer !== undefined && summary.timer !== summary.elapsed) {
+        overallRows.push(`| Moving Time | ${formatElapsed(summary.timer)} |`);
+      }
+      if (summary.avgSpeed !== undefined) {
+        overallRows.push(`| Avg Pace | ${speedToPace(summary.avgSpeed)} /mi |`);
+      }
+      if (summary.maxSpeed !== undefined) {
+        overallRows.push(`| Best Pace | ${speedToPace(summary.maxSpeed)} /mi |`);
+      }
+      if (summary.avgHR !== undefined) {
+        overallRows.push(`| Avg Heart Rate | ${summary.avgHR} bpm |`);
+      }
+      if (summary.maxHR !== undefined) {
+        overallRows.push(`| Max Heart Rate | ${summary.maxHR} bpm |`);
+      }
+      if (summary.minHR !== undefined) {
+        overallRows.push(`| Min Heart Rate | ${summary.minHR} bpm |`);
+      }
+      if (summary.avgCadence !== undefined) {
+        overallRows.push(`| Avg Cadence | ${summary.avgCadence * 2} spm |`);
+      }
+      if (summary.maxCadence !== undefined) {
+        overallRows.push(`| Max Cadence | ${summary.maxCadence * 2} spm |`);
+      }
+      if (summary.ascent !== undefined) {
+        overallRows.push(`| Elevation Gain | ${summary.ascent} m |`);
+      }
+      if (summary.descent !== undefined) {
+        overallRows.push(`| Elevation Loss | ${summary.descent} m |`);
+      }
+      if (summary.avgPower !== undefined) {
+        overallRows.push(`| Avg Power | ${summary.avgPower} W |`);
+      }
+      if (summary.maxPower !== undefined) {
+        overallRows.push(`| Max Power | ${summary.maxPower} W |`);
+      }
+      if (summary.calories !== undefined) {
+        overallRows.push(`| Calories | ${summary.calories} |`);
+      }
+
+      if (overallRows.length > 0) {
+        lines.push("| Metric | Value |");
+        lines.push("|--------|-------|");
+        overallRows.forEach(r => lines.push(r));
+      }
+
+      // Splits
+      if (lapData.length > 0) {
+        lines.push("");
+        lines.push("## Splits");
+        lines.push("");
+
+        const hasDistance = lapData.some(l => l.distance !== undefined);
+        const hasElapsed = lapData.some(l => l.elapsed !== undefined);
+        const hasPace = lapData.some(l => l.avgSpeed !== undefined);
+        const hasHR = lapData.some(l => l.avgHR !== undefined);
+        const hasMaxHR = lapData.some(l => l.maxHR !== undefined);
+        const hasCadence = lapData.some(l => l.avgCadence !== undefined);
+        const hasAscent = lapData.some(l => l.ascent !== undefined);
+        const hasDescent = lapData.some(l => l.descent !== undefined);
+        const hasPower = lapData.some(l => l.avgPower !== undefined);
+
+        const cols = ["Split"];
+        if (hasDistance) cols.push("Distance");
+        if (hasElapsed) cols.push("Time");
+        if (hasPace) cols.push("Pace");
+        if (hasHR) cols.push("Avg HR");
+        if (hasMaxHR) cols.push("Max HR");
+        if (hasCadence) cols.push("Cadence");
+        if (hasAscent) cols.push("Elev ↑");
+        if (hasDescent) cols.push("Elev ↓");
+        if (hasPower) cols.push("Avg Power");
+
+        lines.push("| " + cols.join(" | ") + " |");
+        lines.push("| " + cols.map(() => "---").join(" | ") + " |");
+
+        lapData.forEach(lap => {
+          const cells = [String(lap.num)];
+          if (hasDistance) cells.push(lap.distance !== undefined ? formatDistMi(lap.distance) + " mi" : "—");
+          if (hasElapsed) cells.push(lap.elapsed !== undefined ? formatElapsed(lap.elapsed) : "—");
+          if (hasPace) cells.push(lap.avgSpeed !== undefined ? speedToPace(lap.avgSpeed) : "—");
+          if (hasHR) cells.push(lap.avgHR !== undefined ? lap.avgHR + " bpm" : "—");
+          if (hasMaxHR) cells.push(lap.maxHR !== undefined ? lap.maxHR + " bpm" : "—");
+          if (hasCadence) cells.push(lap.avgCadence !== undefined ? (lap.avgCadence * 2) + " spm" : "—");
+          if (hasAscent) cells.push(lap.ascent !== undefined ? lap.ascent + " m" : "—");
+          if (hasDescent) cells.push(lap.descent !== undefined ? lap.descent + " m" : "—");
+          if (hasPower) cells.push(lap.avgPower !== undefined ? lap.avgPower + " W" : "—");
+          lines.push("| " + cells.join(" | ") + " |");
+        });
+      }
+
+      lines.push("");
+      lines.push("---");
+      lines.push(`*Generated by [FIT File Workout Creator](https://rsgel.github.io/tools/fit-file-workout)*`);
+
+      return lines.join("\n");
+    }
+
+    document.getElementById("download-md-btn").addEventListener("click", () => {
+      if (!parsedData) return;
+      const md = generateMarkdownSummary(parsedData.messages);
+      const blob = new Blob([md], { type: "text/markdown" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const baseName = parsedFileName ? parsedFileName.replace(/\.fit$/i, "") : "workout";
+      a.download = `${baseName}-summary.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    document.getElementById("copy-md-btn").addEventListener("click", () => {
+      if (!parsedData) return;
+      const md = generateMarkdownSummary(parsedData.messages);
+      const btn = document.getElementById("copy-md-btn");
+      navigator.clipboard.writeText(md).then(() => {
+        btn.textContent = "Copied!";
+        setTimeout(() => { btn.textContent = "Copy Markdown"; }, 2000);
+      });
+    });
+
+    // ═══════════════════════════════════════════════
+    // VIEWER: Interactive Chart
+    // ═══════════════════════════════════════════════
+    const chartCanvas = document.getElementById("chart-canvas");
+    const chartCtx = chartCanvas.getContext("2d");
+    const chartTooltip = document.getElementById("chart-tooltip");
+    const chartFieldSelect = document.getElementById("chart-field-select");
+    const chartOverlaySelect = document.getElementById("chart-overlay-select");
+    const chartResetBtn = document.getElementById("chart-reset-btn");
+    const chartShowSplits = document.getElementById("chart-show-splits");
+    const chartLegend = document.getElementById("chart-legend");
+
+    let chartData = [];
+    let chartField = "";
+    let chartOverlayField = "";
+    let chartZoomStart = null;
+    let chartZoomEnd = null;
+    let chartDragStart = null;
+    let chartIsDragging = false;
+    let chartLapTimestamps = [];
+
+    const CHART_FIELDS = ["heart_rate", "speed", "enhanced_speed", "pace", "cadence", "power", "altitude", "enhanced_altitude", "temperature", "distance"];
+    const CHART_COLORS = { primary: "#4a90e2", overlay: "#e2744a" };
+
+    function getChartValue(record, field) {
+      if (field === "pace") {
+        const raw = record.speed !== undefined ? record.speed : record.enhanced_speed;
+        if (raw === undefined || raw === 0xFF || raw === 0xFFFF || raw === 0xFFFFFFFF || raw === 0) return null;
+        if (typeof raw !== "number") return null;
+        const speedMs = raw / 1000;
+        if (speedMs <= 0) return null;
+        const paceSecPerMi = 1609.34 / speedMs;
+        if (paceSecPerMi > 1800) return null; // cap at 30 min/mi
+        return paceSecPerMi;
+      }
+      const raw = record[field];
+      if (raw === undefined || raw === 0xFF || raw === 0xFFFF || raw === 0xFFFFFFFF) return null;
+      return typeof raw === "number" ? raw : null;
+    }
+
+    function scaleChartValue(v, field) {
+      if (v === null) return null;
+      if (field === "pace") return v; // already in sec/mi
+      if (field.includes("speed")) return v / 1000;
+      if (field === "altitude" || field === "enhanced_altitude") return (v / 5) - 500;
+      if (field === "distance") return v / 100;
+      return v;
+    }
+
+    function isFieldAvailable(records, field) {
+      if (field === "pace") {
+        return records.some(r => {
+          const v = r.speed !== undefined ? r.speed : r.enhanced_speed;
+          return v !== undefined && v !== null && v !== 0xFF && v !== 0xFFFF && v !== 0xFFFFFFFF && v > 0;
+        });
+      }
+      return records.some(r => r[field] !== undefined && r[field] !== null && r[field] !== 0xFF && r[field] !== 0xFFFF && r[field] !== 0xFFFFFFFF);
+    }
+
+    function displayChart(messages) {
+      const records = messages.record;
+      if (!records || records.length < 2) {
+        document.getElementById("chart-section").style.display = "none";
+        return;
+      }
+
+      // Determine available fields
+      const availableFields = CHART_FIELDS.filter(f => isFieldAvailable(records, f));
+
+      if (availableFields.length === 0) {
+        document.getElementById("chart-section").style.display = "none";
+        return;
+      }
+
+      // Populate primary select
+      chartFieldSelect.innerHTML = "";
+      availableFields.forEach(f => {
+        const opt = document.createElement("option");
+        opt.value = f;
+        opt.textContent = f.replace(/_/g, " ");
+        chartFieldSelect.appendChild(opt);
+      });
+
+      // Populate overlay select
+      chartOverlaySelect.innerHTML = '<option value="">None</option>';
+      availableFields.forEach(f => {
+        const opt = document.createElement("option");
+        opt.value = f;
+        opt.textContent = f.replace(/_/g, " ");
+        chartOverlaySelect.appendChild(opt);
+      });
+
+      chartField = availableFields[0];
+      chartOverlayField = "";
+      chartData = records;
+      chartZoomStart = null;
+      chartZoomEnd = null;
+
+      // Extract lap timestamps for split lines
+      chartLapTimestamps = [];
+      if (messages.lap && messages.lap.length > 0) {
+        messages.lap.forEach(lap => {
+          if (isValidFitNum(lap.timestamp)) {
+            chartLapTimestamps.push(lap.timestamp);
+          }
+        });
+      }
+
+      // Show splits toggle only if laps exist
+      chartShowSplits.closest("label").style.display = chartLapTimestamps.length > 0 ? "" : "none";
+
+      document.getElementById("chart-section").style.display = "block";
+      drawChart();
+    }
+
+    chartFieldSelect.addEventListener("change", () => {
+      chartField = chartFieldSelect.value;
+      chartZoomStart = null;
+      chartZoomEnd = null;
+      drawChart();
+    });
+
+    chartOverlaySelect.addEventListener("change", () => {
+      chartOverlayField = chartOverlaySelect.value;
+      drawChart();
+    });
+
+    chartShowSplits.addEventListener("change", () => {
+      drawChart();
+    });
+
+    chartResetBtn.addEventListener("click", () => {
+      chartZoomStart = null;
+      chartZoomEnd = null;
+      drawChart();
+    });
+
+    function drawChart() {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = chartCanvas.getBoundingClientRect();
+      chartCanvas.width = rect.width * dpr;
+      chartCanvas.height = rect.height * dpr;
+      chartCtx.scale(dpr, dpr);
+
+      const W = rect.width;
+      const H = rect.height;
+      const hasOverlay = chartOverlayField && chartOverlayField !== chartField;
+      const pad = { top: 20, right: hasOverlay ? 55 : 20, bottom: 30, left: 55 };
+
+      chartCtx.clearRect(0, 0, W, H);
+
+      // Filter data
+      let data = chartData;
+      if (chartZoomStart !== null && chartZoomEnd !== null) {
+        const s = Math.min(chartZoomStart, chartZoomEnd);
+        const e = Math.max(chartZoomStart, chartZoomEnd);
+        data = chartData.slice(s, e + 1);
+      }
+
+      const plotW = W - pad.left - pad.right;
+      const plotH = H - pad.top - pad.bottom;
+
+      // Extract and scale primary values
+      const values = data.map(r => scaleChartValue(getChartValue(r, chartField), chartField));
+      const validValues = values.filter(v => v !== null);
+      if (validValues.length === 0) return;
+
+      const minVal = Math.min(...validValues);
+      const maxVal = Math.max(...validValues);
+      const range = maxVal - minVal || 1;
+
+      // Background
+      chartCtx.fillStyle = "#fafafa";
+      chartCtx.fillRect(pad.left, pad.top, plotW, plotH);
+
+      // Draw split lines if enabled
+      if (chartShowSplits.checked && chartLapTimestamps.length > 0 && data.length > 0 && data[0].timestamp) {
+        const dataStartTs = data[0].timestamp;
+        const dataEndTs = data[data.length - 1].timestamp;
+        chartCtx.strokeStyle = "rgba(180, 180, 180, 0.6)";
+        chartCtx.lineWidth = 1;
+        chartCtx.setLineDash([4, 4]);
+        chartLapTimestamps.forEach((ts, i) => {
+          if (ts <= dataStartTs || ts > dataEndTs) return;
+          // Find record index closest to this timestamp
+          const frac = (ts - dataStartTs) / (dataEndTs - dataStartTs);
+          const x = pad.left + frac * plotW;
+          chartCtx.beginPath();
+          chartCtx.moveTo(x, pad.top);
+          chartCtx.lineTo(x, pad.top + plotH);
+          chartCtx.stroke();
+          // Label
+          chartCtx.fillStyle = "#aaa";
+          chartCtx.font = "10px -apple-system, sans-serif";
+          chartCtx.textAlign = "center";
+          chartCtx.fillText(`${i + 1}`, x, pad.top - 2);
+        });
+        chartCtx.setLineDash([]);
+      }
+
+      // Grid lines
+      chartCtx.strokeStyle = "#eee";
+      chartCtx.lineWidth = 1;
+      const numGridLines = 5;
+      const isPace = chartField === "pace";
+      for (let i = 0; i <= numGridLines; i++) {
+        const y = pad.top + (plotH / numGridLines) * i;
+        chartCtx.beginPath();
+        chartCtx.moveTo(pad.left, y);
+        chartCtx.lineTo(pad.left + plotW, y);
+        chartCtx.stroke();
+
+        // Y-axis labels (left)
+        const val = isPace
+          ? minVal + (range / numGridLines) * i  // pace: top = slower (higher), bottom = faster (lower) — inverted
+          : maxVal - (range / numGridLines) * i;
+        chartCtx.fillStyle = "#888";
+        chartCtx.font = "11px -apple-system, sans-serif";
+        chartCtx.textAlign = "right";
+        chartCtx.fillText(isPace ? formatPaceLabel(val) : val.toFixed(1), pad.left - 6, y + 4);
+      }
+
+      // Draw primary line
+      chartCtx.beginPath();
+      chartCtx.strokeStyle = CHART_COLORS.primary;
+      chartCtx.lineWidth = 1.5;
+      let started = false;
+      values.forEach((v, i) => {
+        if (v === null) return;
+        const x = pad.left + (i / (values.length - 1)) * plotW;
+        const yFrac = isPace
+          ? (v - minVal) / range  // pace: inverted — higher value at top
+          : 1 - (v - minVal) / range;
+        const y = pad.top + yFrac * plotH;
+        if (!started) { chartCtx.moveTo(x, y); started = true; }
+        else chartCtx.lineTo(x, y);
+      });
+      chartCtx.stroke();
+
+      // Fill under primary line
+      if (started) {
+        const lastValidIdx = values.length - 1;
+        const firstValidIdx = values.findIndex(v => v !== null);
+        chartCtx.lineTo(pad.left + (lastValidIdx / (values.length - 1)) * plotW, pad.top + plotH);
+        chartCtx.lineTo(pad.left + (firstValidIdx / (values.length - 1)) * plotW, pad.top + plotH);
+        chartCtx.closePath();
+        chartCtx.fillStyle = "rgba(74, 144, 226, 0.1)";
+        chartCtx.fill();
+      }
+
+      // Draw overlay line
+      if (hasOverlay) {
+        const ovValues = data.map(r => scaleChartValue(getChartValue(r, chartOverlayField), chartOverlayField));
+        const ovValid = ovValues.filter(v => v !== null);
+        if (ovValid.length > 0) {
+          const ovMin = Math.min(...ovValid);
+          const ovMax = Math.max(...ovValid);
+          const ovRange = ovMax - ovMin || 1;
+          const isOvPace = chartOverlayField === "pace";
+
+          // Right Y-axis labels
+          for (let i = 0; i <= numGridLines; i++) {
+            const y = pad.top + (plotH / numGridLines) * i;
+            const val = isOvPace
+              ? ovMin + (ovRange / numGridLines) * i
+              : ovMax - (ovRange / numGridLines) * i;
+            chartCtx.fillStyle = CHART_COLORS.overlay;
+            chartCtx.font = "11px -apple-system, sans-serif";
+            chartCtx.textAlign = "left";
+            chartCtx.fillText(isOvPace ? formatPaceLabel(val) : val.toFixed(1), W - pad.right + 6, y + 4);
+          }
+
+          // Draw overlay line
+          chartCtx.beginPath();
+          chartCtx.strokeStyle = CHART_COLORS.overlay;
+          chartCtx.lineWidth = 1.5;
+          let ovStarted = false;
+          ovValues.forEach((v, i) => {
+            if (v === null) return;
+            const x = pad.left + (i / (ovValues.length - 1)) * plotW;
+            const yFrac = isOvPace
+              ? (v - ovMin) / ovRange
+              : 1 - (v - ovMin) / ovRange;
+            const y = pad.top + yFrac * plotH;
+            if (!ovStarted) { chartCtx.moveTo(x, y); ovStarted = true; }
+            else chartCtx.lineTo(x, y);
+          });
+          chartCtx.stroke();
+        }
+      }
+
+      // Field label (left)
+      chartCtx.fillStyle = CHART_COLORS.primary;
+      chartCtx.font = "12px -apple-system, sans-serif";
+      chartCtx.textAlign = "left";
+      chartCtx.fillText(getChartUnit(chartField), pad.left, pad.top - 6);
+
+      // Field label (right, overlay)
+      if (hasOverlay) {
+        chartCtx.fillStyle = CHART_COLORS.overlay;
+        chartCtx.textAlign = "right";
+        chartCtx.fillText(getChartUnit(chartOverlayField), W - pad.right, pad.top - 6);
+      }
+
+      // X-axis labels
+      chartCtx.fillStyle = "#888";
+      chartCtx.textAlign = "center";
+      const numXLabels = Math.min(6, data.length);
+      for (let i = 0; i < numXLabels; i++) {
+        const idx = Math.round((i / (numXLabels - 1)) * (data.length - 1));
+        const x = pad.left + (idx / (data.length - 1)) * plotW;
+        const record = data[idx];
+        let label;
+        if (record.timestamp) {
+          const sec = record.timestamp - (data[0].timestamp || 0);
+          const m = Math.floor(sec / 60);
+          const s = sec % 60;
+          label = `${m}:${String(s).padStart(2, "0")}`;
+        } else {
+          label = String(idx);
+        }
+        chartCtx.fillText(label, x, H - 6);
+      }
+
+      // Draw drag selection
+      if (chartIsDragging && chartDragStart !== null) {
+        const startX = chartDragStart;
+        const endX = chartDragCurrent || startX;
+        chartCtx.fillStyle = "rgba(74, 144, 226, 0.2)";
+        chartCtx.fillRect(Math.min(startX, endX), pad.top, Math.abs(endX - startX), plotH);
+      }
+
+      // Update legend
+      if (hasOverlay) {
+        chartLegend.style.display = "flex";
+        chartLegend.innerHTML = `
+          <span class="chart-legend-item"><span class="chart-legend-swatch" style="background:${CHART_COLORS.primary}"></span>${getChartUnit(chartField)}</span>
+          <span class="chart-legend-item"><span class="chart-legend-swatch" style="background:${CHART_COLORS.overlay}"></span>${getChartUnit(chartOverlayField)}</span>
+        `;
+      } else {
+        chartLegend.style.display = "none";
+      }
+    }
+
+    function formatPaceLabel(secPerMi) {
+      const m = Math.floor(secPerMi / 60);
+      const s = Math.round(secPerMi % 60);
+      return `${m}:${String(s).padStart(2, "0")}`;
+    }
+
+    function getChartUnit(field) {
+      if (field === "pace") return "Pace (min/mi)";
+      if (field.includes("speed")) return "Speed (m/s)";
+      if (field === "heart_rate") return "Heart Rate (bpm)";
+      if (field === "cadence") return "Cadence (rpm)";
+      if (field === "power") return "Power (W)";
+      if (field.includes("altitude")) return "Altitude (m)";
+      if (field === "temperature") return "Temperature (°C)";
+      if (field === "distance") return "Distance (m)";
+      return field;
+    }
+
+    let chartDragCurrent = null;
+
+    chartCanvas.addEventListener("mousemove", e => {
+      if (!chartData.length) return;
+      const rect = chartCanvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const hasOverlay = chartOverlayField && chartOverlayField !== chartField;
+      const pad = { top: 20, right: hasOverlay ? 55 : 20, bottom: 30, left: 55 };
+      const plotW = rect.width - pad.left - pad.right;
+
+      if (chartIsDragging) {
+        chartDragCurrent = x;
+        drawChart();
+        return;
+      }
+
+      if (x < pad.left || x > pad.left + plotW) {
+        chartTooltip.style.display = "none";
+        return;
+      }
+
+      let data = chartData;
+      if (chartZoomStart !== null && chartZoomEnd !== null) {
+        const startIdx = Math.min(chartZoomStart, chartZoomEnd);
+        const endIdx = Math.max(chartZoomStart, chartZoomEnd);
+        data = chartData.slice(startIdx, endIdx + 1);
+      }
+
+      const frac = (x - pad.left) / plotW;
+      const idx = Math.round(frac * (data.length - 1));
+      const record = data[Math.max(0, Math.min(idx, data.length - 1))];
+      if (!record) return;
+
+      const parts = [];
+      // Primary field
+      if (chartField === "pace") {
+        const paceVal = getChartValue(record, "pace");
+        if (paceVal !== null) parts.push(`pace: ${formatPaceLabel(paceVal)} /mi`);
+      } else {
+        const raw = record[chartField];
+        if (raw !== undefined) parts.push(`${chartField}: ${formatValue("record", chartField, raw)}`);
+      }
+      // Overlay field
+      if (hasOverlay) {
+        if (chartOverlayField === "pace") {
+          const paceVal = getChartValue(record, "pace");
+          if (paceVal !== null) parts.push(`pace: ${formatPaceLabel(paceVal)} /mi`);
+        } else {
+          const raw2 = record[chartOverlayField];
+          if (raw2 !== undefined) parts.push(`${chartOverlayField}: ${formatValue("record", chartOverlayField, raw2)}`);
+        }
+      }
+
+      if (parts.length === 0) { chartTooltip.style.display = "none"; return; }
+
+      chartTooltip.textContent = parts.join(" | ");
+      chartTooltip.style.display = "block";
+      chartTooltip.style.left = (x + 12) + "px";
+      chartTooltip.style.top = (y - 10) + "px";
+    });
+
+    chartCanvas.addEventListener("mouseleave", () => {
+      chartTooltip.style.display = "none";
+    });
+
+    chartCanvas.addEventListener("mousedown", e => {
+      if (!chartData.length) return;
+      const rect = chartCanvas.getBoundingClientRect();
+      chartDragStart = e.clientX - rect.left;
+      chartIsDragging = true;
+      chartDragCurrent = chartDragStart;
+    });
+
+    chartCanvas.addEventListener("mouseup", e => {
+      if (!chartIsDragging) return;
+      chartIsDragging = false;
+
+      const rect = chartCanvas.getBoundingClientRect();
+      const endX = e.clientX - rect.left;
+      const hasOverlay = chartOverlayField && chartOverlayField !== chartField;
+      const pad = { top: 20, right: hasOverlay ? 55 : 20, bottom: 30, left: 55 };
+      const plotW = rect.width - pad.left - pad.right;
+
+      const startFrac = Math.max(0, Math.min(1, (chartDragStart - pad.left) / plotW));
+      const endFrac = Math.max(0, Math.min(1, (endX - pad.left) / plotW));
+
+      if (Math.abs(startFrac - endFrac) < 0.02) {
+        drawChart();
+        return;
+      }
+
+      let dataLen = chartData.length;
+      let baseStart = 0;
+      if (chartZoomStart !== null && chartZoomEnd !== null) {
+        baseStart = Math.min(chartZoomStart, chartZoomEnd);
+        dataLen = Math.abs(chartZoomEnd - chartZoomStart) + 1;
+      }
+
+      const newStart = baseStart + Math.round(Math.min(startFrac, endFrac) * (dataLen - 1));
+      const newEnd = baseStart + Math.round(Math.max(startFrac, endFrac) * (dataLen - 1));
+
+      chartZoomStart = newStart;
+      chartZoomEnd = newEnd;
+      drawChart();
+    });
+
+    window.addEventListener("resize", () => {
+      if (chartData.length) drawChart();
+    });
+
+    // ═══════════════════════════════════════════════
+    // CREATOR: Natural Language Parser
+    // ═══════════════════════════════════════════════
+    const workoutInput = document.getElementById("workout-input");
+    const parseBtn = document.getElementById("parse-btn");
+    const downloadBtn = document.getElementById("download-btn");
+    const parseError = document.getElementById("parse-error");
+    const previewSection = document.getElementById("preview-section");
+    const stepList = document.getElementById("step-list");
+
+    let parsedSteps = [];
+
+    parseBtn.addEventListener("click", () => {
+      parseError.style.display = "none";
+      previewSection.style.display = "none";
+      downloadBtn.disabled = true;
+
+      const text = workoutInput.value.trim();
+      if (!text) {
+        parseError.textContent = "Please enter a workout description.";
+        parseError.style.display = "block";
+        return;
+      }
+
+      try {
+        parsedSteps = parseWorkoutText(text);
+        if (parsedSteps.length === 0) {
+          parseError.textContent = "Could not parse any workout steps. Try using formats like '10 minutes warmup' or 'run 3 miles'.";
+          parseError.style.display = "block";
+          return;
+        }
+        displaySteps(parsedSteps);
+        downloadBtn.disabled = false;
+      } catch (err) {
+        parseError.textContent = `Parse error: ${err.message}`;
+        parseError.style.display = "block";
+      }
+    });
+
+    downloadBtn.addEventListener("click", () => {
+      if (!parsedSteps.length) return;
+
+      const name = document.getElementById("workout-name").value.trim() || "Workout";
+      const sport = parseInt(document.getElementById("workout-sport").value, 10);
+
+      const fitSteps = parsedSteps.map(step => ({
+        durationValue: step.durationValue,
+        durationType: step.durationType,
+        targetType: step.targetType,
+        targetValue: step.targetValue,
+        intensity: step.intensity,
+      }));
+
+      const fitBytes = FIT.encodeWorkout(name, fitSteps, sport);
+      const blob = new Blob([fitBytes], { type: "application/octet-stream" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${name.replace(/[^a-zA-Z0-9_-]/g, "_")}.fit`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    function parseWorkoutText(text) {
+      const unit = document.getElementById("workout-unit").value;
+      const lines = text.split("\n").map(l => l.trim()).filter(l => l.length > 0 && !l.startsWith("#") && !l.startsWith("//"));
+      const steps = [];
+
+      for (const line of lines) {
+        const lower = line.toLowerCase();
+
+        // Repeat pattern: 4x800m at 3:20 with 400m recovery
+        const repeatMatch = lower.match(/^(\d+)\s*[x×]\s*(.+?)(?:\s+with\s+(.+?))?$/);
+        if (repeatMatch) {
+          const count = parseInt(repeatMatch[1], 10);
+          const mainPart = repeatMatch[2].trim();
+          const recoveryPart = repeatMatch[3] ? repeatMatch[3].trim() : null;
+
+          for (let i = 0; i < count; i++) {
+            const mainStep = parseSingleStep(mainPart, unit);
+            mainStep.intensity = 0; // active
+            steps.push(mainStep);
+
+            if (recoveryPart) {
+              const recStep = parseSingleStep(recoveryPart, unit);
+              recStep.intensity = 1; // rest
+              if (!recStep.label) recStep.label = "Recovery";
+              steps.push(recStep);
+            }
+          }
+          continue;
+        }
+
+        // Single step
+        const step = parseSingleStep(lower, unit);
+        steps.push(step);
+      }
+
+      return steps;
+    }
+
+    function parseSingleStep(text, unit) {
+      const step = {
+        durationValue: 0,
+        durationType: 14, // open (default)
+        targetType: 2,    // open (default)
+        targetValue: 0,
+        intensity: 0,     // active (default)
+        label: "",
+        description: text,
+      };
+
+      // Detect intensity
+      if (/\b(warmup|warm\s*up|warm-up)\b/.test(text)) {
+        step.intensity = 3;
+        step.label = "Warm Up";
+      } else if (/\b(cooldown|cool\s*down|cool-down)\b/.test(text)) {
+        step.intensity = 4;
+        step.label = "Cool Down";
+      } else if (/\b(rest|recover|recovery|jog)\b/.test(text)) {
+        step.intensity = 1;
+        step.label = "Rest";
+      } else if (/\b(hard|fast|sprint|tempo|threshold|race\s*pace)\b/.test(text)) {
+        step.intensity = 0;
+        step.label = "Active";
+      }
+
+      // Parse pace target: "at 7:30 pace" or "@ 4:00/km"
+      const paceMatch = text.match(/(?:at|@)\s+(\d+):(\d{2})(?:\s*(?:pace|\/mi|\/km|min\/mi|min\/km))?/);
+      if (paceMatch) {
+        const paceMinutes = parseInt(paceMatch[1], 10);
+        const paceSeconds = parseInt(paceMatch[2], 10);
+        const totalPaceSec = paceMinutes * 60 + paceSeconds;
+        // Convert pace (min/unit) to speed (m/s) then to FIT format (mm/s)
+        const distPerUnit = unit === "km" ? 1000 : 1609.34;
+        const speedMs = distPerUnit / totalPaceSec;
+        step.targetType = 0; // speed
+        step.targetValue = Math.round(speedMs * 1000); // mm/s
+      }
+
+      // Parse HR zone: "hr zone 3" or "zone 2"
+      const hrZoneMatch = text.match(/(?:hr\s+)?zone\s+(\d)/);
+      if (hrZoneMatch && !paceMatch) {
+        step.targetType = 1; // heart rate
+        step.targetValue = parseInt(hrZoneMatch[1], 10);
+      }
+
+      // Parse duration
+      // Time: "10 minutes", "30 sec", "1:30", "90s"
+      const timeMatch = text.match(/(\d+)\s*(?:min(?:ute)?s?|m)\b/) ||
+                         text.match(/(\d+):(\d{2})\s*(?:min)?/) ||
+                         text.match(/(\d+)\s*(?:sec(?:ond)?s?|s)\b/) ||
+                         text.match(/(\d+)\s*(?:hour|hr|h)\b/);
+
+      // Distance: "3 miles", "5 km", "800m", "1.5 mi"
+      const distMatch = text.match(/([\d.]+)\s*(?:mile|miles|mi)\b/) ||
+                         text.match(/([\d.]+)\s*(?:km|kilometer|kilometers|k)\b/) ||
+                         text.match(/([\d.]+)\s*m(?:eter|eters)?\b(?!\s*(?:in|ile))/);
+
+      // "lap button" or "press lap"
+      const lapMatch = text.match(/\blap\s*(?:button)?\b/);
+
+      if (distMatch) {
+        let distMeters;
+        if (text.match(/([\d.]+)\s*(?:mile|miles|mi)\b/)) {
+          distMeters = parseFloat(distMatch[1]) * 1609.34;
+        } else if (text.match(/([\d.]+)\s*(?:km|kilometer|kilometers|k)\b/)) {
+          distMeters = parseFloat(distMatch[1]) * 1000;
+        } else {
+          distMeters = parseFloat(distMatch[1]);
+        }
+        step.durationType = 1; // distance
+        step.durationValue = Math.round(distMeters * 100); // hundredths of meter
+        if (!step.label) step.label = `${distMatch[1]} ${getDistUnit(text)}`;
+      } else if (timeMatch) {
+        let totalMs;
+        if (text.match(/(\d+):(\d{2})/)) {
+          const parts = text.match(/(\d+):(\d{2})/);
+          totalMs = (parseInt(parts[1], 10) * 60 + parseInt(parts[2], 10)) * 1000;
+        } else if (text.match(/(\d+)\s*(?:hour|hr|h)\b/)) {
+          totalMs = parseInt(timeMatch[1], 10) * 3600 * 1000;
+        } else if (text.match(/(\d+)\s*(?:sec|s)\b/)) {
+          totalMs = parseInt(timeMatch[1], 10) * 1000;
+        } else {
+          totalMs = parseInt(timeMatch[1], 10) * 60 * 1000;
+        }
+        step.durationType = 0; // time
+        step.durationValue = totalMs; // milliseconds
+        if (!step.label) step.label = formatMs(totalMs);
+      } else if (lapMatch) {
+        step.durationType = 14; // open / lap button
+        if (!step.label) step.label = "Lap Button";
+      } else {
+        // Couldn't parse duration, try to extract any number as minutes
+        const numMatch = text.match(/(\d+)/);
+        if (numMatch) {
+          const totalMs = parseInt(numMatch[1], 10) * 60 * 1000;
+          step.durationType = 0;
+          step.durationValue = totalMs;
+          if (!step.label) step.label = formatMs(totalMs);
+        }
+      }
+
+      if (!step.label) {
+        step.label = text.slice(0, 40);
+      }
+
+      return step;
+    }
+
+    function getDistUnit(text) {
+      if (/(?:mile|miles|mi)\b/.test(text)) return "mi";
+      if (/(?:km|kilometer|k)\b/.test(text)) return "km";
+      return "m";
+    }
+
+    function formatMs(ms) {
+      const totalSec = Math.round(ms / 1000);
+      if (totalSec >= 3600) {
+        const h = Math.floor(totalSec / 3600);
+        const m = Math.floor((totalSec % 3600) / 60);
+        return m > 0 ? `${h}h ${m}min` : `${h}h`;
+      }
+      if (totalSec >= 60) {
+        const m = Math.floor(totalSec / 60);
+        const s = totalSec % 60;
+        return s > 0 ? `${m}:${String(s).padStart(2, "0")}` : `${m} min`;
+      }
+      return `${totalSec}s`;
+    }
+
+    function displaySteps(steps) {
+      stepList.innerHTML = "";
+      previewSection.style.display = "block";
+
+      steps.forEach((step, i) => {
+        const card = document.createElement("div");
+        card.className = "step-card";
+
+        const num = document.createElement("div");
+        num.className = "step-num";
+        num.textContent = `#${i + 1}`;
+
+        const detail = document.createElement("div");
+        detail.className = "step-detail";
+
+        let durationStr;
+        if (step.durationType === 0) {
+          durationStr = formatMs(step.durationValue);
+        } else if (step.durationType === 1) {
+          const meters = step.durationValue / 100;
+          if (meters >= 1609) {
+            durationStr = `${(meters / 1609.34).toFixed(2)} mi`;
+          } else if (meters >= 1000) {
+            durationStr = `${(meters / 1000).toFixed(2)} km`;
+          } else {
+            durationStr = `${Math.round(meters)} m`;
+          }
+        } else {
+          durationStr = "Lap Button";
+        }
+
+        let targetStr = "";
+        if (step.targetType === 0 && step.targetValue > 0) {
+          const speedMs = step.targetValue / 1000;
+          const paceSecPerMi = 1609.34 / speedMs;
+          const pm = Math.floor(paceSecPerMi / 60);
+          const ps = Math.round(paceSecPerMi % 60);
+          targetStr = ` @ ${pm}:${String(ps).padStart(2, "0")}/mi`;
+        } else if (step.targetType === 1 && step.targetValue > 0) {
+          targetStr = ` — HR Zone ${step.targetValue}`;
+        }
+
+        detail.textContent = `${durationStr}${targetStr}`;
+
+        const typeLabel = document.createElement("span");
+        const intensityMap = { 0: ["Active", "type-active"], 1: ["Rest", "type-rest"], 3: ["Warm Up", "type-warmup"], 4: ["Cool Down", "type-cooldown"] };
+        const [typeName, typeClass] = intensityMap[step.intensity] || ["Active", "type-active"];
+        typeLabel.className = `step-type ${typeClass}`;
+        typeLabel.textContent = typeName;
+
+        card.appendChild(num);
+        card.appendChild(detail);
+        card.appendChild(typeLabel);
+        stepList.appendChild(card);
+      });
+    }
+    </script>
+</body>
+</html>
