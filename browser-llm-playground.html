@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browser LLM Playground</title>
+    <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+      color: #1f2933;
+      background: #f8fafc;
+    }
+    h1 {
+      margin-top: 0;
+      margin-bottom: 8px;
+      font-size: 32px;
+    }
+    p {
+      margin-top: 0;
+    }
+    .panel {
+      background: #ffffff;
+      border: 1px solid #d9e2ec;
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 16px;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+    .capability-grid,
+    .controls-grid {
+      display: grid;
+      gap: 12px;
+    }
+    .capability-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .controls-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-items: end;
+    }
+    .capability {
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 12px;
+      border: 1px solid #e5edf5;
+    }
+    .label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #52606d;
+      margin-bottom: 6px;
+    }
+    .value {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .value.good {
+      color: #0f9d58;
+    }
+    .value.warn {
+      color: #b7791f;
+    }
+    .value.bad {
+      color: #c53030;
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    select,
+    input,
+    textarea,
+    button {
+      width: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      font-size: 16px;
+      border-radius: 8px;
+    }
+    select,
+    input,
+    textarea {
+      padding: 12px;
+      border: 1px solid #bcccdc;
+      background: #ffffff;
+    }
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+    select:focus,
+    input:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #4c6ef5;
+      box-shadow: 0 0 0 3px rgba(76, 110, 245, 0.15);
+    }
+    .button-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    button {
+      width: auto;
+      min-width: 160px;
+      padding: 12px 16px;
+      border: none;
+      background: #4c6ef5;
+      color: #ffffff;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button.secondary {
+      background: #e5edf5;
+      color: #243b53;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .status-box {
+      padding: 12px;
+      border-radius: 8px;
+      background: #eff6ff;
+      color: #1e3a8a;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .status-box.good {
+      background: #ecfdf3;
+      color: #166534;
+    }
+    .status-box.warn {
+      background: #fffbeb;
+      color: #92400e;
+    }
+    .status-box.bad {
+      background: #fef2f2;
+      color: #991b1b;
+    }
+    .response-box {
+      min-height: 160px;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #d9e2ec;
+      background: #ffffff;
+      word-break: break-word;
+      overflow-x: auto;
+    }
+    .response-box.raw {
+      white-space: pre-wrap;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Consolas", "Liberation Mono", monospace;
+      font-size: 14px;
+    }
+    .response-box p {
+      margin: 0 0 8px;
+    }
+    .response-box p:last-child {
+      margin-bottom: 0;
+    }
+    .response-box h1,
+    .response-box h2,
+    .response-box h3,
+    .response-box h4 {
+      margin: 16px 0 8px;
+      line-height: 1.3;
+    }
+    .response-box h1:first-child,
+    .response-box h2:first-child,
+    .response-box h3:first-child {
+      margin-top: 0;
+    }
+    .response-box ul,
+    .response-box ol {
+      padding-left: 20px;
+      margin: 0 0 8px;
+    }
+    .response-box li {
+      margin-bottom: 4px;
+    }
+    .response-box pre {
+      background: #f0f4f8;
+      border: 1px solid #d9e2ec;
+      border-radius: 6px;
+      padding: 12px;
+      overflow-x: auto;
+      margin: 8px 0;
+    }
+    .response-box pre code {
+      background: none;
+      padding: 0;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Consolas", "Liberation Mono", monospace;
+    }
+    .response-box code {
+      background: #e5edf5;
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Consolas", "Liberation Mono", monospace;
+    }
+    .response-box blockquote {
+      border-left: 4px solid #bcccdc;
+      margin: 8px 0;
+      padding: 4px 12px;
+      color: #52606d;
+    }
+    .response-box table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 8px 0;
+      font-size: 14px;
+    }
+    .response-box th,
+    .response-box td {
+      border: 1px solid #d9e2ec;
+      padding: 6px 10px;
+      text-align: left;
+    }
+    .response-box th {
+      background: #f0f4f8;
+      font-weight: 600;
+    }
+    .response-box hr {
+      border: none;
+      border-top: 1px solid #d9e2ec;
+      margin: 12px 0;
+    }
+    .response-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .response-header .meta {
+      margin: 0;
+      flex: 1;
+    }
+    button.small {
+      min-width: 0;
+      width: auto;
+      padding: 6px 12px;
+      font-size: 13px;
+    }
+    ul {
+      padding-left: 20px;
+      margin-bottom: 0;
+    }
+    code {
+      background: #e5edf5;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+      h1 {
+        font-size: 26px;
+      }
+      .capability-grid,
+      .controls-grid {
+        grid-template-columns: 1fr;
+      }
+      .button-row {
+        flex-direction: column;
+      }
+      button {
+        width: 100%;
+      }
+    }
+    </style>
+</head>
+<body>
+    <h1>Browser LLM Playground</h1>
+    <p>Test whether this browser and device can run a small LLM locally with WebGPU and WebLLM, then try a prompt without sending it to your own backend.</p>
+
+    <section class="panel">
+      <h2>Capability check</h2>
+      <div class="capability-grid">
+        <div class="capability">
+          <span class="label">Secure context</span>
+          <div class="value" id="secure-context-value">Checking…</div>
+        </div>
+        <div class="capability">
+          <span class="label">WebGPU</span>
+          <div class="value" id="webgpu-value">Checking…</div>
+        </div>
+        <div class="capability">
+          <span class="label">Device memory</span>
+          <div class="value" id="memory-value">Checking…</div>
+        </div>
+      </div>
+      <p class="meta" id="capability-summary">Checking browser support…</p>
+    </section>
+
+    <section class="panel">
+      <h2>Load a local model</h2>
+      <div class="controls-grid">
+        <div>
+          <label for="model-select">Suggested model</label>
+          <select id="model-select">
+            <option value="Qwen2-0_5B-Instruct">Qwen2 0.5B Instruct</option>
+            <option value="Qwen2-1_5B-Instruct" selected>Qwen2 1.5B Instruct</option>
+            <option value="Llama-3.2-1B-Instruct-q4f32_1-MLC">Llama 3.2 1B Instruct</option>
+          </select>
+        </div>
+        <div>
+          <label for="custom-model">Or custom WebLLM model id</label>
+          <input id="custom-model" type="text" placeholder="Leave blank to use the suggested model">
+        </div>
+      </div>
+      <div class="button-row">
+        <button id="load-button" type="button">Load model</button>
+        <button id="reset-button" class="secondary" type="button">Reset</button>
+      </div>
+      <div class="status-box" id="status-box">Waiting to load a model.</div>
+    </section>
+
+    <section class="panel">
+      <h2>Try a prompt</h2>
+      <label for="system-prompt">System prompt</label>
+      <textarea id="system-prompt">You are a concise assistant running fully in the browser. Mention limits if you are unsure.</textarea>
+      <label for="user-prompt">User prompt</label>
+      <textarea id="user-prompt" placeholder="Ask the local model something simple, like a summary or explanation."></textarea>
+      <div class="button-row">
+        <button id="run-button" type="button" disabled>Run prompt</button>
+      </div>
+      <div class="response-header">
+        <p class="meta" id="run-meta">Load a model first. Initial download can take a while.</p>
+        <button id="raw-toggle" class="secondary small" type="button" title="Toggle between rendered markdown and raw text">Raw</button>
+      </div>
+      <div class="response-box" id="response-box">Your response will appear here.</div>
+    </section>
+
+    <section class="panel">
+      <h2>Current state</h2>
+      <ul>
+        <li>Modern browsers can run smaller quantized LLMs locally when <code>navigator.gpu</code> is available.</li>
+        <li>Best results today come from WebGPU-backed runtimes such as WebLLM; larger models still hit browser memory and download limits.</li>
+        <li>This page is a practical smoke test, not a benchmark. Success depends on browser version, GPU drivers, RAM, and available storage.</li>
+      </ul>
+    </section>
+
+    <script type="module">
+    const markedUrl = 'https://cdn.jsdelivr.net/npm/marked@18.0.0/src/marked.js';
+    const purifyUrl = 'https://cdn.jsdelivr.net/npm/dompurify@3.3.3/dist/purify.es.mjs';
+    let markedModule = null;
+    let purifyModule = null;
+
+    async function loadMarked() {
+      if (markedModule) {
+        return markedModule;
+      }
+      try {
+        const mod = await import(markedUrl);
+        mod.marked.setOptions({ breaks: true });
+        markedModule = mod.marked;
+      } catch (_) {
+        markedModule = null;
+      }
+      return markedModule;
+    }
+
+    async function loadPurify() {
+      if (purifyModule) {
+        return purifyModule;
+      }
+      try {
+        const mod = await import(purifyUrl);
+        purifyModule = mod.default;
+      } catch (_) {
+        purifyModule = null;
+      }
+      return purifyModule;
+    }
+
+    const secureContextValue = document.getElementById('secure-context-value');
+    const webgpuValue = document.getElementById('webgpu-value');
+    const memoryValue = document.getElementById('memory-value');
+    const capabilitySummary = document.getElementById('capability-summary');
+    const modelSelect = document.getElementById('model-select');
+    const customModel = document.getElementById('custom-model');
+    const loadButton = document.getElementById('load-button');
+    const resetButton = document.getElementById('reset-button');
+    const runButton = document.getElementById('run-button');
+    const rawToggle = document.getElementById('raw-toggle');
+    const systemPrompt = document.getElementById('system-prompt');
+    const userPrompt = document.getElementById('user-prompt');
+    const statusBox = document.getElementById('status-box');
+    const runMeta = document.getElementById('run-meta');
+    const responseBox = document.getElementById('response-box');
+
+    const webllmUrl = 'https://esm.run/@mlc-ai/web-llm@0.2.82';
+    let webllmModule = null;
+    let engine = null;
+    let loadedModelId = '';
+    let isBusy = false;
+    let rawMarkdown = '';
+    let showRaw = false;
+
+    let markedParser = null;
+    let purify = null;
+
+    async function renderResponse() {
+      if (showRaw || !rawMarkdown) {
+        responseBox.classList.add('raw');
+        responseBox.textContent = rawMarkdown || 'Your response will appear here.';
+        return;
+      }
+      responseBox.classList.remove('raw');
+      if (!markedParser) {
+        markedParser = await loadMarked();
+      }
+      if (!purify) {
+        purify = await loadPurify();
+      }
+      if (markedParser) {
+        const rawHtml = markedParser.parse(rawMarkdown);
+        responseBox.innerHTML = purify ? purify.sanitize(rawHtml) : rawHtml;
+      } else {
+        responseBox.classList.add('raw');
+        responseBox.textContent = rawMarkdown;
+      }
+    }
+
+    rawToggle.addEventListener('click', async () => {
+      showRaw = !showRaw;
+      rawToggle.textContent = showRaw ? 'Rendered' : 'Raw';
+      await renderResponse();
+    });
+
+    function setValueState(element, text, state) {
+      element.textContent = text;
+      element.className = `value ${state}`;
+    }
+
+    function setStatus(message, tone = '') {
+      statusBox.textContent = message;
+      statusBox.className = tone ? `status-box ${tone}` : 'status-box';
+    }
+
+    function formatProgress(progress) {
+      if (typeof progress === 'string') {
+        return progress;
+      }
+      if (!progress || typeof progress !== 'object') {
+        return 'Loading model…';
+      }
+      const parts = [];
+      if (progress.text) {
+        parts.push(progress.text);
+      }
+      if (typeof progress.progress === 'number') {
+        parts.push(`${Math.round(progress.progress * 100)}%`);
+      }
+      if (typeof progress.percentage === 'number') {
+        parts.push(`${Math.round(progress.percentage)}%`);
+      }
+      if (progress.timeElapsed) {
+        parts.push(`elapsed ${progress.timeElapsed}`);
+      }
+      return parts.length > 0 ? parts.join(' — ') : JSON.stringify(progress);
+    }
+
+    function getSelectedModelId() {
+      return customModel.value.trim() || modelSelect.value;
+    }
+
+    function updateBusyState() {
+      loadButton.disabled = isBusy;
+      resetButton.disabled = isBusy;
+      runButton.disabled = isBusy || !engine;
+    }
+
+    function evaluateCapabilities() {
+      const hasSecureContext = window.isSecureContext;
+      const hasWebGpu = Boolean(navigator.gpu);
+      const deviceMemory = navigator.deviceMemory ? `${navigator.deviceMemory} GB` : 'Unknown';
+
+      setValueState(secureContextValue, hasSecureContext ? 'Yes' : 'No', hasSecureContext ? 'good' : 'bad');
+      setValueState(webgpuValue, hasWebGpu ? 'Available' : 'Missing', hasWebGpu ? 'good' : 'bad');
+      setValueState(memoryValue, deviceMemory, navigator.deviceMemory && navigator.deviceMemory < 4 ? 'warn' : 'good');
+
+      if (!hasSecureContext) {
+        capabilitySummary.textContent = 'This page must run in a secure context (HTTPS or localhost) before browser LLM APIs are usable.';
+        return;
+      }
+      if (!hasWebGpu) {
+        capabilitySummary.textContent = 'This browser does not expose WebGPU, so most practical in-browser LLM demos will not run here.';
+        return;
+      }
+      capabilitySummary.textContent = 'This browser exposes the main capability needed for modern local browser LLM demos.';
+    }
+
+    async function ensureWebllm() {
+      if (webllmModule) {
+        return webllmModule;
+      }
+      setStatus('Importing WebLLM from the CDN…');
+      webllmModule = await import(webllmUrl);
+      return webllmModule;
+    }
+
+    async function loadModel() {
+      if (!window.isSecureContext) {
+        setStatus('Cannot load a local model here because the page is not running in a secure context.', 'bad');
+        return;
+      }
+      if (!navigator.gpu) {
+        setStatus('Cannot load a local model because WebGPU is unavailable in this browser.', 'bad');
+        return;
+      }
+
+      const modelId = getSelectedModelId();
+      isBusy = true;
+      updateBusyState();
+      rawMarkdown = '';
+      renderResponse();
+      runMeta.textContent = 'Loading model…';
+
+      try {
+        const webllm = await ensureWebllm();
+        if (engine && loadedModelId === modelId) {
+          setStatus(`Model already loaded: ${modelId}`, 'good');
+          runMeta.textContent = `Ready with ${modelId}.`;
+          return;
+        }
+        if (engine && typeof engine.unload === 'function') {
+          await engine.unload();
+        }
+        setStatus(`Preparing ${modelId}. The first download may be large and can take several minutes.`, 'warn');
+        engine = await webllm.CreateMLCEngine(modelId, {
+          initProgressCallback(progress) {
+            setStatus(formatProgress(progress), 'warn');
+          }
+        });
+        loadedModelId = modelId;
+        setStatus(`Loaded ${modelId}. Prompts now run locally in this browser tab.`, 'good');
+        runMeta.textContent = `Ready with ${modelId}.`;
+      } catch (error) {
+        engine = null;
+        loadedModelId = '';
+        setStatus(`Failed to load the model: ${error.message}`, 'bad');
+        runMeta.textContent = 'Model load failed.';
+      } finally {
+        isBusy = false;
+        updateBusyState();
+      }
+    }
+
+    async function runPrompt() {
+      const prompt = userPrompt.value.trim();
+      if (!engine) {
+        setStatus('Load a model before running a prompt.', 'bad');
+        return;
+      }
+      if (!prompt) {
+        setStatus('Enter a prompt before running the model.', 'bad');
+        return;
+      }
+
+      const messages = [];
+      if (systemPrompt.value.trim()) {
+        messages.push({ role: 'system', content: systemPrompt.value.trim() });
+      }
+      messages.push({ role: 'user', content: prompt });
+
+      isBusy = true;
+      updateBusyState();
+      setStatus(`Running ${loadedModelId} locally…`);
+      runMeta.textContent = 'Streaming response…';
+      rawMarkdown = '';
+      renderResponse();
+      const startedAt = performance.now();
+
+      try {
+        const stream = await engine.chat.completions.create({
+          messages,
+          stream: true,
+          temperature: 0.7
+        });
+        for await (const chunk of stream) {
+          const token = chunk.choices?.[0]?.delta?.content || '';
+          if (token) {
+            rawMarkdown += token;
+            renderResponse();
+          }
+        }
+        const elapsedMs = Math.round(performance.now() - startedAt);
+        setStatus(`Finished locally with ${loadedModelId}.`, 'good');
+        runMeta.textContent = `Completed in ${elapsedMs} ms.`;
+        if (!rawMarkdown) {
+          rawMarkdown = '';
+          responseBox.textContent = 'The model finished without returning visible text.';
+        }
+      } catch (error) {
+        setStatus(`Prompt failed: ${error.message}`, 'bad');
+        runMeta.textContent = 'Prompt failed.';
+        if (!rawMarkdown) {
+          responseBox.textContent = 'No response produced.';
+        }
+      } finally {
+        isBusy = false;
+        updateBusyState();
+      }
+    }
+
+    function resetState() {
+      engine = null;
+      loadedModelId = '';
+      customModel.value = '';
+      userPrompt.value = '';
+      rawMarkdown = '';
+      renderResponse();
+      runMeta.textContent = 'Load a model first. Initial download can take a while.';
+      setStatus('Waiting to load a model.');
+      updateBusyState();
+    }
+
+    loadButton.addEventListener('click', loadModel);
+    runButton.addEventListener('click', runPrompt);
+    resetButton.addEventListener('click', resetState);
+
+    evaluateCapabilities();
+    updateBusyState();
+    </script>
+</body>
+</html>
