@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hand and Foot Scorer</title>
+    <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+      color: #333;
+      background: #fafafa;
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 28px;
+    }
+    h2 {
+      font-size: 20px;
+      margin-top: 0;
+      margin-bottom: 8px;
+    }
+    h3 {
+      font-size: 16px;
+      margin: 12px 0 6px;
+    }
+
+    /* Scoreboard */
+    .scoreboard {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      background: #fff;
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .scoreboard th, .scoreboard td {
+      padding: 10px 12px;
+      text-align: center;
+      border-bottom: 1px solid #eee;
+    }
+    .scoreboard th {
+      background: #4a5568;
+      color: #fff;
+      font-weight: 600;
+    }
+    .scoreboard td:first-child {
+      text-align: left;
+      font-weight: 600;
+    }
+    .scoreboard .total-col {
+      background: #edf2f7;
+      font-weight: 700;
+    }
+    .scoreboard th.total-col {
+      background: #2d3748;
+    }
+    .scoreboard .winner-row td {
+      background: #f0fff4;
+    }
+
+    /* Team columns */
+    .teams {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .team-panel {
+      background: #fff;
+      border-radius: 6px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    /* Team name editing */
+    .team-name-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .team-name-row h2 {
+      margin: 0;
+      cursor: pointer;
+    }
+    .team-name-row h2:hover {
+      color: #4a90e2;
+    }
+    .team-name-input {
+      font-size: 18px;
+      font-weight: 600;
+      padding: 4px 8px;
+      border: 2px solid #4a90e2;
+      border-radius: 4px;
+      font-family: inherit;
+      width: 100%;
+      max-width: 200px;
+    }
+
+    /* Round tabs */
+    .round-tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+    .round-tab {
+      padding: 6px 14px;
+      border: none;
+      border-radius: 6px 6px 0 0;
+      cursor: pointer;
+      font-size: 14px;
+      font-family: inherit;
+      background: #e2e8f0;
+      color: #4a5568;
+      font-weight: 500;
+    }
+    .round-tab.active {
+      background: #48bb78;
+      color: #fff;
+    }
+    .round-tab .check {
+      color: #38a169;
+      margin-left: 4px;
+    }
+    .round-tab.active .check {
+      color: #fff;
+    }
+
+    /* Meld requirement badge */
+    .meld-req {
+      display: inline-block;
+      background: #ebf8ff;
+      color: #2b6cb0;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    /* Current score */
+    .live-score {
+      font-size: 18px;
+      font-weight: 700;
+      color: #38a169;
+      margin-bottom: 10px;
+    }
+
+    /* Form fields */
+    .field-group {
+      margin-bottom: 10px;
+    }
+    .field-group-title {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 4px;
+      color: #2d3748;
+    }
+    .field-group-hint {
+      font-size: 12px;
+      color: #718096;
+      margin-bottom: 6px;
+    }
+    .field-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .field {
+      flex: 1;
+      min-width: 70px;
+    }
+    .field label {
+      display: block;
+      font-size: 12px;
+      color: #4a5568;
+      margin-bottom: 2px;
+    }
+    .field input {
+      width: 100%;
+      padding: 6px 8px;
+      border: 2px solid #e2e8f0;
+      border-radius: 4px;
+      font-size: 16px;
+      font-family: inherit;
+      background: #fff;
+    }
+    .field input:focus {
+      outline: none;
+      border-color: #4a90e2;
+    }
+    .field input:disabled {
+      background: #f7fafc;
+      color: #a0aec0;
+    }
+
+    /* Going Out toggle */
+    .toggle-btn {
+      padding: 6px 14px;
+      border: 2px solid #e2e8f0;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      font-family: inherit;
+      background: #fff;
+      color: #4a5568;
+    }
+    .toggle-btn.on {
+      background: #4a90e2;
+      border-color: #4a90e2;
+      color: #fff;
+    }
+    .toggle-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Action buttons */
+    .btn {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: inherit;
+      margin-top: 6px;
+    }
+    .btn-submit {
+      background: #4a90e2;
+      color: #fff;
+    }
+    .btn-submit:hover {
+      background: #3a7ecf;
+    }
+    .btn-submitted {
+      background: #a0aec0;
+      color: #fff;
+      cursor: not-allowed;
+    }
+    .btn-edit {
+      background: #edf2f7;
+      color: #4a5568;
+    }
+    .btn-edit:hover {
+      background: #e2e8f0;
+    }
+
+    /* Top actions */
+    .top-actions {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .btn-small {
+      padding: 8px 14px;
+      border: 2px solid #e2e8f0;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-family: inherit;
+      background: #fff;
+      color: #4a5568;
+      font-weight: 500;
+    }
+    .btn-small:hover {
+      background: #edf2f7;
+    }
+
+    /* Rules toggle */
+    .rules-section {
+      background: #fff;
+      border-radius: 6px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    .rules-toggle {
+      cursor: pointer;
+      font-weight: 600;
+      color: #4a5568;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: none;
+      border: none;
+      font-size: 15px;
+      font-family: inherit;
+      padding: 0;
+    }
+    .rules-toggle:hover {
+      color: #2d3748;
+    }
+    .rules-content {
+      display: none;
+      margin-top: 12px;
+      font-size: 14px;
+      color: #4a5568;
+      line-height: 1.7;
+    }
+    .rules-content.open {
+      display: block;
+    }
+    .rules-content h4 {
+      margin: 10px 0 4px;
+      color: #2d3748;
+    }
+    .rules-content ul {
+      margin: 4px 0;
+      padding-left: 20px;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+      h1 {
+        font-size: 22px;
+      }
+      .teams {
+        grid-template-columns: 1fr;
+      }
+      .field-row {
+        gap: 6px;
+      }
+      .field {
+        min-width: 60px;
+      }
+      .round-tab {
+        padding: 6px 10px;
+        font-size: 12px;
+      }
+      .scoreboard th, .scoreboard td {
+        padding: 6px 8px;
+        font-size: 13px;
+      }
+    }
+    </style>
+</head>
+<body>
+    <h1>Hand and Foot Scorer</h1>
+    <p>Track scores for the card game Hand and Foot across four rounds for two teams.</p>
+
+    <div class="top-actions">
+      <button class="btn-small" id="copy-link-btn">📋 Copy Game Link</button>
+      <button class="btn-small" id="new-game-btn">🔄 New Game</button>
+    </div>
+
+    <div class="rules-section">
+      <button class="rules-toggle" id="rules-toggle">▶ Scoring Reference</button>
+      <div class="rules-content" id="rules-content">
+        <h4>Books (7 cards of the same rank)</h4>
+        <ul>
+          <li><strong>Red (clean):</strong> 500 pts</li>
+          <li><strong>Black (dirty):</strong> 300 pts</li>
+          <li><strong>Sevens:</strong> 5,000 pts</li>
+          <li><strong>Fives:</strong> 3,000 pts</li>
+          <li><strong>Wilds:</strong> 2,500 pts</li>
+        </ul>
+        <h4>Card Point Values</h4>
+        <ul>
+          <li>Jokers: 50 · Aces &amp; 2s: 20 · 8–K: 10 · 4–7: 5</li>
+        </ul>
+        <h4>Penalties (cards left in hand/foot)</h4>
+        <ul>
+          <li>Black 3s: −100 each · Red 3s: −500 each</li>
+          <li>Remaining card points are subtracted</li>
+        </ul>
+        <h4>Bonuses</h4>
+        <ul>
+          <li>Going out: +100</li>
+          <li>Red 3s collected: +100 each</li>
+          <li>All 7 red 3s: extra +300</li>
+        </ul>
+        <h4>Meld Requirements</h4>
+        <ul>
+          <li>Round 1: 50 · Round 2: 90 · Round 3: 120 · Round 4: 150</li>
+        </ul>
+      </div>
+    </div>
+
+    <table class="scoreboard" id="scoreboard">
+      <thead>
+        <tr>
+          <th>Team</th>
+          <th>R1</th>
+          <th>R2</th>
+          <th>R3</th>
+          <th>R4</th>
+          <th class="total-col">Total</th>
+        </tr>
+      </thead>
+      <tbody id="scoreboard-body"></tbody>
+    </table>
+
+    <div class="teams" id="teams-container"></div>
+
+    <script>
+    const MELD_REQUIREMENTS = [50, 90, 120, 150];
+    const NUM_ROUNDS = 4;
+
+    function createEmptyRound() {
+      return {
+        books: { red: 0, black: 0, sevens: 0, fives: 0, wilds: 0 },
+        meldedCards: 0,
+        penalties: { blackThrees: 0, redThrees: 0, remainingCards: 0 },
+        bonuses: { goingOut: false, redThrees: 0 },
+      };
+    }
+
+    function calculateRoundScore(round) {
+      const bookPoints =
+        round.books.red * 500 +
+        round.books.black * 300 +
+        round.books.sevens * 5000 +
+        round.books.fives * 3000 +
+        round.books.wilds * 2500;
+
+      const penaltyPoints =
+        round.penalties.blackThrees * -100 +
+        round.penalties.redThrees * -500 +
+        round.penalties.remainingCards;
+
+      const bonusPoints =
+        (round.bonuses.goingOut ? 100 : 0) +
+        round.bonuses.redThrees * 100 +
+        (round.bonuses.redThrees >= 7 ? 300 : 0);
+
+      return bookPoints + round.meldedCards + penaltyPoints + bonusPoints;
+    }
+
+    function createInitialState() {
+      return {
+        teams: [
+          { id: 0, name: "Team 1" },
+          { id: 1, name: "Team 2" },
+        ],
+        activeRound: [0, 0],
+        rounds: [
+          Array.from({ length: NUM_ROUNDS }, createEmptyRound),
+          Array.from({ length: NUM_ROUNDS }, createEmptyRound),
+        ],
+        submitted: [
+          [false, false, false, false],
+          [false, false, false, false],
+        ],
+      };
+    }
+
+    let state = createInitialState();
+
+    // --- URL state persistence ---
+    function encodeState() {
+      const data = {
+        t: state.teams.map(t => t.name),
+        r: state.rounds,
+        s: state.submitted,
+      };
+      return btoa(JSON.stringify(data));
+    }
+
+    function decodeState(hash) {
+      try {
+        const data = JSON.parse(atob(hash));
+        if (data.t && data.r && data.s) {
+          state.teams[0].name = data.t[0];
+          state.teams[1].name = data.t[1];
+          state.rounds = data.r;
+          state.submitted = data.s;
+          return true;
+        }
+      } catch (e) {
+        // invalid state, ignore
+      }
+      return false;
+    }
+
+    function loadFromHash() {
+      const hash = window.location.hash.slice(1);
+      if (hash) {
+        decodeState(hash);
+      }
+    }
+
+    function saveToHash() {
+      const encoded = encodeState();
+      history.replaceState(null, "", `#${encoded}`);
+    }
+
+    // --- Rendering ---
+    function getRoundScores(teamIdx) {
+      return state.rounds[teamIdx].map((round, i) =>
+        state.submitted[teamIdx][i] ? calculateRoundScore(round) : 0
+      );
+    }
+
+    function renderScoreboard() {
+      const tbody = document.getElementById("scoreboard-body");
+      const totals = [0, 1].map(i => {
+        const scores = getRoundScores(i);
+        return scores.reduce((a, b) => a + b, 0);
+      });
+      const maxTotal = Math.max(totals[0], totals[1]);
+      const hasScores = totals[0] !== 0 || totals[1] !== 0;
+
+      tbody.innerHTML = state.teams.map((team, i) => {
+        const scores = getRoundScores(i);
+        const total = totals[i];
+        const isWinner = hasScores && total === maxTotal && totals[0] !== totals[1];
+        return `<tr class="${isWinner ? "winner-row" : ""}">
+          <td>${team.name}</td>
+          ${scores.map(s => `<td>${s.toLocaleString()}</td>`).join("")}
+          <td class="total-col">${total.toLocaleString()}</td>
+        </tr>`;
+      }).join("");
+    }
+
+    function renderTeamPanel(teamIdx) {
+      const team = state.teams[teamIdx];
+      const activeRound = state.activeRound[teamIdx];
+      const round = state.rounds[teamIdx][activeRound];
+      const submitted = state.submitted[teamIdx][activeRound];
+      const liveScore = calculateRoundScore(round);
+
+      const panel = document.getElementById(`team-${teamIdx}`);
+      if (!panel) return;
+
+      panel.innerHTML = `
+        <div class="team-name-row">
+          <h2 id="team-name-display-${teamIdx}" title="Click to edit">${team.name}</h2>
+        </div>
+        <div class="round-tabs">
+          ${[0, 1, 2, 3].map(r => `
+            <button class="round-tab ${r === activeRound ? "active" : ""}"
+              data-team="${teamIdx}" data-round="${r}">
+              R${r + 1}${state.submitted[teamIdx][r] ? '<span class="check"> ✓</span>' : ""}
+            </button>
+          `).join("")}
+        </div>
+        <div class="meld-req">Meld: ${MELD_REQUIREMENTS[activeRound]} pts</div>
+        <div class="live-score">Score: ${liveScore.toLocaleString()}</div>
+
+        <div class="field-group">
+          <div class="field-group-title">Special Books</div>
+          <div class="field-group-hint">Number of completed books (7 cards each)</div>
+          <div class="field-row">
+            <div class="field">
+              <label>7s</label>
+              <input type="number" min="0" inputmode="numeric"
+                data-team="${teamIdx}" data-cat="books" data-key="sevens"
+                value="${round.books.sevens}" ${submitted ? "disabled" : ""}>
+            </div>
+            <div class="field">
+              <label>5s</label>
+              <input type="number" min="0" inputmode="numeric"
+                data-team="${teamIdx}" data-cat="books" data-key="fives"
+                value="${round.books.fives}" ${submitted ? "disabled" : ""}>
+            </div>
+            <div class="field">
+              <label>Wilds</label>
+              <input type="number" min="0" inputmode="numeric"
+                data-team="${teamIdx}" data-cat="books" data-key="wilds"
+                value="${round.books.wilds}" ${submitted ? "disabled" : ""}>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-group-title">Books</div>
+          <div class="field-row">
+            <div class="field">
+              <label>Red (clean)</label>
+              <input type="number" min="0" inputmode="numeric"
+                data-team="${teamIdx}" data-cat="books" data-key="red"
+                value="${round.books.red}" ${submitted ? "disabled" : ""}>
+            </div>
+            <div class="field">
+              <label>Black (dirty)</label>
+              <input type="number" min="0" inputmode="numeric"
+                data-team="${teamIdx}" data-cat="books" data-key="black"
+                value="${round.books.black}" ${submitted ? "disabled" : ""}>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-group-title">Card Points</div>
+          <div class="field-group-hint">Total points from melded cards (Jokers: 50, Aces/2s: 20, 8–K: 10, 4–7: 5)</div>
+          <div class="field-row">
+            <div class="field">
+              <label>Melded card points</label>
+              <input type="number" inputmode="numeric"
+                data-team="${teamIdx}" data-cat="meldedCards" data-key=""
+                value="${round.meldedCards}" ${submitted ? "disabled" : ""}>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-group-title">Penalties</div>
+          <div class="field-group-hint">Cards left in hand or foot</div>
+          <div class="field-row">
+            <div class="field">
+              <label>Black 3s (−100 ea.)</label>
+              <input type="number" min="0" inputmode="numeric"
+                data-team="${teamIdx}" data-cat="penalties" data-key="blackThrees"
+                value="${round.penalties.blackThrees}" ${submitted ? "disabled" : ""}>
+            </div>
+            <div class="field">
+              <label>Red 3s (−500 ea.)</label>
+              <input type="number" min="0" inputmode="numeric"
+                data-team="${teamIdx}" data-cat="penalties" data-key="redThrees"
+                value="${round.penalties.redThrees}" ${submitted ? "disabled" : ""}>
+            </div>
+            <div class="field">
+              <label>Remaining pts</label>
+              <input type="number" inputmode="numeric"
+                data-team="${teamIdx}" data-cat="penalties" data-key="remainingCards"
+                value="${round.penalties.remainingCards}" ${submitted ? "disabled" : ""}>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-group-title">Bonuses</div>
+          <div class="field-row" style="align-items: flex-end;">
+            <div class="field" style="flex: 0 0 auto;">
+              <label>&nbsp;</label>
+              <button class="toggle-btn ${round.bonuses.goingOut ? "on" : ""}"
+                data-team="${teamIdx}" data-toggle="goingOut" ${submitted ? "disabled" : ""}>
+                Going Out
+              </button>
+            </div>
+            <div class="field">
+              <label>Red 3s collected</label>
+              <input type="number" min="0" max="7" inputmode="numeric"
+                data-team="${teamIdx}" data-cat="bonuses" data-key="redThrees"
+                value="${round.bonuses.redThrees}" ${submitted ? "disabled" : ""}>
+            </div>
+          </div>
+        </div>
+
+        ${submitted ? `
+          <button class="btn btn-submitted" disabled>Score Submitted</button>
+          <button class="btn btn-edit" data-team="${teamIdx}" data-action="edit">Edit</button>
+        ` : `
+          <button class="btn btn-submit" data-team="${teamIdx}" data-action="submit">Submit Score</button>
+        `}
+      `;
+    }
+
+    function render() {
+      renderScoreboard();
+      renderTeamPanel(0);
+      renderTeamPanel(1);
+    }
+
+    function initPanels() {
+      const container = document.getElementById("teams-container");
+      container.innerHTML = `
+        <div class="team-panel" id="team-0"></div>
+        <div class="team-panel" id="team-1"></div>
+      `;
+    }
+
+    // --- Event handling ---
+    document.getElementById("teams-container").addEventListener("input", (e) => {
+      const el = e.target;
+      if (el.tagName !== "INPUT") return;
+      const teamIdx = parseInt(el.dataset.team);
+      const cat = el.dataset.cat;
+      const key = el.dataset.key;
+      const activeRound = state.activeRound[teamIdx];
+      const round = state.rounds[teamIdx][activeRound];
+      const val = parseInt(el.value) || 0;
+
+      if (cat === "meldedCards") {
+        round.meldedCards = val;
+      } else if (cat && key) {
+        round[cat][key] = val;
+      }
+
+      // Update live score
+      const panel = document.getElementById(`team-${teamIdx}`);
+      const liveEl = panel.querySelector(".live-score");
+      if (liveEl) {
+        liveEl.textContent = `Score: ${calculateRoundScore(round).toLocaleString()}`;
+      }
+    });
+
+    document.getElementById("teams-container").addEventListener("click", (e) => {
+      const el = e.target.closest("button");
+      if (!el) {
+        // Check for team name click
+        const nameEl = e.target.closest("[id^='team-name-display-']");
+        if (nameEl) {
+          const teamIdx = parseInt(nameEl.id.split("-").pop());
+          startEditingName(teamIdx);
+        }
+        return;
+      }
+
+      // Round tabs
+      if (el.classList.contains("round-tab")) {
+        const teamIdx = parseInt(el.dataset.team);
+        const round = parseInt(el.dataset.round);
+        state.activeRound[teamIdx] = round;
+        renderTeamPanel(teamIdx);
+        return;
+      }
+
+      // Going Out toggle
+      if (el.dataset.toggle === "goingOut") {
+        const teamIdx = parseInt(el.dataset.team);
+        const activeRound = state.activeRound[teamIdx];
+        const round = state.rounds[teamIdx][activeRound];
+        round.bonuses.goingOut = !round.bonuses.goingOut;
+        renderTeamPanel(teamIdx);
+        return;
+      }
+
+      // Submit
+      if (el.dataset.action === "submit") {
+        const teamIdx = parseInt(el.dataset.team);
+        const activeRound = state.activeRound[teamIdx];
+        state.submitted[teamIdx][activeRound] = true;
+        saveToHash();
+        render();
+        return;
+      }
+
+      // Edit
+      if (el.dataset.action === "edit") {
+        const teamIdx = parseInt(el.dataset.team);
+        const activeRound = state.activeRound[teamIdx];
+        state.submitted[teamIdx][activeRound] = false;
+        saveToHash();
+        render();
+        return;
+      }
+    });
+
+    function startEditingName(teamIdx) {
+      const nameEl = document.getElementById(`team-name-display-${teamIdx}`);
+      const row = nameEl.parentElement;
+      const current = state.teams[teamIdx].name;
+      row.innerHTML = `
+        <input type="text" class="team-name-input" id="team-name-input-${teamIdx}"
+          value="${current}" maxlength="30">
+      `;
+      const input = document.getElementById(`team-name-input-${teamIdx}`);
+      input.focus();
+      input.select();
+
+      const finish = () => {
+        const newName = input.value.trim() || current;
+        state.teams[teamIdx].name = newName;
+        saveToHash();
+        render();
+      };
+
+      input.addEventListener("blur", finish);
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          input.blur();
+        }
+      });
+    }
+
+    // Rules toggle
+    document.getElementById("rules-toggle").addEventListener("click", () => {
+      const content = document.getElementById("rules-content");
+      const btn = document.getElementById("rules-toggle");
+      const isOpen = content.classList.toggle("open");
+      btn.textContent = isOpen ? "▼ Scoring Reference" : "▶ Scoring Reference";
+    });
+
+    // Copy game link
+    document.getElementById("copy-link-btn").addEventListener("click", () => {
+      saveToHash();
+      const url = window.location.href;
+      navigator.clipboard.writeText(url).then(() => {
+        const btn = document.getElementById("copy-link-btn");
+        btn.textContent = "Copied!";
+        setTimeout(() => { btn.textContent = "📋 Copy Game Link"; }, 2000);
+      });
+    });
+
+    // New game
+    document.getElementById("new-game-btn").addEventListener("click", () => {
+      if (confirm("Start a new game? All scores will be cleared.")) {
+        state = createInitialState();
+        history.replaceState(null, "", window.location.pathname);
+        render();
+      }
+    });
+
+    // Handle back/forward and hash changes
+    window.addEventListener("hashchange", () => {
+      loadFromHash();
+      render();
+    });
+
+    // Initialize
+    loadFromHash();
+    initPanels();
+    render();
+    </script>
+</body>
+</html>
