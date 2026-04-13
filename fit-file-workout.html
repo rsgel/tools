@@ -1279,7 +1279,6 @@ cooldown 1 mile easy
         if (cads.length > 0) {
           if (!summary.avgCadence) summary.avgCadence = Math.round(cads.reduce((a, b) => a + b, 0) / cads.length);
           if (!summary.maxCadence) summary.maxCadence = Math.max(...cads);
-          summary.minCadence = Math.min(...cads);
         }
       }
 

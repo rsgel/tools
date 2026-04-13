@@ -196,8 +196,7 @@ def test_summary_displays_with_session_data(page: Page, static_server):
     }""")
     expect(page.locator("#summary-section")).to_be_visible()
     # Check that summary stats rendered
-    stats = page.locator(".summary-stat")
-    assert stats.count() >= 5
+    expect(page.locator(".summary-stat")).to_have_count(7)
 
 
 def test_splits_display_with_lap_data(page: Page, static_server):
@@ -232,7 +231,7 @@ def test_splits_table_has_headers(page: Page, static_server):
         displaySplits(messages);
     }""")
     headers = page.locator(".splits-table th")
-    header_texts = [headers.nth(i).text_content() for i in range(headers.count())]
+    header_texts = headers.all_text_contents()
     assert "Split" in header_texts
     assert "Distance" in header_texts
     assert "Pace" in header_texts
