@@ -356,6 +356,90 @@
       color: #2c6faa;
     }
 
+    /* Workout summary */
+    .summary-section {
+      margin-top: 20px;
+      margin-bottom: 24px;
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .summary-stat {
+      background: #f9f9f9;
+      border-radius: 6px;
+      padding: 12px;
+      border-left: 4px solid #4a90e2;
+    }
+    .summary-stat .stat-label {
+      font-size: 11px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 2px;
+    }
+    .summary-stat .stat-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: #333;
+    }
+    .summary-stat .stat-sub {
+      font-size: 12px;
+      color: #888;
+      margin-top: 1px;
+    }
+
+    /* Splits table */
+    .splits-section {
+      margin-top: 20px;
+      margin-bottom: 24px;
+    }
+    .splits-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .splits-table th,
+    .splits-table td {
+      border: 1px solid #ddd;
+      padding: 8px 10px;
+      text-align: right;
+      white-space: nowrap;
+    }
+    .splits-table th {
+      background: #f5f5f5;
+      font-weight: 600;
+      text-align: center;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .splits-table td:first-child,
+    .splits-table th:first-child {
+      text-align: center;
+      font-weight: 600;
+    }
+    .splits-table tbody tr:hover {
+      background: #f0f7ff;
+    }
+    .splits-table .fastest {
+      color: #155724;
+      font-weight: 700;
+    }
+    .splits-table .slowest {
+      color: #721c24;
+      font-weight: 700;
+    }
+    .btn-row-viewer {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
     @media (max-width: 600px) {
       body {
         padding: 10px;
@@ -413,6 +497,19 @@
           <canvas id="chart-canvas"></canvas>
           <div class="chart-tooltip" id="chart-tooltip"></div>
         </div>
+      </div>
+
+      <div id="summary-section" class="summary-section" style="display:none">
+        <h2>Workout Summary</h2>
+        <div id="summary-grid" class="summary-grid"></div>
+        <div class="btn-row-viewer">
+          <button class="btn btn-secondary" id="download-md-btn">Download Markdown Summary</button>
+        </div>
+      </div>
+
+      <div id="splits-section" class="splits-section" style="display:none">
+        <h2>Splits</h2>
+        <div id="splits-container"></div>
       </div>
 
       <div id="messages-section" style="display:none">
@@ -921,6 +1018,7 @@ cooldown 1 mile easy
     });
 
     let parsedData = null;
+    let parsedFileName = "";
 
     function handleFile(file) {
       if (!file.name.toLowerCase().endsWith(".fit")) {
@@ -932,9 +1030,12 @@ cooldown 1 mile easy
       reader.onload = () => {
         try {
           parsedData = parseFitFile(reader.result);
+          parsedFileName = file.name;
           displayFileInfo(file, parsedData);
           displayMessages(parsedData.messages);
           displayChart(parsedData.messages);
+          displaySummary(parsedData.messages);
+          displaySplits(parsedData.messages);
         } catch (err) {
           alert(`Error parsing FIT file: ${err.message}`);
         }
@@ -1098,6 +1199,402 @@ cooldown 1 mile easy
       a.click();
       URL.revokeObjectURL(url);
     }
+
+    // ═══════════════════════════════════════════════
+    // VIEWER: Workout Summary & Splits
+    // ═══════════════════════════════════════════════
+
+    // Helper: convert raw FIT speed (mm/s) to pace string (min:sec /mi)
+    function speedToPace(speedMmS) {
+      if (!speedMmS || speedMmS === 0 || speedMmS === 0xFFFF || speedMmS === 0xFFFFFFFF) return "—";
+      const speedMs = speedMmS / 1000;
+      const paceSecPerMi = 1609.34 / speedMs;
+      if (paceSecPerMi > 3600) return "—";
+      const m = Math.floor(paceSecPerMi / 60);
+      const s = Math.round(paceSecPerMi % 60);
+      return `${m}:${String(s).padStart(2, "0")}`;
+    }
+
+    // Helper: format elapsed time (ms as stored in FIT) to readable
+    function formatElapsed(ms) {
+      if (!ms || ms === 0xFFFFFFFF) return "—";
+      const totalSec = Math.round(ms / 1000);
+      const h = Math.floor(totalSec / 3600);
+      const m = Math.floor((totalSec % 3600) / 60);
+      const s = totalSec % 60;
+      if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+      return `${m}:${String(s).padStart(2, "0")}`;
+    }
+
+    // Helper: format distance (hundredths of meters) to mi
+    function formatDistMi(hundredths) {
+      if (!hundredths || hundredths === 0xFFFFFFFF) return "—";
+      return (hundredths / 100 / 1609.34).toFixed(2);
+    }
+
+    // Helper: format altitude value
+    function formatAlt(raw) {
+      if (raw === undefined || raw === null || raw === 0xFFFF || raw === 0xFFFFFFFF) return null;
+      if (raw > 100) return ((raw / 5) - 500).toFixed(0);
+      return raw;
+    }
+
+    // Helper: check if value is valid FIT numeric (not invalid sentinel)
+    function isValidFitNum(v) {
+      return v !== undefined && v !== null && v !== 0xFF && v !== 0xFFFF && v !== 0xFFFFFFFF && typeof v === "number";
+    }
+
+    function extractSessionSummary(messages) {
+      const session = messages.session && messages.session[0];
+      const records = messages.record || [];
+      const summary = {};
+
+      if (session) {
+        if (isValidFitNum(session.total_distance)) summary.distance = session.total_distance;
+        if (isValidFitNum(session.total_elapsed_time)) summary.elapsed = session.total_elapsed_time;
+        if (isValidFitNum(session.total_timer_time)) summary.timer = session.total_timer_time;
+        if (isValidFitNum(session.avg_speed)) summary.avgSpeed = session.avg_speed;
+        if (isValidFitNum(session.max_speed)) summary.maxSpeed = session.max_speed;
+        if (isValidFitNum(session.avg_heart_rate)) summary.avgHR = session.avg_heart_rate;
+        if (isValidFitNum(session.max_heart_rate)) summary.maxHR = session.max_heart_rate;
+        if (isValidFitNum(session.avg_cadence)) summary.avgCadence = session.avg_cadence;
+        if (isValidFitNum(session.max_cadence)) summary.maxCadence = session.max_cadence;
+        if (isValidFitNum(session.avg_power)) summary.avgPower = session.avg_power;
+        if (isValidFitNum(session.max_power)) summary.maxPower = session.max_power;
+        if (isValidFitNum(session.total_ascent)) summary.ascent = session.total_ascent;
+        if (isValidFitNum(session.total_descent)) summary.descent = session.total_descent;
+        if (isValidFitNum(session.total_calories)) summary.calories = session.total_calories;
+      }
+
+      // Compute min HR from records if not in session
+      if (records.length > 0) {
+        const hrs = records.map(r => r.heart_rate).filter(v => isValidFitNum(v) && v > 0);
+        if (hrs.length > 0) {
+          summary.minHR = Math.min(...hrs);
+          if (!summary.avgHR) summary.avgHR = Math.round(hrs.reduce((a, b) => a + b, 0) / hrs.length);
+          if (!summary.maxHR) summary.maxHR = Math.max(...hrs);
+        }
+        // Compute cadence from records if not in session
+        const cads = records.map(r => r.cadence).filter(v => isValidFitNum(v) && v > 0);
+        if (cads.length > 0) {
+          if (!summary.avgCadence) summary.avgCadence = Math.round(cads.reduce((a, b) => a + b, 0) / cads.length);
+          if (!summary.maxCadence) summary.maxCadence = Math.max(...cads);
+          summary.minCadence = Math.min(...cads);
+        }
+      }
+
+      return summary;
+    }
+
+    function displaySummary(messages) {
+      const section = document.getElementById("summary-section");
+      const grid = document.getElementById("summary-grid");
+      grid.innerHTML = "";
+
+      const summary = extractSessionSummary(messages);
+      if (Object.keys(summary).length === 0) {
+        section.style.display = "none";
+        return;
+      }
+
+      const stats = [];
+
+      if (summary.distance !== undefined) {
+        stats.push({ label: "Distance", value: formatDistMi(summary.distance) + " mi", sub: (summary.distance / 100 / 1000).toFixed(2) + " km" });
+      }
+      if (summary.elapsed !== undefined) {
+        stats.push({ label: "Elapsed Time", value: formatElapsed(summary.elapsed) });
+      }
+      if (summary.avgSpeed !== undefined) {
+        stats.push({ label: "Avg Pace", value: speedToPace(summary.avgSpeed) + " /mi" });
+      }
+      if (summary.avgHR !== undefined) {
+        let sub = "";
+        if (summary.minHR !== undefined && summary.maxHR !== undefined) sub = `${summary.minHR} – ${summary.maxHR} bpm`;
+        stats.push({ label: "Avg Heart Rate", value: summary.avgHR + " bpm", sub });
+      }
+      if (summary.avgCadence !== undefined) {
+        let sub = "";
+        if (summary.maxCadence !== undefined) sub = `max ${summary.maxCadence} spm`;
+        stats.push({ label: "Avg Cadence", value: (summary.avgCadence * 2) + " spm", sub });
+      }
+      if (summary.ascent !== undefined) {
+        const sub = summary.descent !== undefined ? `↓ ${summary.descent} m descent` : "";
+        stats.push({ label: "Elevation Gain", value: summary.ascent + " m", sub });
+      }
+      if (summary.avgPower !== undefined) {
+        const sub = summary.maxPower !== undefined ? `max ${summary.maxPower} W` : "";
+        stats.push({ label: "Avg Power", value: summary.avgPower + " W", sub });
+      }
+      if (summary.calories !== undefined) {
+        stats.push({ label: "Calories", value: summary.calories.toLocaleString() });
+      }
+
+      stats.forEach(s => {
+        const div = document.createElement("div");
+        div.className = "summary-stat";
+        div.innerHTML = `<div class="stat-label">${s.label}</div><div class="stat-value">${s.value}</div>${s.sub ? `<div class="stat-sub">${s.sub}</div>` : ""}`;
+        grid.appendChild(div);
+      });
+
+      section.style.display = "block";
+    }
+
+    function extractLapData(messages) {
+      const laps = messages.lap;
+      if (!laps || laps.length < 1) return [];
+
+      return laps.map((lap, i) => {
+        const data = { num: i + 1 };
+        if (isValidFitNum(lap.total_distance)) data.distance = lap.total_distance;
+        if (isValidFitNum(lap.total_elapsed_time)) data.elapsed = lap.total_elapsed_time;
+        if (isValidFitNum(lap.total_timer_time)) data.timer = lap.total_timer_time;
+        if (isValidFitNum(lap.avg_speed)) data.avgSpeed = lap.avg_speed;
+        if (isValidFitNum(lap.max_speed)) data.maxSpeed = lap.max_speed;
+        if (isValidFitNum(lap.avg_heart_rate)) data.avgHR = lap.avg_heart_rate;
+        if (isValidFitNum(lap.max_heart_rate)) data.maxHR = lap.max_heart_rate;
+        if (isValidFitNum(lap.avg_cadence)) data.avgCadence = lap.avg_cadence;
+        if (isValidFitNum(lap.total_ascent)) data.ascent = lap.total_ascent;
+        if (isValidFitNum(lap.total_descent)) data.descent = lap.total_descent;
+        if (isValidFitNum(lap.avg_power)) data.avgPower = lap.avg_power;
+        if (isValidFitNum(lap.max_power)) data.maxPower = lap.max_power;
+        return data;
+      });
+    }
+
+    function displaySplits(messages) {
+      const section = document.getElementById("splits-section");
+      const container = document.getElementById("splits-container");
+      container.innerHTML = "";
+
+      const lapData = extractLapData(messages);
+      if (lapData.length < 1) {
+        section.style.display = "none";
+        return;
+      }
+
+      // Determine which columns have data
+      const hasDistance = lapData.some(l => l.distance !== undefined);
+      const hasElapsed = lapData.some(l => l.elapsed !== undefined);
+      const hasPace = lapData.some(l => l.avgSpeed !== undefined);
+      const hasHR = lapData.some(l => l.avgHR !== undefined);
+      const hasCadence = lapData.some(l => l.avgCadence !== undefined);
+      const hasElevation = lapData.some(l => l.ascent !== undefined);
+      const hasPower = lapData.some(l => l.avgPower !== undefined);
+
+      // Find fastest / slowest pace laps (by avgSpeed — higher speed = faster pace)
+      let fastestIdx = -1;
+      let slowestIdx = -1;
+      if (hasPace && lapData.length > 1) {
+        let maxSpeed = -1;
+        let minSpeed = Infinity;
+        lapData.forEach((l, i) => {
+          if (l.avgSpeed !== undefined && l.avgSpeed > 0) {
+            if (l.avgSpeed > maxSpeed) { maxSpeed = l.avgSpeed; fastestIdx = i; }
+            if (l.avgSpeed < minSpeed) { minSpeed = l.avgSpeed; slowestIdx = i; }
+          }
+        });
+        if (fastestIdx === slowestIdx) { fastestIdx = -1; slowestIdx = -1; }
+      }
+
+      const table = document.createElement("table");
+      table.className = "splits-table";
+
+      // Header
+      const thead = document.createElement("thead");
+      const headRow = document.createElement("tr");
+      const headers = ["Split"];
+      if (hasDistance) headers.push("Distance");
+      if (hasElapsed) headers.push("Time");
+      if (hasPace) headers.push("Pace");
+      if (hasHR) headers.push("Avg HR", "Max HR");
+      if (hasCadence) headers.push("Cadence");
+      if (hasElevation) headers.push("Elev ↑", "Elev ↓");
+      if (hasPower) headers.push("Avg Power");
+      headers.forEach(h => {
+        const th = document.createElement("th");
+        th.textContent = h;
+        headRow.appendChild(th);
+      });
+      thead.appendChild(headRow);
+      table.appendChild(thead);
+
+      // Body
+      const tbody = document.createElement("tbody");
+      lapData.forEach((lap, i) => {
+        const row = document.createElement("tr");
+
+        const addCell = (text, cls) => {
+          const td = document.createElement("td");
+          td.textContent = text;
+          if (cls) td.className = cls;
+          row.appendChild(td);
+        };
+
+        addCell(lap.num);
+        if (hasDistance) addCell(lap.distance !== undefined ? formatDistMi(lap.distance) + " mi" : "—");
+        if (hasElapsed) addCell(lap.elapsed !== undefined ? formatElapsed(lap.elapsed) : "—");
+        if (hasPace) {
+          const paceStr = lap.avgSpeed !== undefined ? speedToPace(lap.avgSpeed) : "—";
+          const cls = i === fastestIdx ? "fastest" : (i === slowestIdx ? "slowest" : "");
+          addCell(paceStr, cls);
+        }
+        if (hasHR) {
+          addCell(lap.avgHR !== undefined ? lap.avgHR + " bpm" : "—");
+          addCell(lap.maxHR !== undefined ? lap.maxHR + " bpm" : "—");
+        }
+        if (hasCadence) addCell(lap.avgCadence !== undefined ? (lap.avgCadence * 2) + " spm" : "—");
+        if (hasElevation) {
+          addCell(lap.ascent !== undefined ? lap.ascent + " m" : "—");
+          addCell(lap.descent !== undefined ? lap.descent + " m" : "—");
+        }
+        if (hasPower) addCell(lap.avgPower !== undefined ? lap.avgPower + " W" : "—");
+
+        tbody.appendChild(row);
+      });
+      table.appendChild(tbody);
+      container.appendChild(table);
+
+      section.style.display = "block";
+    }
+
+    // ─── Markdown Summary Export ───
+    function generateMarkdownSummary(messages) {
+      const summary = extractSessionSummary(messages);
+      const lapData = extractLapData(messages);
+      const lines = [];
+
+      lines.push(`# Workout Summary`);
+      if (parsedFileName) lines.push(`\n**File:** ${parsedFileName}`);
+
+      // Session summary from session message
+      const session = messages.session && messages.session[0];
+      if (session && isValidFitNum(session.timestamp)) {
+        const date = new Date((session.timestamp + 631065600) * 1000);
+        lines.push(`**Date:** ${date.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}`);
+      }
+
+      lines.push("");
+      lines.push("## Overall");
+      lines.push("");
+
+      const overallRows = [];
+      if (summary.distance !== undefined) {
+        overallRows.push(`| Distance | ${formatDistMi(summary.distance)} mi (${(summary.distance / 100 / 1000).toFixed(2)} km) |`);
+      }
+      if (summary.elapsed !== undefined) {
+        overallRows.push(`| Elapsed Time | ${formatElapsed(summary.elapsed)} |`);
+      }
+      if (summary.timer !== undefined && summary.timer !== summary.elapsed) {
+        overallRows.push(`| Moving Time | ${formatElapsed(summary.timer)} |`);
+      }
+      if (summary.avgSpeed !== undefined) {
+        overallRows.push(`| Avg Pace | ${speedToPace(summary.avgSpeed)} /mi |`);
+      }
+      if (summary.maxSpeed !== undefined) {
+        overallRows.push(`| Best Pace | ${speedToPace(summary.maxSpeed)} /mi |`);
+      }
+      if (summary.avgHR !== undefined) {
+        overallRows.push(`| Avg Heart Rate | ${summary.avgHR} bpm |`);
+      }
+      if (summary.maxHR !== undefined) {
+        overallRows.push(`| Max Heart Rate | ${summary.maxHR} bpm |`);
+      }
+      if (summary.minHR !== undefined) {
+        overallRows.push(`| Min Heart Rate | ${summary.minHR} bpm |`);
+      }
+      if (summary.avgCadence !== undefined) {
+        overallRows.push(`| Avg Cadence | ${summary.avgCadence * 2} spm |`);
+      }
+      if (summary.maxCadence !== undefined) {
+        overallRows.push(`| Max Cadence | ${summary.maxCadence * 2} spm |`);
+      }
+      if (summary.ascent !== undefined) {
+        overallRows.push(`| Elevation Gain | ${summary.ascent} m |`);
+      }
+      if (summary.descent !== undefined) {
+        overallRows.push(`| Elevation Loss | ${summary.descent} m |`);
+      }
+      if (summary.avgPower !== undefined) {
+        overallRows.push(`| Avg Power | ${summary.avgPower} W |`);
+      }
+      if (summary.maxPower !== undefined) {
+        overallRows.push(`| Max Power | ${summary.maxPower} W |`);
+      }
+      if (summary.calories !== undefined) {
+        overallRows.push(`| Calories | ${summary.calories} |`);
+      }
+
+      if (overallRows.length > 0) {
+        lines.push("| Metric | Value |");
+        lines.push("|--------|-------|");
+        overallRows.forEach(r => lines.push(r));
+      }
+
+      // Splits
+      if (lapData.length > 0) {
+        lines.push("");
+        lines.push("## Splits");
+        lines.push("");
+
+        const hasDistance = lapData.some(l => l.distance !== undefined);
+        const hasElapsed = lapData.some(l => l.elapsed !== undefined);
+        const hasPace = lapData.some(l => l.avgSpeed !== undefined);
+        const hasHR = lapData.some(l => l.avgHR !== undefined);
+        const hasMaxHR = lapData.some(l => l.maxHR !== undefined);
+        const hasCadence = lapData.some(l => l.avgCadence !== undefined);
+        const hasAscent = lapData.some(l => l.ascent !== undefined);
+        const hasDescent = lapData.some(l => l.descent !== undefined);
+        const hasPower = lapData.some(l => l.avgPower !== undefined);
+
+        const cols = ["Split"];
+        if (hasDistance) cols.push("Distance");
+        if (hasElapsed) cols.push("Time");
+        if (hasPace) cols.push("Pace");
+        if (hasHR) cols.push("Avg HR");
+        if (hasMaxHR) cols.push("Max HR");
+        if (hasCadence) cols.push("Cadence");
+        if (hasAscent) cols.push("Elev ↑");
+        if (hasDescent) cols.push("Elev ↓");
+        if (hasPower) cols.push("Avg Power");
+
+        lines.push("| " + cols.join(" | ") + " |");
+        lines.push("| " + cols.map(() => "---").join(" | ") + " |");
+
+        lapData.forEach(lap => {
+          const cells = [String(lap.num)];
+          if (hasDistance) cells.push(lap.distance !== undefined ? formatDistMi(lap.distance) + " mi" : "—");
+          if (hasElapsed) cells.push(lap.elapsed !== undefined ? formatElapsed(lap.elapsed) : "—");
+          if (hasPace) cells.push(lap.avgSpeed !== undefined ? speedToPace(lap.avgSpeed) : "—");
+          if (hasHR) cells.push(lap.avgHR !== undefined ? lap.avgHR + " bpm" : "—");
+          if (hasMaxHR) cells.push(lap.maxHR !== undefined ? lap.maxHR + " bpm" : "—");
+          if (hasCadence) cells.push(lap.avgCadence !== undefined ? (lap.avgCadence * 2) + " spm" : "—");
+          if (hasAscent) cells.push(lap.ascent !== undefined ? lap.ascent + " m" : "—");
+          if (hasDescent) cells.push(lap.descent !== undefined ? lap.descent + " m" : "—");
+          if (hasPower) cells.push(lap.avgPower !== undefined ? lap.avgPower + " W" : "—");
+          lines.push("| " + cells.join(" | ") + " |");
+        });
+      }
+
+      lines.push("");
+      lines.push("---");
+      lines.push(`*Generated by [FIT File Workout Creator](https://rsgel.github.io/tools/fit-file-workout)*`);
+
+      return lines.join("\n");
+    }
+
+    document.getElementById("download-md-btn").addEventListener("click", () => {
+      if (!parsedData) return;
+      const md = generateMarkdownSummary(parsedData.messages);
+      const blob = new Blob([md], { type: "text/markdown" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const baseName = parsedFileName ? parsedFileName.replace(/\.fit$/i, "") : "workout";
+      a.download = `${baseName}-summary.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
 
     // ═══════════════════════════════════════════════
     // VIEWER: Interactive Chart
