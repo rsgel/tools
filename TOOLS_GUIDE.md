@@ -36,14 +36,29 @@ tools/
 
 - **HTML file**: `{tool-name}.html` (e.g., `json-formatter.html`)
 - **Docs file**: `{tool-name}.docs.md` (e.g., `json-formatter.docs.md`)
-- **Docs format**: Brief 2-3 sentence description of what the tool does
+- **Docs format**: Description first, then optional Spec and Backlog sections
 
 ### Example docs.md:
 ```markdown
 A JSON formatting and validation tool. Paste or type JSON into the input area 
 and see it pretty-printed with syntax highlighting. Invalid JSON is flagged 
 with a clear error message showing the line and position of the problem.
+
+## Spec
+
+Core behaviors: paste/type JSON in left panel, formatted output in right panel.
+Uses native JSON.parse for validation. Error messages extract line/position from
+SyntaxError. Supports compact vs. pretty output (2-space indent).
+
+## Backlog
+
+- JSON diff mode (compare two JSON blobs)
+- JSON-to-YAML conversion
+- Collapsible tree view
 ```
+
+The **Spec** and **Backlog** sections are optional but encouraged for non-trivial tools.
+Keep the spec concise — essential data model, key behaviors, and technical decisions.
 
 ---
 

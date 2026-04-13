@@ -23,9 +23,31 @@ Each tool is a single, self-contained HTML file. Follow these rules:
 ## When Adding a Tool
 
 1. Create the `.html` file
-2. Create the `.docs.md` file with a 2-3 sentence description
+2. Create the `.docs.md` file (see format below)
 3. Add a line to `README.md` in the Tools section
 4. Optionally add Playwright tests in `tests/`
+
+## Docs File Format (`*.docs.md`)
+
+Each tool's docs file starts with a 2-3 sentence description, then optionally includes
+a lightweight spec and a backlog of future ideas:
+
+```markdown
+Brief 2-3 sentence description of what the tool does.
+
+## Spec
+
+Essential spec notes: core data model, key behaviors, technical decisions.
+Keep it concise — just enough for an agent to understand intent without
+reading all the source code.
+
+## Backlog
+
+- Future idea one
+- Future idea two
+```
+
+The Spec and Backlog sections are optional but encouraged for non-trivial tools.
 
 ## Code Style
 

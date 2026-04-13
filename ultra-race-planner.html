@@ -1,0 +1,1844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultra Race Planner</title>
+    <script src="https://cdn.jsdelivr.net/npm/js-yaml@4/dist/js-yaml.min.js"></script>
+    <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+      color: #333;
+      background: #fafafa;
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 28px;
+    }
+    h2 {
+      font-size: 20px;
+      margin-top: 0;
+      margin-bottom: 12px;
+    }
+    h3 {
+      font-size: 16px;
+      margin: 12px 0 6px;
+    }
+
+    /* Tab bar */
+    .tab-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2px;
+      border-bottom: 2px solid #4a5568;
+      margin-bottom: 20px;
+    }
+    .tab-bar button {
+      padding: 10px 16px;
+      border: none;
+      background: #e2e8f0;
+      color: #4a5568;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 6px 6px 0 0;
+      transition: background 0.15s;
+    }
+    .tab-bar button:hover {
+      background: #cbd5e0;
+    }
+    .tab-bar button.active {
+      background: #4a5568;
+      color: #fff;
+    }
+    .tab-panel {
+      display: none;
+    }
+    .tab-panel.active {
+      display: block;
+    }
+
+    /* Forms */
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+    input[type="text"],
+    input[type="number"],
+    input[type="file"],
+    textarea,
+    select {
+      font-size: 16px;
+      font-family: inherit;
+      padding: 8px 10px;
+      border: 1px solid #cbd5e0;
+      border-radius: 4px;
+      width: 100%;
+      background: #fff;
+    }
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+    textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+    .form-row {
+      margin-bottom: 14px;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .form-grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 14px;
+    }
+    .hint {
+      font-size: 12px;
+      color: #718096;
+      margin-top: 2px;
+    }
+
+    /* Buttons */
+    button {
+      font-family: inherit;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-primary {
+      background: #3182ce;
+      color: #fff;
+    }
+    .btn-primary:hover {
+      background: #2b6cb0;
+    }
+    .btn-secondary {
+      background: #e2e8f0;
+      color: #4a5568;
+    }
+    .btn-secondary:hover {
+      background: #cbd5e0;
+    }
+    .btn-danger {
+      background: #fc8181;
+      color: #fff;
+    }
+    .btn-danger:hover {
+      background: #f56565;
+    }
+    .btn-sm {
+      padding: 4px 10px;
+      font-size: 13px;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      margin-bottom: 16px;
+    }
+    th, td {
+      padding: 8px 10px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+      font-size: 14px;
+    }
+    th {
+      background: #4a5568;
+      color: #fff;
+      font-weight: 600;
+    }
+    td input, td select {
+      font-size: 14px;
+      padding: 4px 6px;
+      width: 100%;
+    }
+    td textarea {
+      font-size: 14px;
+      padding: 4px 6px;
+      min-height: 36px;
+    }
+
+    /* Cards */
+    .card {
+      background: #fff;
+      border-radius: 6px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      margin-bottom: 16px;
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    /* GPX drop zone */
+    .drop-zone {
+      border: 2px dashed #cbd5e0;
+      border-radius: 6px;
+      padding: 24px;
+      text-align: center;
+      color: #718096;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      margin-bottom: 14px;
+    }
+    .drop-zone.dragover {
+      border-color: #3182ce;
+      background: #ebf8ff;
+    }
+    .drop-zone input[type="file"] {
+      display: none;
+    }
+    .gpx-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .gpx-stat {
+      background: #ebf8ff;
+      border-radius: 4px;
+      padding: 10px;
+      text-align: center;
+    }
+    .gpx-stat .value {
+      font-size: 20px;
+      font-weight: 700;
+      color: #2b6cb0;
+    }
+    .gpx-stat .label {
+      font-size: 12px;
+      color: #4a5568;
+    }
+
+    /* Toggle buttons */
+    .toggle-btn {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid #cbd5e0;
+      background: #edf2f7;
+      color: #718096;
+      user-select: none;
+    }
+    .toggle-btn.on {
+      background: #c6f6d5;
+      color: #276749;
+      border-color: #9ae6b4;
+    }
+
+    /* Segment cards */
+    .segment-card {
+      background: #fff;
+      border-radius: 6px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      margin-bottom: 16px;
+    }
+    .segment-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .segment-header h3 {
+      margin: 0;
+    }
+    .segment-meta {
+      font-size: 13px;
+      color: #718096;
+    }
+    .nutrition-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+    }
+    .nutrition-row select {
+      flex: 1;
+      min-width: 140px;
+    }
+    .nutrition-row input[type="number"] {
+      width: 70px;
+      flex: 0 0 70px;
+    }
+    .segment-totals {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #eee;
+    }
+    .segment-total {
+      text-align: center;
+      font-size: 13px;
+    }
+    .segment-total .val {
+      font-weight: 700;
+      font-size: 16px;
+    }
+    .segment-total .lbl {
+      color: #718096;
+    }
+    .rate-ok { color: #276749; }
+    .rate-warn { color: #b7791f; }
+    .rate-low { color: #c53030; }
+
+    /* Dashboard */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .summary-card {
+      background: #fff;
+      border-radius: 6px;
+      padding: 14px;
+      text-align: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .summary-card .val {
+      font-size: 22px;
+      font-weight: 700;
+      color: #2b6cb0;
+    }
+    .summary-card .lbl {
+      font-size: 12px;
+      color: #718096;
+    }
+    .bar-container {
+      height: 16px;
+      background: #edf2f7;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.3s;
+    }
+    .bar-green { background: #48bb78; }
+    .bar-yellow { background: #ecc94b; }
+    .bar-red { background: #f56565; }
+
+    /* Export */
+    .export-section {
+      margin-bottom: 20px;
+    }
+    .export-section h3 {
+      margin-top: 0;
+    }
+    .export-buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .import-area {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    /* Action bar */
+    .action-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* Status message */
+    .status-msg {
+      padding: 10px 14px;
+      border-radius: 4px;
+      margin-bottom: 14px;
+      font-size: 14px;
+      display: none;
+    }
+    .status-msg.success {
+      display: block;
+      background: #f0fff4;
+      color: #276749;
+      border: 1px solid #c6f6d5;
+    }
+    .status-msg.error {
+      display: block;
+      background: #fff5f5;
+      color: #c53030;
+      border: 1px solid #fed7d7;
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #a0aec0;
+    }
+    .empty-state p {
+      margin: 4px 0;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 12px;
+      }
+      h1 {
+        font-size: 22px;
+      }
+      .tab-bar button {
+        padding: 8px 10px;
+        font-size: 12px;
+      }
+      .form-grid, .form-grid-3, .gpx-stats, .segment-totals, .summary-grid {
+        grid-template-columns: 1fr;
+      }
+      .segment-totals {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    </style>
+</head>
+<body>
+    <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <h1>Ultra Race Planner</h1>
+      <button class="btn btn-secondary btn-sm" id="new-plan-btn">New Plan</button>
+    </div>
+    <p>Plan your ultrarunning race logistics: splits, aid stations, drop bags, and nutrition strategy.</p>
+
+    <div class="tab-bar" id="tab-bar">
+      <button class="active" data-tab="setup">Race Setup</button>
+      <button data-tab="stations">Aid Stations</button>
+      <button data-tab="inventory">Nutrition Inventory</button>
+      <button data-tab="segments">Segment Planner</button>
+      <button data-tab="dashboard">Dashboard</button>
+      <button data-tab="export">Export / Import</button>
+    </div>
+
+    <!-- TAB 1: Race Setup -->
+    <div class="tab-panel active" id="tab-setup">
+      <div class="card">
+        <h2>Race Details</h2>
+        <div class="form-row">
+          <label for="race-name">Race Name</label>
+          <input type="text" id="race-name" placeholder="e.g. Western States 100">
+        </div>
+        <div class="form-grid">
+          <div class="form-row">
+            <label for="race-distance">Distance (miles)</label>
+            <input type="number" id="race-distance" min="0" step="0.1" placeholder="100">
+          </div>
+          <div class="form-row">
+            <label for="race-goal-time">Goal Finish Time</label>
+            <input type="text" id="race-goal-time" placeholder="HH:MM:SS" pattern="\d{1,3}:\d{2}:\d{2}">
+            <div class="hint">Format: HH:MM:SS (e.g. 24:00:00)</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>GPX Import</h2>
+        <div class="drop-zone" id="gpx-drop-zone">
+          <p><strong>Drop a GPX file here</strong> or click to browse</p>
+          <p class="hint">Extracts distance and elevation data from your route</p>
+          <input type="file" id="gpx-file" accept=".gpx">
+        </div>
+        <div id="gpx-stats" style="display:none">
+          <div class="gpx-stats">
+            <div class="gpx-stat">
+              <div class="value" id="gpx-distance">—</div>
+              <div class="label">Distance (mi)</div>
+            </div>
+            <div class="gpx-stat">
+              <div class="value" id="gpx-gain">—</div>
+              <div class="label">Elevation Gain (ft)</div>
+            </div>
+            <div class="gpx-stat">
+              <div class="value" id="gpx-loss">—</div>
+              <div class="label">Elevation Loss (ft)</div>
+            </div>
+          </div>
+          <div class="hint" style="margin-top:8px">
+            <span id="gpx-points-count"></span> trackpoints processed.
+            <button class="btn btn-sm btn-secondary" id="gpx-clear-btn">Clear GPX</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Nutrition Targets</h2>
+        <div class="hint" style="margin-bottom:10px">Set your per-hour nutrition goals. These are used to flag segments on the dashboard.</div>
+        <div class="form-grid-3">
+          <div class="form-row">
+            <label for="target-carbs">Carbs / hour (g)</label>
+            <input type="number" id="target-carbs" min="0" step="1" placeholder="60">
+          </div>
+          <div class="form-row">
+            <label for="target-sodium">Sodium / hour (mg)</label>
+            <input type="number" id="target-sodium" min="0" step="1" placeholder="500">
+          </div>
+          <div class="form-row">
+            <label for="target-caffeine">Caffeine / hour (mg)</label>
+            <input type="number" id="target-caffeine" min="0" step="1" placeholder="0">
+            <div class="hint">Optional</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Race Notes</h2>
+        <div class="hint" style="margin-bottom:8px">General notes, strategy, or instructions for yourself or your crew.</div>
+        <textarea id="race-notes" rows="4" placeholder="e.g. Start conservative, walk all climbs after mile 60, switch to broth at night..."></textarea>
+      </div>
+    </div>
+
+    <!-- TAB 2: Aid Stations -->
+    <div class="tab-panel" id="tab-stations">
+      <div class="card">
+        <div class="card-header">
+          <h2>Aid Stations</h2>
+          <button class="btn btn-primary btn-sm" id="add-station-btn">+ Add Station</button>
+        </div>
+        <div class="hint" style="margin-bottom:12px">Add aid stations in order of distance from the start. Start and Finish are automatic.</div>
+        <div id="stations-list">
+          <div class="empty-state" id="stations-empty">
+            <p><strong>No aid stations yet</strong></p>
+            <p>Click "+ Add Station" to add your first aid station.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: Nutrition Inventory -->
+    <div class="tab-panel" id="tab-inventory">
+      <div class="card">
+        <div class="card-header">
+          <h2>Nutrition Products</h2>
+          <button class="btn btn-primary btn-sm" id="add-product-btn">+ Add Product</button>
+        </div>
+        <div class="hint" style="margin-bottom:12px">Build your inventory of nutrition products. These can be assigned to segments in the planner.</div>
+        <div id="products-list">
+          <div class="empty-state" id="products-empty">
+            <p><strong>No products yet</strong></p>
+            <p>Click "+ Add Product" to add your first nutrition product.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: Segment Nutrition Planner -->
+    <div class="tab-panel" id="tab-segments">
+      <div id="segments-content">
+        <div class="empty-state" id="segments-empty">
+          <p><strong>No segments to plan</strong></p>
+          <p>Add at least one aid station and set your race distance to generate segments.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: Dashboard -->
+    <div class="tab-panel" id="tab-dashboard">
+      <div id="dashboard-content">
+        <div class="empty-state" id="dashboard-empty">
+          <p><strong>Nothing to show yet</strong></p>
+          <p>Set up your race, add aid stations, and plan nutrition to see the dashboard.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 6: Export / Import -->
+    <div class="tab-panel" id="tab-export">
+      <div class="card export-section">
+        <h2>Export Plan</h2>
+        <p>Download your race plan as a structured YAML file (for re-import) or as readable Markdown.</p>
+        <div class="export-buttons">
+          <button class="btn btn-primary" id="export-yaml-btn">Download YAML</button>
+          <button class="btn btn-secondary" id="export-md-btn">Download Markdown</button>
+        </div>
+      </div>
+
+      <div class="card import-area">
+        <h2>Import Plan</h2>
+        <p>Load a previously exported YAML plan to restore your race data.</p>
+        <div class="drop-zone" id="yaml-drop-zone">
+          <p><strong>Drop a YAML file here</strong> or click to browse</p>
+          <input type="file" id="yaml-file" accept=".yaml,.yml">
+        </div>
+        <div id="import-status" class="status-msg"></div>
+      </div>
+    </div>
+
+    <script>
+    // ──────────────────────────────────────────
+    // State
+    // ──────────────────────────────────────────
+    const STORAGE_KEY = "ultra-race-planner";
+
+    const defaultState = () => ({
+      race: {
+        name: "",
+        distance: 0,
+        goalTime: "",
+        elevationGain: 0,
+        elevationLoss: 0,
+        notes: "",
+      },
+      gpxData: null,
+      nutritionTargets: {
+        carbsPerHour: 0,
+        sodiumPerHour: 0,
+        caffeinePerHour: 0,
+      },
+      aidStations: [],
+      products: [],
+      segments: [],
+    });
+
+    const state = defaultState();
+
+    // ──────────────────────────────────────────
+    // Utilities
+    // ──────────────────────────────────────────
+    function generateId() {
+      return crypto.randomUUID();
+    }
+
+    function parseTimeToSeconds(str) {
+      if (!str) return 0;
+      const parts = str.split(":").map(Number);
+      if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+      if (parts.length === 2) return parts[0] * 3600 + parts[1] * 60;
+      return 0;
+    }
+
+    function formatSeconds(secs) {
+      if (!secs || secs <= 0) return "—";
+      const h = Math.floor(secs / 3600);
+      const m = Math.floor((secs % 3600) / 60);
+      const s = Math.floor(secs % 60);
+      return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+    }
+
+    function formatHM(secs) {
+      if (!secs || secs <= 0) return "—";
+      const h = Math.floor(secs / 3600);
+      const m = Math.floor((secs % 3600) / 60);
+      return `${h}:${String(m).padStart(2, "0")}`;
+    }
+
+    function round2(n) {
+      return Math.round(n * 100) / 100;
+    }
+
+    function round1(n) {
+      return Math.round(n * 10) / 10;
+    }
+
+    // ──────────────────────────────────────────
+    // Persistence
+    // ──────────────────────────────────────────
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) { /* storage full or unavailable */ }
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        if (!data || typeof data !== "object") return;
+        if (data.race) Object.assign(state.race, data.race);
+        if (data.gpxData) state.gpxData = data.gpxData;
+        if (data.nutritionTargets) Object.assign(state.nutritionTargets, data.nutritionTargets);
+        if (Array.isArray(data.aidStations)) state.aidStations = data.aidStations;
+        if (Array.isArray(data.products)) state.products = data.products;
+        if (Array.isArray(data.segments)) state.segments = data.segments;
+      } catch (e) { /* corrupt data, ignore */ }
+    }
+
+    function resetState() {
+      const fresh = defaultState();
+      Object.keys(fresh).forEach(k => { state[k] = fresh[k]; });
+      localStorage.removeItem(STORAGE_KEY);
+    }
+
+    // Debounced auto-save on any input
+    let saveTimer = null;
+    function debouncedSave() {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(saveState, 300);
+    }
+    document.addEventListener("input", debouncedSave);
+
+    // Haversine distance in miles between two lat/lon points
+    function haversine(lat1, lon1, lat2, lon2) {
+      const R = 3958.8; // Earth radius in miles
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) ** 2 +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    function metersToFeet(m) {
+      return m * 3.28084;
+    }
+
+    function downloadBlob(content, filename, mime) {
+      const blob = new Blob([content], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // ──────────────────────────────────────────
+    // Tab switching
+    // ──────────────────────────────────────────
+    document.getElementById("tab-bar").addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-tab]");
+      if (!btn) return;
+      document.querySelectorAll("#tab-bar button").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById(`tab-${btn.dataset.tab}`).classList.add("active");
+
+      // Refresh dynamic content when switching tabs
+      if (btn.dataset.tab === "segments") rebuildSegments();
+      if (btn.dataset.tab === "dashboard") { rebuildSegments(); renderDashboard(); }
+    });
+
+    // ──────────────────────────────────────────
+    // Race Setup — field sync
+    // ──────────────────────────────────────────
+    document.getElementById("race-name").addEventListener("input", (e) => {
+      state.race.name = e.target.value;
+    });
+    document.getElementById("race-distance").addEventListener("input", (e) => {
+      state.race.distance = parseFloat(e.target.value) || 0;
+    });
+    document.getElementById("race-goal-time").addEventListener("input", (e) => {
+      state.race.goalTime = e.target.value;
+    });
+    document.getElementById("race-notes").addEventListener("input", (e) => {
+      state.race.notes = e.target.value;
+    });
+    document.getElementById("target-carbs").addEventListener("input", (e) => {
+      state.nutritionTargets.carbsPerHour = parseFloat(e.target.value) || 0;
+    });
+    document.getElementById("target-sodium").addEventListener("input", (e) => {
+      state.nutritionTargets.sodiumPerHour = parseFloat(e.target.value) || 0;
+    });
+    document.getElementById("target-caffeine").addEventListener("input", (e) => {
+      state.nutritionTargets.caffeinePerHour = parseFloat(e.target.value) || 0;
+    });
+
+    // ──────────────────────────────────────────
+    // GPX Parsing
+    // ──────────────────────────────────────────
+    const gpxDropZone = document.getElementById("gpx-drop-zone");
+    const gpxFileInput = document.getElementById("gpx-file");
+
+    gpxDropZone.addEventListener("click", () => gpxFileInput.click());
+    gpxDropZone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      gpxDropZone.classList.add("dragover");
+    });
+    gpxDropZone.addEventListener("dragleave", () => {
+      gpxDropZone.classList.remove("dragover");
+    });
+    gpxDropZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      gpxDropZone.classList.remove("dragover");
+      if (e.dataTransfer.files.length) handleGpxFile(e.dataTransfer.files[0]);
+    });
+    gpxFileInput.addEventListener("change", () => {
+      if (gpxFileInput.files.length) handleGpxFile(gpxFileInput.files[0]);
+    });
+
+    document.getElementById("gpx-clear-btn").addEventListener("click", () => {
+      state.gpxData = null;
+      state.race.elevationGain = 0;
+      state.race.elevationLoss = 0;
+      document.getElementById("gpx-stats").style.display = "none";
+      gpxDropZone.style.display = "";
+      gpxFileInput.value = "";
+      saveState();
+    });
+
+    function handleGpxFile(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          parseGpx(e.target.result);
+        } catch (err) {
+          alert(`Error parsing GPX file: ${err.message}`);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function parseGpx(xmlText) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(xmlText, "application/xml");
+      const trkpts = doc.querySelectorAll("trkpt");
+      if (trkpts.length === 0) {
+        alert("No trackpoints found in GPX file.");
+        return;
+      }
+
+      const raw = [];
+      trkpts.forEach(pt => {
+        const lat = parseFloat(pt.getAttribute("lat"));
+        const lon = parseFloat(pt.getAttribute("lon"));
+        const eleEl = pt.querySelector("ele");
+        const ele = eleEl ? parseFloat(eleEl.textContent) : 0;
+        raw.push({ lat, lon, ele });
+      });
+
+      // Downsample to ~500 points max for performance
+      let sampled = raw;
+      if (raw.length > 500) {
+        const step = Math.ceil(raw.length / 500);
+        sampled = raw.filter((_, i) => i % step === 0);
+        if (sampled[sampled.length - 1] !== raw[raw.length - 1]) {
+          sampled.push(raw[raw.length - 1]);
+        }
+      }
+
+      // Calculate cumulative distance and elevation
+      const points = [{ dist: 0, ele: metersToFeet(sampled[0].ele) }];
+      let cumDist = 0;
+      let gain = 0;
+      let loss = 0;
+
+      for (let i = 1; i < sampled.length; i++) {
+        const d = haversine(sampled[i - 1].lat, sampled[i - 1].lon, sampled[i].lat, sampled[i].lon);
+        cumDist += d;
+        const elevCurr = metersToFeet(sampled[i].ele);
+        const elevPrev = metersToFeet(sampled[i - 1].ele);
+        const diff = elevCurr - elevPrev;
+        if (diff > 0) gain += diff;
+        else loss += Math.abs(diff);
+        points.push({ dist: round2(cumDist), ele: Math.round(elevCurr) });
+      }
+
+      state.gpxData = { points, totalDist: round2(cumDist), gain: Math.round(gain), loss: Math.round(loss) };
+      state.race.elevationGain = state.gpxData.gain;
+      state.race.elevationLoss = state.gpxData.loss;
+
+      // Update UI
+      document.getElementById("gpx-distance").textContent = state.gpxData.totalDist;
+      document.getElementById("gpx-gain").textContent = state.gpxData.gain.toLocaleString();
+      document.getElementById("gpx-loss").textContent = state.gpxData.loss.toLocaleString();
+      document.getElementById("gpx-points-count").textContent = `${trkpts.length} → ${sampled.length}`;
+      document.getElementById("gpx-stats").style.display = "";
+      gpxDropZone.style.display = "none";
+      saveState();
+    }
+
+    function getElevationAtDistance(dist) {
+      if (!state.gpxData || !state.gpxData.points.length) return null;
+      const pts = state.gpxData.points;
+      if (dist <= 0) return pts[0].ele;
+      if (dist >= pts[pts.length - 1].dist) return pts[pts.length - 1].ele;
+      for (let i = 1; i < pts.length; i++) {
+        if (pts[i].dist >= dist) {
+          const frac = (dist - pts[i - 1].dist) / (pts[i].dist - pts[i - 1].dist);
+          return Math.round(pts[i - 1].ele + frac * (pts[i].ele - pts[i - 1].ele));
+        }
+      }
+      return pts[pts.length - 1].ele;
+    }
+
+    // ──────────────────────────────────────────
+    // Aid Stations
+    // ──────────────────────────────────────────
+    document.getElementById("add-station-btn").addEventListener("click", () => {
+      state.aidStations.push({
+        id: generateId(),
+        name: "",
+        distance: 0,
+        elevation: 0,
+        cutoffTime: "",
+        crewAccess: false,
+        hasDropBag: false,
+        dropBagContents: "",
+        notes: "",
+      });
+      renderStations();
+      saveState();
+    });
+
+    function renderStations() {
+      const container = document.getElementById("stations-list");
+      const empty = document.getElementById("stations-empty");
+
+      if (state.aidStations.length === 0) {
+        empty.style.display = "";
+        const existing = container.querySelector(".stations-table-wrap");
+        if (existing) existing.remove();
+        return;
+      }
+      empty.style.display = "none";
+
+      // Sort by distance
+      state.aidStations.sort((a, b) => a.distance - b.distance);
+
+      let html = `<div style="overflow-x:auto"><table>
+        <thead><tr>
+          <th>Name</th><th>Mile</th><th>Elev (ft)</th><th>Cutoff</th>
+          <th>Crew</th><th>Drop Bag</th><th>Notes</th><th></th>
+        </tr></thead><tbody>`;
+
+      state.aidStations.forEach((s, i) => {
+        html += `<tr data-id="${s.id}">
+          <td><input type="text" value="${escAttr(s.name)}" data-field="name" placeholder="Station name"></td>
+          <td><input type="number" value="${s.distance || ""}" data-field="distance" min="0" step="0.1" style="width:70px"></td>
+          <td><input type="number" value="${s.elevation || ""}" data-field="elevation" style="width:70px"></td>
+          <td><input type="text" value="${escAttr(s.cutoffTime)}" data-field="cutoffTime" placeholder="HH:MM:SS" style="width:90px"></td>
+          <td><span class="toggle-btn ${s.crewAccess ? "on" : ""}" data-field="crewAccess">${s.crewAccess ? "Yes" : "No"}</span></td>
+          <td><span class="toggle-btn ${s.hasDropBag ? "on" : ""}" data-field="hasDropBag">${s.hasDropBag ? "Yes" : "No"}</span></td>
+          <td><input type="text" value="${escAttr(s.notes)}" data-field="notes" placeholder="Notes"></td>
+          <td><button class="btn btn-danger btn-sm" data-action="remove">✕</button></td>
+        </tr>`;
+        if (s.hasDropBag) {
+          html += `<tr data-id="${s.id}" class="dropbag-row">
+            <td colspan="8">
+              <label style="font-size:12px">Drop bag contents:</label>
+              <textarea data-field="dropBagContents" placeholder="e.g. Extra socks, headlamp, jacket">${escHtml(s.dropBagContents)}</textarea>
+            </td>
+          </tr>`;
+        }
+      });
+
+      html += `</tbody></table></div>`;
+
+      // Replace content (keep empty state element)
+      const existing = container.querySelector(".stations-table-wrap");
+      if (existing) existing.remove();
+      const wrapper = document.createElement("div");
+      wrapper.className = "stations-table-wrap";
+      wrapper.innerHTML = html;
+      container.appendChild(wrapper);
+    }
+
+    function escAttr(s) {
+      return (s || "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+    }
+
+    function escHtml(s) {
+      return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    // Event delegation for station editing
+    document.getElementById("stations-list").addEventListener("input", (e) => {
+      const tr = e.target.closest("tr");
+      if (!tr) return;
+      const id = tr.dataset.id;
+      const field = e.target.dataset.field;
+      const station = state.aidStations.find(s => s.id === id);
+      if (!station || !field) return;
+
+      if (field === "distance" || field === "elevation") {
+        station[field] = parseFloat(e.target.value) || 0;
+        // Auto-fill elevation from GPX
+        if (field === "distance" && state.gpxData) {
+          const ele = getElevationAtDistance(station.distance);
+          if (ele !== null) {
+            station.elevation = ele;
+            const eleInput = tr.querySelector("[data-field='elevation']");
+            if (eleInput) eleInput.value = ele;
+          }
+        }
+      } else {
+        station[field] = e.target.value;
+      }
+    });
+
+    document.getElementById("stations-list").addEventListener("click", (e) => {
+      const tr = e.target.closest("tr");
+      if (!tr) return;
+      const id = tr.dataset.id;
+      const station = state.aidStations.find(s => s.id === id);
+      if (!station) return;
+
+      // Toggle buttons
+      if (e.target.classList.contains("toggle-btn")) {
+        const field = e.target.dataset.field;
+        station[field] = !station[field];
+        e.target.classList.toggle("on");
+        e.target.textContent = station[field] ? "Yes" : "No";
+        if (field === "hasDropBag") renderStations();
+        saveState();
+        return;
+      }
+
+      // Remove button
+      if (e.target.dataset.action === "remove" || e.target.closest("[data-action='remove']")) {
+        state.aidStations = state.aidStations.filter(s => s.id !== id);
+        renderStations();
+        saveState();
+      }
+    });
+
+    // ──────────────────────────────────────────
+    // Product Inventory
+    // ──────────────────────────────────────────
+    document.getElementById("add-product-btn").addEventListener("click", () => {
+      state.products.push({
+        id: generateId(),
+        name: "",
+        carbsPerServing: 0,
+        sodiumPerServing: 0,
+        caffeinePerServing: 0,
+        caloriesPerServing: 0,
+      });
+      renderProducts();
+      saveState();
+    });
+
+    function renderProducts() {
+      const container = document.getElementById("products-list");
+      const empty = document.getElementById("products-empty");
+
+      if (state.products.length === 0) {
+        empty.style.display = "";
+        const existing = container.querySelector(".products-table-wrap");
+        if (existing) existing.remove();
+        return;
+      }
+      empty.style.display = "none";
+
+      let html = `<div style="overflow-x:auto"><table>
+        <thead><tr>
+          <th>Product Name</th><th>Carbs (g)</th><th>Sodium (mg)</th>
+          <th>Caffeine (mg)</th><th>Calories</th><th></th>
+        </tr></thead><tbody>`;
+
+      state.products.forEach(p => {
+        html += `<tr data-id="${p.id}">
+          <td><input type="text" value="${escAttr(p.name)}" data-field="name" placeholder="e.g. SiS Beta Fuel Gel"></td>
+          <td><input type="number" value="${p.carbsPerServing || ""}" data-field="carbsPerServing" min="0" style="width:70px"></td>
+          <td><input type="number" value="${p.sodiumPerServing || ""}" data-field="sodiumPerServing" min="0" style="width:80px"></td>
+          <td><input type="number" value="${p.caffeinePerServing || ""}" data-field="caffeinePerServing" min="0" style="width:80px"></td>
+          <td><input type="number" value="${p.caloriesPerServing || ""}" data-field="caloriesPerServing" min="0" style="width:80px"></td>
+          <td><button class="btn btn-danger btn-sm" data-action="remove">✕</button></td>
+        </tr>`;
+      });
+      html += `</tbody></table></div>`;
+
+      const existing = container.querySelector(".products-table-wrap");
+      if (existing) existing.remove();
+      const wrapper = document.createElement("div");
+      wrapper.className = "products-table-wrap";
+      wrapper.innerHTML = html;
+      container.appendChild(wrapper);
+    }
+
+    document.getElementById("products-list").addEventListener("input", (e) => {
+      const tr = e.target.closest("tr");
+      if (!tr) return;
+      const id = tr.dataset.id;
+      const field = e.target.dataset.field;
+      const product = state.products.find(p => p.id === id);
+      if (!product || !field) return;
+
+      if (field === "name") {
+        product[field] = e.target.value;
+      } else {
+        product[field] = parseFloat(e.target.value) || 0;
+      }
+    });
+
+    document.getElementById("products-list").addEventListener("click", (e) => {
+      if (e.target.dataset.action === "remove" || e.target.closest("[data-action='remove']")) {
+        const tr = e.target.closest("tr");
+        if (!tr) return;
+        const id = tr.dataset.id;
+        state.products = state.products.filter(p => p.id !== id);
+        // Also clean up segments referencing this product
+        state.segments.forEach(seg => {
+          seg.plannedNutrition = seg.plannedNutrition.filter(n => n.productId !== id);
+          seg.carryItems = seg.carryItems.filter(n => n.productId !== id);
+          seg.aidStationPickup = seg.aidStationPickup.filter(n => n.productId !== id);
+        });
+        renderProducts();
+        saveState();
+      }
+    });
+
+    // ──────────────────────────────────────────
+    // Segments
+    // ──────────────────────────────────────────
+    function buildSegments() {
+      if (state.race.distance <= 0) return [];
+      const sorted = [...state.aidStations].sort((a, b) => a.distance - b.distance);
+      const waypoints = [
+        { name: "Start", distance: 0 },
+        ...sorted,
+        { name: "Finish", distance: state.race.distance },
+      ];
+
+      const totalSecs = parseTimeToSeconds(state.race.goalTime);
+      const segments = [];
+
+      for (let i = 0; i < waypoints.length - 1; i++) {
+        const start = waypoints[i];
+        const end = waypoints[i + 1];
+        const dist = round2(end.distance - start.distance);
+        if (dist <= 0) continue;
+
+        const estSecs = state.race.distance > 0 && totalSecs > 0
+          ? (dist / state.race.distance) * totalSecs
+          : 0;
+
+        // Try to find existing segment data to preserve nutrition entries
+        const existingKey = `${start.name || start.distance}→${end.name || end.distance}`;
+        const existing = state.segments.find(s => {
+          const sKey = `${s.startStation}→${s.endStation}`;
+          return sKey === existingKey;
+        });
+
+        segments.push({
+          startStation: start.name || `Mile ${start.distance}`,
+          endStation: end.name || `Mile ${end.distance}`,
+          distance: dist,
+          estimatedTime: estSecs,
+          plannedNutrition: existing ? existing.plannedNutrition : [],
+          carryItems: existing ? existing.carryItems : [],
+          aidStationPickup: existing ? existing.aidStationPickup : [],
+          notes: existing ? existing.notes : "",
+        });
+      }
+      return segments;
+    }
+
+    function rebuildSegments() {
+      state.segments = buildSegments();
+      renderSegments();
+      saveState();
+    }
+
+    function renderSegments() {
+      const container = document.getElementById("segments-content");
+      const empty = document.getElementById("segments-empty");
+
+      if (state.segments.length === 0) {
+        empty.style.display = "";
+        // Remove all segment cards
+        container.querySelectorAll(".segment-card").forEach(el => el.remove());
+        return;
+      }
+      empty.style.display = "none";
+
+      let html = "";
+      state.segments.forEach((seg, idx) => {
+        const hours = seg.estimatedTime / 3600;
+        const totals = calcSegmentTotals(seg);
+        const perHour = hours > 0 ? {
+          carbs: round1(totals.carbs / hours),
+          sodium: round1(totals.sodium / hours),
+          caffeine: round1(totals.caffeine / hours),
+          calories: round1(totals.calories / hours),
+        } : { carbs: 0, sodium: 0, caffeine: 0, calories: 0 };
+
+        html += `<div class="segment-card" data-seg="${idx}">
+          <div class="segment-header">
+            <h3>${escHtml(seg.startStation)} → ${escHtml(seg.endStation)}</h3>
+            <span class="segment-meta">${seg.distance} mi · ${formatHM(seg.estimatedTime)}</span>
+          </div>
+
+          <div style="margin-bottom:8px">
+            <strong style="font-size:13px">Planned Consumption</strong>
+            <div class="nutrition-list" data-list="plannedNutrition">
+              ${renderNutritionItems(seg.plannedNutrition, idx, "plannedNutrition")}
+            </div>
+            <button class="btn btn-sm btn-secondary" data-action="add-item" data-list="plannedNutrition" style="margin-top:4px">+ Add</button>
+          </div>
+
+          <div style="margin-bottom:8px">
+            <strong style="font-size:13px">Carry Into Segment</strong>
+            <div class="nutrition-list" data-list="carryItems">
+              ${renderNutritionItems(seg.carryItems, idx, "carryItems")}
+            </div>
+            <button class="btn btn-sm btn-secondary" data-action="add-item" data-list="carryItems" style="margin-top:4px">+ Add</button>
+          </div>
+
+          <div style="margin-bottom:8px">
+            <strong style="font-size:13px">Pick Up at Aid Station</strong>
+            <div class="nutrition-list" data-list="aidStationPickup">
+              ${renderNutritionItems(seg.aidStationPickup, idx, "aidStationPickup")}
+            </div>
+            <button class="btn btn-sm btn-secondary" data-action="add-item" data-list="aidStationPickup" style="margin-top:4px">+ Add</button>
+          </div>
+
+          <div style="margin-bottom:8px">
+            <strong style="font-size:13px">Notes</strong>
+            <textarea data-field="segNotes" placeholder="Gear, reminders, etc." style="margin-top:4px">${escHtml(seg.notes)}</textarea>
+          </div>
+
+          <div class="segment-totals">
+            <div class="segment-total">
+              <div class="val ${rateClass(perHour.carbs, state.nutritionTargets.carbsPerHour)}">${totals.carbs}g</div>
+              <div class="lbl">Carbs (${perHour.carbs}g/hr)</div>
+            </div>
+            <div class="segment-total">
+              <div class="val ${rateClass(perHour.sodium, state.nutritionTargets.sodiumPerHour)}">${totals.sodium}mg</div>
+              <div class="lbl">Sodium (${perHour.sodium}mg/hr)</div>
+            </div>
+            <div class="segment-total">
+              <div class="val">${totals.caffeine}mg</div>
+              <div class="lbl">Caffeine (${perHour.caffeine}mg/hr)</div>
+            </div>
+            <div class="segment-total">
+              <div class="val">${totals.calories} kcal</div>
+              <div class="lbl">Calories (${perHour.calories}/hr)</div>
+            </div>
+          </div>
+        </div>`;
+      });
+
+      // Replace segment cards only
+      container.querySelectorAll(".segment-card").forEach(el => el.remove());
+      const temp = document.createElement("div");
+      temp.innerHTML = html;
+      while (temp.firstChild) {
+        container.appendChild(temp.firstChild);
+      }
+    }
+
+    function renderNutritionItems(items, segIdx, listName) {
+      if (!items || items.length === 0) return '<div class="hint" style="margin:4px 0">None</div>';
+      return items.map((item, itemIdx) => `
+        <div class="nutrition-row" data-item="${itemIdx}">
+          <select data-field="productId">
+            <option value="">— Select product —</option>
+            ${state.products.map(p => `<option value="${p.id}" ${p.id === item.productId ? "selected" : ""}>${escHtml(p.name || "Unnamed")}</option>`).join("")}
+          </select>
+          <input type="number" value="${item.quantity || 1}" data-field="quantity" min="1" step="1" title="Quantity (servings)">
+          <button class="btn btn-danger btn-sm" data-action="remove-item" title="Remove">✕</button>
+        </div>
+      `).join("");
+    }
+
+    function rateClass(actual, target) {
+      if (!target || target <= 0) return "";
+      const ratio = actual / target;
+      if (ratio >= 0.9) return "rate-ok";
+      if (ratio >= 0.7) return "rate-warn";
+      return "rate-low";
+    }
+
+    function calcSegmentTotals(seg) {
+      let carbs = 0, sodium = 0, caffeine = 0, calories = 0;
+      (seg.plannedNutrition || []).forEach(item => {
+        const p = state.products.find(pr => pr.id === item.productId);
+        if (!p) return;
+        const q = item.quantity || 1;
+        carbs += p.carbsPerServing * q;
+        sodium += p.sodiumPerServing * q;
+        caffeine += p.caffeinePerServing * q;
+        calories += p.caloriesPerServing * q;
+      });
+      return { carbs: round1(carbs), sodium: round1(sodium), caffeine: round1(caffeine), calories: round1(calories) };
+    }
+
+    // Event delegation for segments
+    document.getElementById("segments-content").addEventListener("click", (e) => {
+      const card = e.target.closest(".segment-card");
+      if (!card) return;
+      const segIdx = parseInt(card.dataset.seg);
+      const seg = state.segments[segIdx];
+      if (!seg) return;
+
+      // Add item
+      if (e.target.dataset.action === "add-item") {
+        const listName = e.target.dataset.list;
+        seg[listName].push({ productId: "", quantity: 1 });
+        renderSegments();
+        return;
+      }
+
+      // Remove item
+      if (e.target.dataset.action === "remove-item" || e.target.closest("[data-action='remove-item']")) {
+        const row = e.target.closest(".nutrition-row");
+        const listEl = e.target.closest(".nutrition-list") || row.parentElement;
+        const listName = listEl.dataset.list || e.target.closest("[data-list]")?.dataset.list;
+        if (!row || !listName) return;
+        const itemIdx = parseInt(row.dataset.item);
+        seg[listName].splice(itemIdx, 1);
+        renderSegments();
+        return;
+      }
+    });
+
+    document.getElementById("segments-content").addEventListener("input", (e) => {
+      const card = e.target.closest(".segment-card");
+      if (!card) return;
+      const segIdx = parseInt(card.dataset.seg);
+      const seg = state.segments[segIdx];
+      if (!seg) return;
+
+      // Segment notes
+      if (e.target.dataset.field === "segNotes") {
+        seg.notes = e.target.value;
+        return;
+      }
+
+      const row = e.target.closest(".nutrition-row");
+      if (!row) return;
+      const itemIdx = parseInt(row.dataset.item);
+      const listEl = row.closest("[data-list]");
+      if (!listEl) return;
+      const listName = listEl.dataset.list;
+      const field = e.target.dataset.field;
+      const item = seg[listName][itemIdx];
+      if (!item || !field) return;
+
+      if (field === "quantity") {
+        item.quantity = parseInt(e.target.value) || 1;
+      } else {
+        item[field] = e.target.value;
+      }
+
+      // Recalculate totals display
+      renderSegments();
+    });
+
+    document.getElementById("segments-content").addEventListener("change", (e) => {
+      if (e.target.dataset.field === "productId") {
+        const card = e.target.closest(".segment-card");
+        if (!card) return;
+        const segIdx = parseInt(card.dataset.seg);
+        const seg = state.segments[segIdx];
+        if (!seg) return;
+
+        const row = e.target.closest(".nutrition-row");
+        if (!row) return;
+        const itemIdx = parseInt(row.dataset.item);
+        const listEl = row.closest("[data-list]");
+        if (!listEl) return;
+        const listName = listEl.dataset.list;
+        const item = seg[listName][itemIdx];
+        if (!item) return;
+
+        item.productId = e.target.value;
+        renderSegments();
+      }
+    });
+
+    // ──────────────────────────────────────────
+    // Dashboard
+    // ──────────────────────────────────────────
+    function renderDashboard() {
+      const container = document.getElementById("dashboard-content");
+      const empty = document.getElementById("dashboard-empty");
+
+      if (state.segments.length === 0 || state.race.distance <= 0) {
+        empty.style.display = "";
+        const existing = container.querySelector(".dashboard-inner");
+        if (existing) existing.remove();
+        return;
+      }
+      empty.style.display = "none";
+
+      const totalSecs = parseTimeToSeconds(state.race.goalTime);
+      const totalHours = totalSecs / 3600;
+      let raceTotals = { carbs: 0, sodium: 0, caffeine: 0, calories: 0 };
+      const segData = state.segments.map(seg => {
+        const t = calcSegmentTotals(seg);
+        raceTotals.carbs += t.carbs;
+        raceTotals.sodium += t.sodium;
+        raceTotals.caffeine += t.caffeine;
+        raceTotals.calories += t.calories;
+        return { seg, totals: t };
+      });
+
+      const avgPerHour = totalHours > 0 ? {
+        carbs: round1(raceTotals.carbs / totalHours),
+        sodium: round1(raceTotals.sodium / totalHours),
+        caffeine: round1(raceTotals.caffeine / totalHours),
+        calories: round1(raceTotals.calories / totalHours),
+      } : { carbs: 0, sodium: 0, caffeine: 0, calories: 0 };
+
+      let html = `<div class="dashboard-inner">
+        <h2>Race Summary</h2>
+        <div class="summary-grid">
+          <div class="summary-card">
+            <div class="val">${state.race.distance} mi</div>
+            <div class="lbl">Distance</div>
+          </div>
+          <div class="summary-card">
+            <div class="val">${state.race.goalTime || "—"}</div>
+            <div class="lbl">Goal Time</div>
+          </div>
+          <div class="summary-card">
+            <div class="val">${state.race.elevationGain ? state.race.elevationGain.toLocaleString() + " ft" : "—"}</div>
+            <div class="lbl">Elevation Gain</div>
+          </div>
+          <div class="summary-card">
+            <div class="val">${state.aidStations.length}</div>
+            <div class="lbl">Aid Stations</div>
+          </div>
+        </div>
+
+        <h2>Nutrition Summary</h2>
+        <div class="summary-grid">
+          <div class="summary-card">
+            <div class="val">${round1(raceTotals.carbs)}g</div>
+            <div class="lbl">Total Carbs (${avgPerHour.carbs}g/hr)</div>
+          </div>
+          <div class="summary-card">
+            <div class="val">${round1(raceTotals.sodium)}mg</div>
+            <div class="lbl">Total Sodium (${avgPerHour.sodium}mg/hr)</div>
+          </div>
+          <div class="summary-card">
+            <div class="val">${round1(raceTotals.caffeine)}mg</div>
+            <div class="lbl">Total Caffeine (${avgPerHour.caffeine}mg/hr)</div>
+          </div>
+          <div class="summary-card">
+            <div class="val">${round1(raceTotals.calories)}</div>
+            <div class="lbl">Total Calories (${avgPerHour.calories}/hr)</div>
+          </div>
+        </div>`;
+
+      // Targets comparison
+      const t = state.nutritionTargets;
+      if (t.carbsPerHour > 0 || t.sodiumPerHour > 0) {
+        html += `<h2>vs. Targets</h2>
+        <div class="card" style="margin-bottom:16px">
+          ${targetBar("Carbs/hr", avgPerHour.carbs, t.carbsPerHour, "g")}
+          ${targetBar("Sodium/hr", avgPerHour.sodium, t.sodiumPerHour, "mg")}
+          ${t.caffeinePerHour > 0 ? targetBar("Caffeine/hr", avgPerHour.caffeine, t.caffeinePerHour, "mg") : ""}
+        </div>`;
+      }
+
+      // Aid station splits table
+      html += `<h2>Splits &amp; Aid Stations</h2>
+        <div style="overflow-x:auto"><table>
+          <thead><tr>
+            <th>Station</th><th>Mile</th><th>Split</th><th>Cutoff</th><th>Crew</th><th>Drop Bag</th>
+          </tr></thead><tbody>`;
+
+      let cumTime = 0;
+      const sorted = [...state.aidStations].sort((a, b) => a.distance - b.distance);
+      const waypoints = [
+        { name: "Start", distance: 0, crewAccess: false, hasDropBag: false, cutoffTime: "" },
+        ...sorted,
+        { name: "Finish", distance: state.race.distance, crewAccess: false, hasDropBag: false, cutoffTime: "" },
+      ];
+
+      waypoints.forEach((wp, i) => {
+        const splitSecs = totalSecs > 0 && state.race.distance > 0
+          ? (wp.distance / state.race.distance) * totalSecs
+          : 0;
+        html += `<tr>
+          <td><strong>${escHtml(wp.name)}</strong></td>
+          <td>${wp.distance}</td>
+          <td>${formatSeconds(splitSecs)}</td>
+          <td>${wp.cutoffTime || "—"}</td>
+          <td>${wp.crewAccess ? "✓" : ""}</td>
+          <td>${wp.hasDropBag ? "✓" : ""}</td>
+        </tr>`;
+      });
+
+      html += `</tbody></table></div>`;
+
+      // Per-segment nutrition detail
+      html += `<h2>Segment Nutrition</h2>`;
+      segData.forEach(({ seg, totals }) => {
+        const hours = seg.estimatedTime / 3600;
+        const perHour = hours > 0 ? {
+          carbs: round1(totals.carbs / hours),
+          sodium: round1(totals.sodium / hours),
+        } : { carbs: 0, sodium: 0 };
+
+        const carbFlag = t.carbsPerHour > 0 && perHour.carbs < t.carbsPerHour * 0.7;
+        const sodiumFlag = t.sodiumPerHour > 0 && perHour.sodium < t.sodiumPerHour * 0.7;
+        const flagStyle = (carbFlag || sodiumFlag) ? "border-left: 3px solid #f56565; padding-left: 13px;" : "";
+
+        html += `<div class="card" style="${flagStyle}">
+          <strong>${escHtml(seg.startStation)} → ${escHtml(seg.endStation)}</strong>
+          <span class="segment-meta" style="margin-left:8px">${seg.distance} mi · ${formatHM(seg.estimatedTime)}</span>
+          <div style="margin-top:6px; font-size:13px">
+            Carbs: ${totals.carbs}g (${perHour.carbs}g/hr)
+            · Sodium: ${totals.sodium}mg (${perHour.sodium}mg/hr)
+            · Caffeine: ${totals.caffeine}mg
+            · Calories: ${totals.calories} kcal
+          </div>
+          ${carbFlag ? '<div style="color:#c53030;font-size:12px;margin-top:4px">⚠ Carbs below target</div>' : ""}
+          ${sodiumFlag ? '<div style="color:#c53030;font-size:12px;margin-top:4px">⚠ Sodium below target</div>' : ""}
+        </div>`;
+      });
+
+      html += `</div>`;
+
+      const existing = container.querySelector(".dashboard-inner");
+      if (existing) existing.remove();
+      const wrapper = document.createElement("div");
+      wrapper.innerHTML = html;
+      container.appendChild(wrapper.firstElementChild);
+    }
+
+    function targetBar(label, actual, target, unit) {
+      if (!target || target <= 0) return "";
+      const pct = Math.min(Math.round((actual / target) * 100), 150);
+      const barPct = Math.min(pct, 100);
+      const cls = pct >= 90 ? "bar-green" : pct >= 70 ? "bar-yellow" : "bar-red";
+      return `<div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px">
+          <span>${label}: ${actual}${unit}</span>
+          <span>Target: ${target}${unit} (${pct}%)</span>
+        </div>
+        <div class="bar-container"><div class="bar-fill ${cls}" style="width:${barPct}%"></div></div>
+      </div>`;
+    }
+
+    // ──────────────────────────────────────────
+    // Export — YAML
+    // ──────────────────────────────────────────
+    document.getElementById("export-yaml-btn").addEventListener("click", () => {
+      const data = {
+        race: { ...state.race },
+        nutritionTargets: { ...state.nutritionTargets },
+        aidStations: state.aidStations.map(s => ({ ...s })),
+        products: state.products.map(p => ({ ...p })),
+        segments: state.segments.map(s => ({
+          startStation: s.startStation,
+          endStation: s.endStation,
+          plannedNutrition: s.plannedNutrition.map(n => ({ ...n })),
+          carryItems: s.carryItems.map(n => ({ ...n })),
+          aidStationPickup: s.aidStationPickup.map(n => ({ ...n })),
+          notes: s.notes || "",
+        })),
+      };
+
+      const yaml = jsyaml.dump(data, { lineWidth: -1, noRefs: true });
+      const slug = (state.race.name || "race-plan").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      downloadBlob(yaml, `${slug}.yaml`, "text/yaml");
+    });
+
+    // ──────────────────────────────────────────
+    // Export — Markdown
+    // ──────────────────────────────────────────
+    document.getElementById("export-md-btn").addEventListener("click", () => {
+      const md = generateMarkdown();
+      const slug = (state.race.name || "race-plan").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      downloadBlob(md, `${slug}.md`, "text/markdown");
+    });
+
+    function generateMarkdown() {
+      const r = state.race;
+      const t = state.nutritionTargets;
+      const totalSecs = parseTimeToSeconds(r.goalTime);
+      const totalHours = totalSecs / 3600;
+
+      let md = `# ${r.name || "Race Plan"}\n\n`;
+      md += `- **Distance**: ${r.distance} miles\n`;
+      md += `- **Goal Time**: ${r.goalTime || "—"}\n`;
+      if (r.elevationGain) md += `- **Elevation Gain**: ${r.elevationGain.toLocaleString()} ft\n`;
+      if (r.elevationLoss) md += `- **Elevation Loss**: ${r.elevationLoss.toLocaleString()} ft\n`;
+      md += `\n`;
+
+      if (r.notes) {
+        md += `${r.notes}\n\n`;
+      }
+
+      // Targets
+      if (t.carbsPerHour || t.sodiumPerHour) {
+        md += `## Nutrition Targets\n\n`;
+        if (t.carbsPerHour) md += `- Carbs: ${t.carbsPerHour}g/hr\n`;
+        if (t.sodiumPerHour) md += `- Sodium: ${t.sodiumPerHour}mg/hr\n`;
+        if (t.caffeinePerHour) md += `- Caffeine: ${t.caffeinePerHour}mg/hr\n`;
+        md += `\n`;
+      }
+
+      // Aid stations table
+      if (state.aidStations.length > 0) {
+        md += `## Aid Stations\n\n`;
+        md += `| Station | Mile | Split | Crew | Drop Bag | Notes |\n`;
+        md += `|---------|------|-------|------|----------|-------|\n`;
+
+        const sorted = [...state.aidStations].sort((a, b) => a.distance - b.distance);
+        sorted.forEach(s => {
+          const splitSecs = totalSecs > 0 && r.distance > 0
+            ? (s.distance / r.distance) * totalSecs : 0;
+          md += `| ${s.name} | ${s.distance} | ${formatSeconds(splitSecs)} | ${s.crewAccess ? "Yes" : "No"} | ${s.hasDropBag ? "Yes" : "No"} | ${s.notes || ""} |\n`;
+        });
+        md += `\n`;
+
+        // Drop bag details
+        const dropBagStations = sorted.filter(s => s.hasDropBag && s.dropBagContents);
+        if (dropBagStations.length > 0) {
+          md += `### Drop Bag Contents\n\n`;
+          dropBagStations.forEach(s => {
+            md += `**${s.name}** (mi ${s.distance}): ${s.dropBagContents}\n\n`;
+          });
+        }
+      }
+
+      // Segment nutrition
+      if (state.segments.length > 0) {
+        md += `## Segment Nutrition Plan\n\n`;
+        state.segments.forEach(seg => {
+          const hours = seg.estimatedTime / 3600;
+          const totals = calcSegmentTotals(seg);
+          const perHour = hours > 0 ? {
+            carbs: round1(totals.carbs / hours),
+            sodium: round1(totals.sodium / hours),
+          } : { carbs: 0, sodium: 0 };
+
+          md += `### ${seg.startStation} → ${seg.endStation} (${seg.distance} mi, ${formatHM(seg.estimatedTime)})\n\n`;
+
+          if (seg.plannedNutrition.length > 0) {
+            md += `**Consume:**\n`;
+            seg.plannedNutrition.forEach(n => {
+              const p = state.products.find(pr => pr.id === n.productId);
+              md += `- ${n.quantity}× ${p ? p.name : "Unknown"}\n`;
+            });
+            md += `\n`;
+          }
+          if (seg.carryItems.length > 0) {
+            md += `**Carry:**\n`;
+            seg.carryItems.forEach(n => {
+              const p = state.products.find(pr => pr.id === n.productId);
+              md += `- ${n.quantity}× ${p ? p.name : "Unknown"}\n`;
+            });
+            md += `\n`;
+          }
+          if (seg.aidStationPickup.length > 0) {
+            md += `**Pick up at aid:**\n`;
+            seg.aidStationPickup.forEach(n => {
+              const p = state.products.find(pr => pr.id === n.productId);
+              md += `- ${n.quantity}× ${p ? p.name : "Unknown"}\n`;
+            });
+            md += `\n`;
+          }
+
+          if (seg.notes) {
+            md += `**Notes:** ${seg.notes}\n\n`;
+          }
+
+          md += `*Totals: ${totals.carbs}g carbs (${perHour.carbs}g/hr), ${totals.sodium}mg sodium (${perHour.sodium}mg/hr), ${totals.caffeine}mg caffeine, ${totals.calories} kcal*\n\n`;
+        });
+
+        // Overall summary
+        let raceTotals = { carbs: 0, sodium: 0, caffeine: 0, calories: 0 };
+        state.segments.forEach(seg => {
+          const t = calcSegmentTotals(seg);
+          raceTotals.carbs += t.carbs;
+          raceTotals.sodium += t.sodium;
+          raceTotals.caffeine += t.caffeine;
+          raceTotals.calories += t.calories;
+        });
+
+        const avgPerHour = totalHours > 0 ? {
+          carbs: round1(raceTotals.carbs / totalHours),
+          sodium: round1(raceTotals.sodium / totalHours),
+          caffeine: round1(raceTotals.caffeine / totalHours),
+          calories: round1(raceTotals.calories / totalHours),
+        } : { carbs: 0, sodium: 0, caffeine: 0, calories: 0 };
+
+        md += `## Nutrition Summary\n\n`;
+        md += `| Metric | Total | Per Hour | Target |\n`;
+        md += `|--------|-------|----------|--------|\n`;
+        md += `| Carbs | ${round1(raceTotals.carbs)}g | ${avgPerHour.carbs}g | ${t.carbsPerHour || "—"}g |\n`;
+        md += `| Sodium | ${round1(raceTotals.sodium)}mg | ${avgPerHour.sodium}mg | ${t.sodiumPerHour || "—"}mg |\n`;
+        md += `| Caffeine | ${round1(raceTotals.caffeine)}mg | ${avgPerHour.caffeine}mg | ${t.caffeinePerHour || "—"}mg |\n`;
+        md += `| Calories | ${round1(raceTotals.calories)} kcal | ${avgPerHour.calories} kcal | — |\n`;
+      }
+
+      return md;
+    }
+
+    // ──────────────────────────────────────────
+    // Import — YAML
+    // ──────────────────────────────────────────
+    const yamlDropZone = document.getElementById("yaml-drop-zone");
+    const yamlFileInput = document.getElementById("yaml-file");
+
+    yamlDropZone.addEventListener("click", () => yamlFileInput.click());
+    yamlDropZone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      yamlDropZone.classList.add("dragover");
+    });
+    yamlDropZone.addEventListener("dragleave", () => {
+      yamlDropZone.classList.remove("dragover");
+    });
+    yamlDropZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      yamlDropZone.classList.remove("dragover");
+      if (e.dataTransfer.files.length) handleYamlFile(e.dataTransfer.files[0]);
+    });
+    yamlFileInput.addEventListener("change", () => {
+      if (yamlFileInput.files.length) handleYamlFile(yamlFileInput.files[0]);
+    });
+
+    function handleYamlFile(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          importYaml(e.target.result);
+        } catch (err) {
+          showImportStatus(`Error importing YAML: ${err.message}`, "error");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function importYaml(text) {
+      const data = jsyaml.load(text);
+      if (!data || typeof data !== "object") {
+        showImportStatus("Invalid YAML: not an object", "error");
+        return;
+      }
+
+      // Restore state
+      if (data.race) {
+        Object.assign(state.race, data.race);
+        document.getElementById("race-name").value = state.race.name || "";
+        document.getElementById("race-distance").value = state.race.distance || "";
+        document.getElementById("race-goal-time").value = state.race.goalTime || "";
+        document.getElementById("race-notes").value = state.race.notes || "";
+      }
+      if (data.nutritionTargets) {
+        Object.assign(state.nutritionTargets, data.nutritionTargets);
+        document.getElementById("target-carbs").value = state.nutritionTargets.carbsPerHour || "";
+        document.getElementById("target-sodium").value = state.nutritionTargets.sodiumPerHour || "";
+        document.getElementById("target-caffeine").value = state.nutritionTargets.caffeinePerHour || "";
+      }
+      if (Array.isArray(data.aidStations)) {
+        state.aidStations = data.aidStations.map(s => ({
+          id: s.id || generateId(),
+          name: s.name || "",
+          distance: s.distance || 0,
+          elevation: s.elevation || 0,
+          cutoffTime: s.cutoffTime || "",
+          crewAccess: !!s.crewAccess,
+          hasDropBag: !!s.hasDropBag,
+          dropBagContents: s.dropBagContents || "",
+          notes: s.notes || "",
+        }));
+      }
+      if (Array.isArray(data.products)) {
+        state.products = data.products.map(p => ({
+          id: p.id || generateId(),
+          name: p.name || "",
+          carbsPerServing: p.carbsPerServing || 0,
+          sodiumPerServing: p.sodiumPerServing || 0,
+          caffeinePerServing: p.caffeinePerServing || 0,
+          caloriesPerServing: p.caloriesPerServing || 0,
+        }));
+      }
+      if (Array.isArray(data.segments)) {
+        state.segments = data.segments.map(s => ({
+          startStation: s.startStation || "",
+          endStation: s.endStation || "",
+          distance: s.distance || 0,
+          estimatedTime: s.estimatedTime || 0,
+          plannedNutrition: Array.isArray(s.plannedNutrition) ? s.plannedNutrition : [],
+          carryItems: Array.isArray(s.carryItems) ? s.carryItems : [],
+          aidStationPickup: Array.isArray(s.aidStationPickup) ? s.aidStationPickup : [],
+          notes: s.notes || "",
+        }));
+      }
+
+      renderStations();
+      renderProducts();
+      showImportStatus("Plan imported successfully!", "success");
+      saveState();
+    }
+
+    function showImportStatus(msg, type) {
+      const el = document.getElementById("import-status");
+      el.textContent = msg;
+      el.className = `status-msg ${type}`;
+      setTimeout(() => { el.className = "status-msg"; }, 4000);
+    }
+
+    // ──────────────────────────────────────────
+    // Init
+    // ──────────────────────────────────────────
+    loadState();
+    hydrateUI();
+
+    function hydrateUI() {
+      document.getElementById("race-name").value = state.race.name || "";
+      document.getElementById("race-distance").value = state.race.distance || "";
+      document.getElementById("race-goal-time").value = state.race.goalTime || "";
+      document.getElementById("race-notes").value = state.race.notes || "";
+      document.getElementById("target-carbs").value = state.nutritionTargets.carbsPerHour || "";
+      document.getElementById("target-sodium").value = state.nutritionTargets.sodiumPerHour || "";
+      document.getElementById("target-caffeine").value = state.nutritionTargets.caffeinePerHour || "";
+
+      if (state.gpxData) {
+        document.getElementById("gpx-distance").textContent = state.gpxData.totalDist;
+        document.getElementById("gpx-gain").textContent = state.gpxData.gain.toLocaleString();
+        document.getElementById("gpx-loss").textContent = state.gpxData.loss.toLocaleString();
+        document.getElementById("gpx-points-count").textContent = `${state.gpxData.points.length} points`;
+        document.getElementById("gpx-stats").style.display = "";
+        document.getElementById("gpx-drop-zone").style.display = "none";
+      }
+
+      renderStations();
+      renderProducts();
+    }
+
+    // New Plan button
+    document.getElementById("new-plan-btn").addEventListener("click", () => {
+      if (!confirm("Start a new plan? This will clear all current data.")) return;
+      resetState();
+      document.getElementById("gpx-stats").style.display = "none";
+      document.getElementById("gpx-drop-zone").style.display = "";
+      document.getElementById("gpx-file").value = "";
+      hydrateUI();
+    });
+    </script>
+</body>
+</html>

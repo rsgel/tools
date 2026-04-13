@@ -13,6 +13,7 @@ Each tool is a single, self-contained HTML file. The site is hosted via [GitHub 
 - [Succession Planting Planner](succession-planting-planner) calculate staggered sowing dates for continuous harvests in PNW gardens
 - [Initiative Tracker](initiative-tracker) track D&D combat turn order, HP, conditions, and death saves
 - [Hand and Foot Scorer](hand-and-foot-scorer) track scores for the card game Hand and Foot across four rounds
+- [Ultra Race Planner](ultra-race-planner) plan ultrarunning race logistics with splits, aid stations, drop bags, and nutrition strategy
 
 <!-- New tools should be added above this line as bullet points:
 - [Tool Name](tool-name) short description
