@@ -1,0 +1,1 @@
+A scoring tool for the card game Hand and Foot. Enter book counts, card points, penalties, and bonuses for two teams across four rounds with automatic score calculation. Share game state via a URL link.
