@@ -1329,9 +1329,9 @@ cooldown 1 mile easy
 
       let data = chartData;
       if (chartZoomStart !== null && chartZoomEnd !== null) {
-        const s = Math.min(chartZoomStart, chartZoomEnd);
-        const e2 = Math.max(chartZoomStart, chartZoomEnd);
-        data = chartData.slice(s, e2 + 1);
+        const startIdx = Math.min(chartZoomStart, chartZoomEnd);
+        const endIdx = Math.max(chartZoomStart, chartZoomEnd);
+        data = chartData.slice(startIdx, endIdx + 1);
       }
 
       const frac = (x - pad.left) / plotW;

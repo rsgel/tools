@@ -15,19 +15,21 @@ def static_server():
         ["python", "-m", "http.server", "8124", "--directory", root],
         stdout=PIPE,
     )
-    retries = 5
-    while retries > 0:
-        conn = HTTPConnection("127.0.0.1:8124")
-        try:
-            conn.request("HEAD", "/")
-            conn.getresponse()
-            yield process
-            break
-        except ConnectionRefusedError:
-            time.sleep(1)
-            retries -= 1
-    process.terminate()
-    process.wait()
+    try:
+        retries = 5
+        while retries > 0:
+            conn = HTTPConnection("127.0.0.1:8124")
+            try:
+                conn.request("HEAD", "/")
+                conn.getresponse()
+                break
+            except ConnectionRefusedError:
+                time.sleep(1)
+                retries -= 1
+        yield process
+    finally:
+        process.terminate()
+        process.wait()
 
 
 BASE_URL = "http://127.0.0.1:8124/fit-file-workout.html"
