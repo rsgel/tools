@@ -9,6 +9,37 @@
     * {
       box-sizing: border-box;
     }
+    *:focus-visible {
+      outline: 2px solid #2b6cb0;
+      outline-offset: 2px;
+      border-radius: 3px;
+    }
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    .skip-link {
+      position: absolute;
+      left: -9999px;
+      top: 8px;
+      background: #2b6cb0;
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 4px;
+      text-decoration: none;
+      font-weight: 600;
+      z-index: 1000;
+    }
+    .skip-link:focus {
+      left: 8px;
+    }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
       max-width: 960px;
@@ -87,6 +118,7 @@
     }
     input[type="number"] {
       -moz-appearance: textfield;
+      appearance: textfield;
     }
     textarea {
       resize: vertical;
@@ -243,18 +275,25 @@
       display: inline-block;
       padding: 4px 10px;
       border-radius: 4px;
+      font: inherit;
       font-size: 13px;
       font-weight: 600;
       cursor: pointer;
-      border: 1px solid #cbd5e0;
+      border: 1px solid #a0aec0;
       background: #edf2f7;
-      color: #718096;
+      color: #2d3748;
       user-select: none;
     }
     .toggle-btn.on {
       background: #c6f6d5;
-      color: #276749;
-      border-color: #9ae6b4;
+      color: #22543d;
+      border-color: #38a169;
+    }
+    .status-msg.info {
+      display: block;
+      background: #ebf8ff;
+      color: #2c5282;
+      border: 1px solid #bee3f8;
     }
 
     /* Segment cards */
@@ -408,7 +447,7 @@
     .empty-state {
       text-align: center;
       padding: 40px 20px;
-      color: #a0aec0;
+      color: #4a5568;
     }
     .empty-state p {
       margin: 4px 0;
@@ -438,23 +477,25 @@
     </style>
 </head>
 <body>
-    <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px">
+    <a href="#main" class="skip-link">Skip to main content</a>
+    <header style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px">
       <h1>Ultra Race Planner</h1>
       <button class="btn btn-secondary btn-sm" id="new-plan-btn">New Plan</button>
-    </div>
+    </header>
     <p>Plan your ultrarunning race logistics: splits, aid stations, drop bags, and nutrition strategy.</p>
 
-    <div class="tab-bar" id="tab-bar">
-      <button class="active" data-tab="setup">Race Setup</button>
-      <button data-tab="stations">Aid Stations</button>
-      <button data-tab="inventory">Nutrition Inventory</button>
-      <button data-tab="segments">Segment Planner</button>
-      <button data-tab="dashboard">Dashboard</button>
-      <button data-tab="export">Export / Import</button>
+    <main id="main" tabindex="-1">
+    <div class="tab-bar" id="tab-bar" role="tablist" aria-label="Race plan sections">
+      <button class="active" data-tab="setup" role="tab" id="tab-btn-setup" aria-controls="tab-setup" aria-selected="true" tabindex="0">Race Setup</button>
+      <button data-tab="stations" role="tab" id="tab-btn-stations" aria-controls="tab-stations" aria-selected="false" tabindex="-1">Aid Stations</button>
+      <button data-tab="inventory" role="tab" id="tab-btn-inventory" aria-controls="tab-inventory" aria-selected="false" tabindex="-1">Nutrition Inventory</button>
+      <button data-tab="segments" role="tab" id="tab-btn-segments" aria-controls="tab-segments" aria-selected="false" tabindex="-1">Segment Planner</button>
+      <button data-tab="dashboard" role="tab" id="tab-btn-dashboard" aria-controls="tab-dashboard" aria-selected="false" tabindex="-1">Dashboard</button>
+      <button data-tab="export" role="tab" id="tab-btn-export" aria-controls="tab-export" aria-selected="false" tabindex="-1">Export / Import</button>
     </div>
 
     <!-- TAB 1: Race Setup -->
-    <div class="tab-panel active" id="tab-setup">
+    <div class="tab-panel active" id="tab-setup" role="tabpanel" aria-labelledby="tab-btn-setup" tabindex="0">
       <div class="card">
         <h2>Race Details</h2>
         <div class="form-row">
@@ -468,19 +509,20 @@
           </div>
           <div class="form-row">
             <label for="race-goal-time">Goal Finish Time</label>
-            <input type="text" id="race-goal-time" placeholder="HH:MM:SS" pattern="\d{1,3}:\d{2}:\d{2}">
-            <div class="hint">Format: HH:MM:SS (e.g. 24:00:00)</div>
+            <input type="text" id="race-goal-time" placeholder="HH:MM:SS" pattern="\d{1,3}:\d{2}:\d{2}" aria-describedby="goal-time-hint">
+            <div class="hint" id="goal-time-hint">Format: HH:MM:SS (e.g. 24:00:00)</div>
           </div>
         </div>
       </div>
 
       <div class="card">
         <h2>GPX Import</h2>
-        <div class="drop-zone" id="gpx-drop-zone">
+        <div class="drop-zone" id="gpx-drop-zone" role="button" tabindex="0" aria-label="Upload GPX file. Drop a file here or press Enter to browse." aria-describedby="gpx-drop-hint">
           <p><strong>Drop a GPX file here</strong> or click to browse</p>
-          <p class="hint">Extracts distance and elevation data from your route</p>
-          <input type="file" id="gpx-file" accept=".gpx">
+          <p class="hint" id="gpx-drop-hint">Extracts distance and elevation data from your route</p>
+          <input type="file" id="gpx-file" accept=".gpx" tabindex="-1" aria-hidden="true">
         </div>
+        <div id="gpx-status" class="status-msg" role="status" aria-live="polite"></div>
         <div id="gpx-stats" style="display:none">
           <div class="gpx-stats">
             <div class="gpx-stat">
@@ -517,8 +559,8 @@
           </div>
           <div class="form-row">
             <label for="target-caffeine">Caffeine / hour (mg)</label>
-            <input type="number" id="target-caffeine" min="0" step="1" placeholder="0">
-            <div class="hint">Optional</div>
+            <input type="number" id="target-caffeine" min="0" step="1" placeholder="0" aria-describedby="caffeine-hint">
+            <div class="hint" id="caffeine-hint">Optional</div>
           </div>
         </div>
       </div>
@@ -531,7 +573,7 @@
     </div>
 
     <!-- TAB 2: Aid Stations -->
-    <div class="tab-panel" id="tab-stations">
+    <div class="tab-panel" id="tab-stations" role="tabpanel" aria-labelledby="tab-btn-stations" tabindex="0">
       <div class="card">
         <div class="card-header">
           <h2>Aid Stations</h2>
@@ -548,7 +590,7 @@
     </div>
 
     <!-- TAB 3: Nutrition Inventory -->
-    <div class="tab-panel" id="tab-inventory">
+    <div class="tab-panel" id="tab-inventory" role="tabpanel" aria-labelledby="tab-btn-inventory" tabindex="0">
       <div class="card">
         <div class="card-header">
           <h2>Nutrition Products</h2>
@@ -565,7 +607,7 @@
     </div>
 
     <!-- TAB 4: Segment Nutrition Planner -->
-    <div class="tab-panel" id="tab-segments">
+    <div class="tab-panel" id="tab-segments" role="tabpanel" aria-labelledby="tab-btn-segments" tabindex="0">
       <div id="segments-content">
         <div class="empty-state" id="segments-empty">
           <p><strong>No segments to plan</strong></p>
@@ -575,7 +617,7 @@
     </div>
 
     <!-- TAB 5: Dashboard -->
-    <div class="tab-panel" id="tab-dashboard">
+    <div class="tab-panel" id="tab-dashboard" role="tabpanel" aria-labelledby="tab-btn-dashboard" tabindex="0">
       <div id="dashboard-content">
         <div class="empty-state" id="dashboard-empty">
           <p><strong>Nothing to show yet</strong></p>
@@ -585,7 +627,7 @@
     </div>
 
     <!-- TAB 6: Export / Import -->
-    <div class="tab-panel" id="tab-export">
+    <div class="tab-panel" id="tab-export" role="tabpanel" aria-labelledby="tab-btn-export" tabindex="0">
       <div class="card export-section">
         <h2>Export Plan</h2>
         <p>Download your race plan as a structured YAML file (for re-import) or as readable Markdown.</p>
@@ -598,13 +640,14 @@
       <div class="card import-area">
         <h2>Import Plan</h2>
         <p>Load a previously exported YAML plan to restore your race data.</p>
-        <div class="drop-zone" id="yaml-drop-zone">
+        <div class="drop-zone" id="yaml-drop-zone" role="button" tabindex="0" aria-label="Import YAML plan. Drop a file here or press Enter to browse.">
           <p><strong>Drop a YAML file here</strong> or click to browse</p>
-          <input type="file" id="yaml-file" accept=".yaml,.yml">
+          <input type="file" id="yaml-file" accept=".yaml,.yml" tabindex="-1" aria-hidden="true">
         </div>
-        <div id="import-status" class="status-msg"></div>
+        <div id="import-status" class="status-msg" role="status" aria-live="polite"></div>
       </div>
     </div>
+    </main>
 
     <script>
     // ──────────────────────────────────────────
@@ -740,17 +783,43 @@
     // ──────────────────────────────────────────
     // Tab switching
     // ──────────────────────────────────────────
-    document.getElementById("tab-bar").addEventListener("click", (e) => {
-      const btn = e.target.closest("button[data-tab]");
+    function activateTab(btn) {
       if (!btn) return;
-      document.querySelectorAll("#tab-bar button").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll("#tab-bar button[role='tab']").forEach(b => {
+        b.classList.remove("active");
+        b.setAttribute("aria-selected", "false");
+        b.setAttribute("tabindex", "-1");
+      });
       document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
       btn.classList.add("active");
+      btn.setAttribute("aria-selected", "true");
+      btn.setAttribute("tabindex", "0");
       document.getElementById(`tab-${btn.dataset.tab}`).classList.add("active");
 
       // Refresh dynamic content when switching tabs
       if (btn.dataset.tab === "segments") rebuildSegments();
       if (btn.dataset.tab === "dashboard") { rebuildSegments(); renderDashboard(); }
+    }
+
+    document.getElementById("tab-bar").addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-tab]");
+      activateTab(btn);
+    });
+
+    document.getElementById("tab-bar").addEventListener("keydown", (e) => {
+      const tabs = Array.from(document.querySelectorAll("#tab-bar button[role='tab']"));
+      const idx = tabs.indexOf(document.activeElement);
+      if (idx < 0) return;
+      let next = -1;
+      if (e.key === "ArrowRight") next = (idx + 1) % tabs.length;
+      else if (e.key === "ArrowLeft") next = (idx - 1 + tabs.length) % tabs.length;
+      else if (e.key === "Home") next = 0;
+      else if (e.key === "End") next = tabs.length - 1;
+      if (next >= 0) {
+        e.preventDefault();
+        tabs[next].focus();
+        activateTab(tabs[next]);
+      }
     });
 
     // ──────────────────────────────────────────
@@ -785,6 +854,12 @@
     const gpxFileInput = document.getElementById("gpx-file");
 
     gpxDropZone.addEventListener("click", () => gpxFileInput.click());
+    gpxDropZone.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        gpxFileInput.click();
+      }
+    });
     gpxDropZone.addEventListener("dragover", (e) => {
       e.preventDefault();
       gpxDropZone.classList.add("dragover");
@@ -817,10 +892,19 @@
         try {
           parseGpx(e.target.result);
         } catch (err) {
-          alert(`Error parsing GPX file: ${err.message}`);
+          showGpxStatus(`Error parsing GPX file: ${err.message}`, "error");
         }
       };
       reader.readAsText(file);
+    }
+
+    function showGpxStatus(msg, type) {
+      const el = document.getElementById("gpx-status");
+      el.textContent = msg;
+      el.className = `status-msg ${type}`;
+      if (type === "success" || type === "info") {
+        setTimeout(() => { el.className = "status-msg"; el.textContent = ""; }, 4000);
+      }
     }
 
     function parseGpx(xmlText) {
@@ -828,7 +912,7 @@
       const doc = parser.parseFromString(xmlText, "application/xml");
       const trkpts = doc.querySelectorAll("trkpt");
       if (trkpts.length === 0) {
-        alert("No trackpoints found in GPX file.");
+        showGpxStatus("No trackpoints found in GPX file.", "error");
         return;
       }
 
@@ -880,6 +964,7 @@
       document.getElementById("gpx-stats").style.display = "";
       gpxDropZone.style.display = "none";
       saveState();
+      showGpxStatus(`Loaded ${trkpts.length} trackpoints (${state.gpxData.totalDist} mi).`, "success");
     }
 
     function getElevationAtDistance(dist) {
@@ -937,21 +1022,23 @@
         </tr></thead><tbody>`;
 
       state.aidStations.forEach((s, i) => {
+        const safeName = s.name ? `aid station ${escAttr(s.name)}` : `aid station row ${i + 1}`;
         html += `<tr data-id="${s.id}">
-          <td><input type="text" value="${escAttr(s.name)}" data-field="name" placeholder="Station name"></td>
-          <td><input type="number" value="${s.distance || ""}" data-field="distance" min="0" step="0.1" style="width:70px"></td>
-          <td><input type="number" value="${s.elevation || ""}" data-field="elevation" style="width:70px"></td>
-          <td><input type="text" value="${escAttr(s.cutoffTime)}" data-field="cutoffTime" placeholder="HH:MM:SS" style="width:90px"></td>
-          <td><span class="toggle-btn ${s.crewAccess ? "on" : ""}" data-field="crewAccess">${s.crewAccess ? "Yes" : "No"}</span></td>
-          <td><span class="toggle-btn ${s.hasDropBag ? "on" : ""}" data-field="hasDropBag">${s.hasDropBag ? "Yes" : "No"}</span></td>
-          <td><input type="text" value="${escAttr(s.notes)}" data-field="notes" placeholder="Notes"></td>
-          <td><button class="btn btn-danger btn-sm" data-action="remove">✕</button></td>
+          <td><input type="text" value="${escAttr(s.name)}" data-field="name" placeholder="Station name" aria-label="Aid station name, row ${i + 1}"></td>
+          <td><input type="number" value="${s.distance || ""}" data-field="distance" min="0" step="0.1" style="width:70px" aria-label="Distance in miles for ${safeName}"></td>
+          <td><input type="number" value="${s.elevation || ""}" data-field="elevation" style="width:70px" aria-label="Elevation in feet for ${safeName}"></td>
+          <td><input type="text" value="${escAttr(s.cutoffTime)}" data-field="cutoffTime" placeholder="HH:MM:SS" style="width:90px" aria-label="Cutoff time for ${safeName}"></td>
+          <td><button type="button" class="toggle-btn ${s.crewAccess ? "on" : ""}" data-field="crewAccess" role="switch" aria-checked="${!!s.crewAccess}" aria-label="Crew access at ${safeName}">${s.crewAccess ? "Yes" : "No"}</button></td>
+          <td><button type="button" class="toggle-btn ${s.hasDropBag ? "on" : ""}" data-field="hasDropBag" role="switch" aria-checked="${!!s.hasDropBag}" aria-label="Drop bag at ${safeName}">${s.hasDropBag ? "Yes" : "No"}</button></td>
+          <td><input type="text" value="${escAttr(s.notes)}" data-field="notes" placeholder="Notes" aria-label="Notes for ${safeName}"></td>
+          <td><button class="btn btn-danger btn-sm" data-action="remove" aria-label="Remove ${safeName}" title="Remove">✕</button></td>
         </tr>`;
         if (s.hasDropBag) {
+          const dbId = `dropbag-${s.id}`;
           html += `<tr data-id="${s.id}" class="dropbag-row">
             <td colspan="8">
-              <label style="font-size:12px">Drop bag contents:</label>
-              <textarea data-field="dropBagContents" placeholder="e.g. Extra socks, headlamp, jacket">${escHtml(s.dropBagContents)}</textarea>
+              <label for="${dbId}" style="font-size:12px">Drop bag contents for ${escHtml(s.name || "this station")}:</label>
+              <textarea id="${dbId}" data-field="dropBagContents" placeholder="e.g. Extra socks, headlamp, jacket">${escHtml(s.dropBagContents)}</textarea>
             </td>
           </tr>`;
         }
@@ -1013,6 +1100,7 @@
         const field = e.target.dataset.field;
         station[field] = !station[field];
         e.target.classList.toggle("on");
+        e.target.setAttribute("aria-checked", String(station[field]));
         e.target.textContent = station[field] ? "Yes" : "No";
         if (field === "hasDropBag") renderStations();
         saveState();
@@ -1061,14 +1149,15 @@
           <th>Caffeine (mg)</th><th>Calories</th><th></th>
         </tr></thead><tbody>`;
 
-      state.products.forEach(p => {
+      state.products.forEach((p, i) => {
+        const safeName = p.name ? `product ${escAttr(p.name)}` : `product row ${i + 1}`;
         html += `<tr data-id="${p.id}">
-          <td><input type="text" value="${escAttr(p.name)}" data-field="name" placeholder="e.g. SiS Beta Fuel Gel"></td>
-          <td><input type="number" value="${p.carbsPerServing || ""}" data-field="carbsPerServing" min="0" style="width:70px"></td>
-          <td><input type="number" value="${p.sodiumPerServing || ""}" data-field="sodiumPerServing" min="0" style="width:80px"></td>
-          <td><input type="number" value="${p.caffeinePerServing || ""}" data-field="caffeinePerServing" min="0" style="width:80px"></td>
-          <td><input type="number" value="${p.caloriesPerServing || ""}" data-field="caloriesPerServing" min="0" style="width:80px"></td>
-          <td><button class="btn btn-danger btn-sm" data-action="remove">✕</button></td>
+          <td><input type="text" value="${escAttr(p.name)}" data-field="name" placeholder="e.g. SiS Beta Fuel Gel" aria-label="Product name, row ${i + 1}"></td>
+          <td><input type="number" value="${p.carbsPerServing || ""}" data-field="carbsPerServing" min="0" style="width:70px" aria-label="Carbs in grams per serving for ${safeName}"></td>
+          <td><input type="number" value="${p.sodiumPerServing || ""}" data-field="sodiumPerServing" min="0" style="width:80px" aria-label="Sodium in milligrams per serving for ${safeName}"></td>
+          <td><input type="number" value="${p.caffeinePerServing || ""}" data-field="caffeinePerServing" min="0" style="width:80px" aria-label="Caffeine in milligrams per serving for ${safeName}"></td>
+          <td><input type="number" value="${p.caloriesPerServing || ""}" data-field="caloriesPerServing" min="0" style="width:80px" aria-label="Calories per serving for ${safeName}"></td>
+          <td><button class="btn btn-danger btn-sm" data-action="remove" aria-label="Remove ${safeName}" title="Remove">✕</button></td>
         </tr>`;
       });
       html += `</tbody></table></div>`;
@@ -1225,11 +1314,11 @@
 
           <div class="segment-totals">
             <div class="segment-total">
-              <div class="val ${rateClass(perHour.carbs, state.nutritionTargets.carbsPerHour)}">${totals.carbs}g</div>
+              <div class="val ${rateClass(perHour.carbs, state.nutritionTargets.carbsPerHour)}">${rateIcon(perHour.carbs, state.nutritionTargets.carbsPerHour)}${totals.carbs}g</div>
               <div class="lbl">Carbs (${perHour.carbs}g/hr)</div>
             </div>
             <div class="segment-total">
-              <div class="val ${rateClass(perHour.sodium, state.nutritionTargets.sodiumPerHour)}">${totals.sodium}mg</div>
+              <div class="val ${rateClass(perHour.sodium, state.nutritionTargets.sodiumPerHour)}">${rateIcon(perHour.sodium, state.nutritionTargets.sodiumPerHour)}${totals.sodium}mg</div>
               <div class="lbl">Sodium (${perHour.sodium}mg/hr)</div>
             </div>
             <div class="segment-total">
@@ -1257,14 +1346,22 @@
       if (!items || items.length === 0) return '<div class="hint" style="margin:4px 0">None</div>';
       return items.map((item, itemIdx) => `
         <div class="nutrition-row" data-item="${itemIdx}">
-          <select data-field="productId">
+          <select data-field="productId" aria-label="Product">
             <option value="">— Select product —</option>
             ${state.products.map(p => `<option value="${p.id}" ${p.id === item.productId ? "selected" : ""}>${escHtml(p.name || "Unnamed")}</option>`).join("")}
           </select>
-          <input type="number" value="${item.quantity || 1}" data-field="quantity" min="1" step="1" title="Quantity (servings)">
-          <button class="btn btn-danger btn-sm" data-action="remove-item" title="Remove">✕</button>
+          <input type="number" value="${item.quantity || 1}" data-field="quantity" min="1" step="1" aria-label="Quantity (servings)" title="Quantity (servings)">
+          <button class="btn btn-danger btn-sm" data-action="remove-item" aria-label="Remove nutrition item" title="Remove">✕</button>
         </div>
       `).join("");
+    }
+
+    function rateIcon(actual, target) {
+      if (!target || target <= 0) return "";
+      const ratio = actual / target;
+      if (ratio >= 0.9) return "✓ ";
+      if (ratio >= 0.7) return "⚠ ";
+      return "⚠⚠ ";
     }
 
     function rateClass(actual, target) {
@@ -1347,9 +1444,40 @@
         item[field] = e.target.value;
       }
 
-      // Recalculate totals display
-      renderSegments();
+      // Update totals only — do NOT re-render whole segment list (would lose input focus)
+      updateSegmentTotalsDisplay(card, seg);
     });
+
+    function updateSegmentTotalsDisplay(card, seg) {
+      const totalsDiv = card.querySelector(".segment-totals");
+      if (!totalsDiv) return;
+      const hours = seg.estimatedTime / 3600;
+      const totals = calcSegmentTotals(seg);
+      const perHour = hours > 0 ? {
+        carbs: round1(totals.carbs / hours),
+        sodium: round1(totals.sodium / hours),
+        caffeine: round1(totals.caffeine / hours),
+        calories: round1(totals.calories / hours),
+      } : { carbs: 0, sodium: 0, caffeine: 0, calories: 0 };
+      const t = state.nutritionTargets;
+      totalsDiv.innerHTML = `
+        <div class="segment-total">
+          <div class="val ${rateClass(perHour.carbs, t.carbsPerHour)}">${rateIcon(perHour.carbs, t.carbsPerHour)}${totals.carbs}g</div>
+          <div class="lbl">Carbs (${perHour.carbs}g/hr)</div>
+        </div>
+        <div class="segment-total">
+          <div class="val ${rateClass(perHour.sodium, t.sodiumPerHour)}">${rateIcon(perHour.sodium, t.sodiumPerHour)}${totals.sodium}mg</div>
+          <div class="lbl">Sodium (${perHour.sodium}mg/hr)</div>
+        </div>
+        <div class="segment-total">
+          <div class="val">${totals.caffeine}mg</div>
+          <div class="lbl">Caffeine (${perHour.caffeine}mg/hr)</div>
+        </div>
+        <div class="segment-total">
+          <div class="val">${totals.calories} kcal</div>
+          <div class="lbl">Calories (${perHour.calories}/hr)</div>
+        </div>`;
+    }
 
     document.getElementById("segments-content").addEventListener("change", (e) => {
       if (e.target.dataset.field === "productId") {
@@ -1704,6 +1832,12 @@
     const yamlFileInput = document.getElementById("yaml-file");
 
     yamlDropZone.addEventListener("click", () => yamlFileInput.click());
+    yamlDropZone.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        yamlFileInput.click();
+      }
+    });
     yamlDropZone.addEventListener("dragover", (e) => {
       e.preventDefault();
       yamlDropZone.classList.add("dragover");
