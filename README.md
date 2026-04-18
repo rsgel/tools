@@ -16,6 +16,7 @@ Each tool is a single, self-contained HTML file. The site is hosted via [GitHub 
 - [Ultra Race Planner](ultra-race-planner) plan ultrarunning race logistics with splits, aid stations, drop bags, and nutrition strategy
 - [Running Planner](running-planner) plan weekly running mileage with natural language entry, drag-and-drop, and FIT export
 - [FIT File Workout](fit-file-workout) view FIT activity files with charts and tables, or create structured workouts from natural language
+- [Tip Calculator](tip-calculator) calculate tip and split the bill among multiple people
 
 <!-- New tools should be added above this line as bullet points:
 - [Tool Name](tool-name) short description
