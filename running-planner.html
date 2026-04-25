@@ -320,6 +320,7 @@
       text-overflow: ellipsis;
       display: -webkit-box;
       -webkit-line-clamp: 2;
+      line-clamp: 2;
       -webkit-box-orient: vertical;
     }
     .workout-delete {
@@ -740,6 +741,14 @@
     rest: { label: "Rest", cssClass: "type-rest" },
     other: { label: "Other", cssClass: "type-other" },
   };
+  const TYPE_KEYWORDS = [
+    { keys: ["easy", "recovery", "shake-out", "shakeout"], type: "easy" },
+    { keys: ["tempo", "threshold", "lt", "lactate"], type: "tempo" },
+    { keys: ["interval", "intervals", "repeat", "repeats", "fartlek", "speed", "track", "vo2", "vo2max"], type: "intervals" },
+    { keys: ["long run", "long", "lr"], type: "long-run" },
+    { keys: ["race", "5k race", "10k race", "half race", "marathon race", "time trial", "tt"], type: "race" },
+    { keys: ["cross-train", "cross train", "xt", "bike", "swim", "yoga", "strength", "gym", "elliptical"], type: "cross-train" },
+  ];
 
   // ─── State ───
   let state = {
@@ -833,6 +842,51 @@
     return Math.round(dist * 10) / 10;
   }
 
+  function escapeRegExp(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  function keywordPatternSource(keyword) {
+    return keyword.trim().split(/\s+/).map(escapeRegExp).join("\\s+");
+  }
+
+  function keywordRegex(keyword) {
+    return new RegExp(`(^|[^a-z0-9])${keywordPatternSource(keyword)}([^a-z0-9]|$)`, "i");
+  }
+
+  function getTypeKeywords(type) {
+    const entry = TYPE_KEYWORDS.find(tk => tk.type === type);
+    return entry ? [...entry.keys].sort((a, b) => b.length - a.length) : [];
+  }
+
+  function stripTypeKeywordsFromNotes(notes, type) {
+    let cleaned = notes
+      .replace(/^[\s,\-–—]+/, "")
+      .replace(/[\s,\-–—]+$/, "")
+      .trim();
+    const keywords = getTypeKeywords(type);
+    let changed = true;
+
+    while (changed) {
+      changed = false;
+      for (const keyword of keywords) {
+        const source = keywordPatternSource(keyword);
+        const leading = new RegExp(`^[\\s,\\-–—]*${source}(?=$|[^a-z0-9])[\\s,\\-–—]*`, "i");
+        const trailing = new RegExp(`[\\s,\\-–—]*(?:^|[^a-z0-9])${source}[\\s,\\-–—]*$`, "i");
+        const next = cleaned.replace(leading, "").replace(trailing, "").trim();
+        if (next !== cleaned) {
+          cleaned = next;
+          changed = true;
+        }
+      }
+    }
+
+    return cleaned
+      .replace(/^[\s,\-–—]+/, "")
+      .replace(/[\s,\-–—]+$/, "")
+      .trim();
+  }
+
   // ─── Natural Language Parser ───
   function parseWorkoutInput(raw) {
     const text = raw.trim();
@@ -852,18 +906,9 @@
     const unit = state.settings.unit;
 
     // Type detection from keywords (do this early so we know if cross-train)
-    const typeKeywords = [
-      { keys: ["easy", "recovery", "shake-out", "shakeout"], type: "easy" },
-      { keys: ["tempo", "threshold", "lt", "lactate"], type: "tempo" },
-      { keys: ["interval", "intervals", "repeat", "repeats", "fartlek", "speed", "track", "vo2", "vo2max"], type: "intervals" },
-      { keys: ["long run", "long", "lr"], type: "long-run" },
-      { keys: ["race", "5k race", "10k race", "half race", "marathon race", "time trial", "tt"], type: "race" },
-      { keys: ["cross-train", "cross train", "xt", "bike", "swim", "yoga", "strength", "gym", "elliptical"], type: "cross-train" },
-    ];
-
-    for (const tk of typeKeywords) {
+    for (const tk of TYPE_KEYWORDS) {
       for (const kw of tk.keys) {
-        if (lower.includes(kw)) {
+        if (keywordRegex(kw).test(lower)) {
           type = tk.type;
           break;
         }
@@ -938,10 +983,7 @@
     }
 
     // Clean up notes — remove type keywords that were used for classification
-    const cleanedNotes = notes
-      .replace(/^[\s,\-–—]+/, "")
-      .replace(/[\s,\-–—]+$/, "")
-      .trim();
+    const cleanedNotes = stripTypeKeywordsFromNotes(notes, type);
 
     const result = { distance, type, notes: cleanedNotes };
     if (foundTime && !foundDist) {
@@ -1357,7 +1399,8 @@
       }
       const typeLabel = (WORKOUT_TYPES[workout.type] || WORKOUT_TYPES.other).label.toLowerCase();
       if (workout.type !== "other") parts.push(typeLabel);
-      if (workout.notes) parts.push(workout.notes);
+      const notes = stripTypeKeywordsFromNotes(workout.notes || "", workout.type);
+      if (notes) parts.push(notes);
       input.value = parts.join(" ");
     } else {
       input.value = "";
