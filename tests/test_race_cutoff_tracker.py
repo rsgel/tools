@@ -13,14 +13,17 @@ def open_tracker(page: Page):
 
 def add_station(page: Page, name: str, distance: str, cutoff: str, actual: str = ""):
     page.click("#add-station-btn")
-    edit_row = page.locator("#station-rows tr.metadata-row").last
-    edit_row.locator("input[data-field='name']").fill(name)
-    edit_row.locator("input[data-field='distance']").fill(distance)
-    edit_row.locator("input[data-field='cutoff']").fill(cutoff)
-    edit_row.locator("button[data-action='edit']").click()
-    row = page.locator("#station-rows tr:not(.metadata-row)").last
+    row = page.locator("#station-rows tr").last
+    row.locator("input[data-field='name']").fill(name)
+    row.locator("input[data-field='distance']").fill(distance)
+    row.locator("input[data-field='cutoff']").fill(cutoff)
+    page.click("#edit-stations-btn")
+    row = page.locator("#station-rows tr").last
     if actual:
-        row.locator("input[data-field='actual']").fill(actual)
+        actual_input = row.locator("input[data-field='actual']")
+        actual_input.fill(actual)
+        actual_input.press("Tab")
+        row = page.locator("#station-rows tr").last
     return row
 
 
@@ -29,23 +32,33 @@ def test_initial_state(page: Page, static_server):
     expect(page.locator("h1")).to_have_text("Race Cutoff Tracker")
     expect(page.locator("#empty-state")).to_be_visible()
     expect(page.locator("#paste-input")).not_to_be_visible()
+    expect(page.locator("#edit-stations-btn")).to_be_visible()
     expect(page.locator("#stations-actions #add-station-btn")).to_be_visible()
 
 
 def test_add_station_row(page: Page, static_server):
     open_tracker(page)
     page.click("#add-station-btn")
-    expect(page.locator("#station-rows tr:not(.metadata-row)")).to_have_count(1)
-    expect(page.locator("#station-rows tr.metadata-row")).to_have_count(1)
+    expect(page.locator("#station-rows tr")).to_have_count(1)
+    expect(page.locator("#edit-stations-btn")).to_have_text("Done Editing")
+    expect(page.locator("#station-rows input[data-field='distance']")).to_be_visible()
     expect(page.locator("#empty-state")).not_to_be_visible()
 
 
-def test_remove_station_lives_in_metadata_editor(page: Page, static_server):
+def test_remove_station_lives_in_global_edit_mode(page: Page, static_server):
     open_tracker(page)
     add_station(page, "Ridge Aid", "12", "3:30")
-    expect(page.locator("#station-rows tr:not(.metadata-row) button[data-action='remove']")).to_have_count(0)
-    page.locator("#station-rows tr:not(.metadata-row)").last.locator("button[data-action='edit']").click()
-    expect(page.locator("#station-rows tr.metadata-row button[data-action='remove']")).to_be_visible()
+    expect(page.locator("#station-rows button[data-action='remove']")).to_have_count(0)
+    page.click("#edit-stations-btn")
+    expect(page.locator("#station-rows button[data-action='remove']")).to_be_visible()
+
+
+def test_distance_typing_is_not_replaced_by_rerender(page: Page, static_server):
+    open_tracker(page)
+    page.click("#add-station-btn")
+    distance_input = page.locator("#station-rows input[data-field='distance']").last
+    distance_input.type("15.8")
+    expect(distance_input).to_have_value("15.8")
 
 
 def test_elapsed_actual_margin(page: Page, static_server):
@@ -76,8 +89,8 @@ def test_paste_import_replaces_rows(page: Page, static_server):
         "Aid Station\tDistance\tCutoff\tActual\nStart\t0\t0:00\t0:00\nRidge\t12\t3:30\t3:05",
     )
     page.click("#import-btn")
-    expect(page.locator("#station-rows tr:not(.metadata-row)")).to_have_count(2)
-    expect(page.locator("#station-rows tr:not(.metadata-row)").nth(1)).to_contain_text("25m ahead")
+    expect(page.locator("#station-rows tr")).to_have_count(2)
+    expect(page.locator("#station-rows tr").nth(1)).to_contain_text("25m ahead")
 
 
 def test_clock_mode_margin(page: Page, static_server):
@@ -92,7 +105,7 @@ def test_clock_mode_margin(page: Page, static_server):
 def test_sample_data_draws_chart(page: Page, static_server):
     open_tracker(page)
     page.click("#sample-btn")
-    expect(page.locator("#station-rows tr:not(.metadata-row)")).to_have_count(5)
+    expect(page.locator("#station-rows tr")).to_have_count(5)
     expect(page.locator("#chart-empty")).not_to_be_visible()
 
 
@@ -100,7 +113,7 @@ def test_clear_resets_tracker(page: Page, static_server):
     open_tracker(page)
     add_station(page, "Ridge Aid", "12", "3:30", "3:05")
     page.click("#clear-btn")
-    expect(page.locator("#station-rows tr:not(.metadata-row)")).to_have_count(0)
+    expect(page.locator("#station-rows tr")).to_have_count(0)
     expect(page.locator("#empty-state")).to_be_visible()
 
 

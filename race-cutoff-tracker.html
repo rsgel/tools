@@ -298,21 +298,6 @@
     color: #334155;
     white-space: nowrap;
   }
-  .metadata-row td {
-    background: #f8fafc;
-    border-bottom-color: #cbd5e1;
-  }
-  .metadata-editor {
-    display: grid;
-    grid-template-columns: minmax(180px, 1.4fr) minmax(90px, 0.7fr) minmax(110px, 0.8fr) auto;
-    gap: 8px;
-    align-items: end;
-  }
-  .metadata-actions {
-    display: flex;
-    gap: 6px;
-    justify-content: flex-end;
-  }
   .name-cell input {
     min-width: 170px;
   }
@@ -435,12 +420,6 @@
       justify-content: flex-start;
       margin-top: 6px;
     }
-    .metadata-editor {
-      grid-template-columns: 1fr;
-    }
-    .metadata-actions {
-      justify-content: flex-start;
-    }
     .control-grid,
     .dashboard-grid,
     .paste-grid {
@@ -517,6 +496,7 @@
       <div class="section-header">
         <h2 id="stations-heading">Aid Stations</h2>
         <div class="station-actions" id="stations-actions">
+          <button type="button" class="btn-secondary" id="edit-stations-btn">Edit Stations</button>
           <button type="button" class="btn-primary" id="add-station-btn">Add Station</button>
           <button type="button" class="btn-secondary" id="sample-btn">Load Sample</button>
           <button type="button" class="btn-danger" id="clear-btn">Clear</button>
@@ -547,7 +527,7 @@
               <th>Pace</th>
               <th>Status</th>
               <th>Projection</th>
-              <th>Edit</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody id="station-rows"></tbody>
@@ -568,7 +548,7 @@
   };
 
   let state = loadState();
-  let editingStationId = null;
+  let stationsEditMode = false;
 
   const raceNameInput = document.getElementById('race-name');
   const raceStartInput = document.getElementById('race-start-time');
@@ -581,6 +561,7 @@
   const chartEmpty = document.getElementById('chart-empty');
   const pasteInput = document.getElementById('paste-input');
   const importError = document.getElementById('import-error');
+  const editStationsButton = document.getElementById('edit-stations-btn');
 
   function loadState() {
     try {
@@ -896,6 +877,8 @@
   function renderRows(model) {
     stationRows.innerHTML = '';
     emptyState.style.display = state.stations.length ? 'none' : 'block';
+    editStationsButton.textContent = stationsEditMode ? 'Done Editing' : 'Edit Stations';
+    editStationsButton.className = stationsEditMode ? 'btn-primary' : 'btn-secondary';
     const byId = new Map(model.evaluated.map((station) => [station.id, station]));
 
     state.stations.forEach((station) => {
@@ -903,53 +886,38 @@
       const row = document.createElement('tr');
       row.dataset.stationId = station.id;
       row.innerHTML = `
-        <td class="station-name">${escapeHtml(station.name || 'Unnamed')}</td>
-        <td class="meta-value">${distanceHtml(evaluated)}</td>
-        <td class="meta-value">${cutoffHtml(evaluated)}</td>
+        <td class="${stationsEditMode ? 'name-cell' : 'station-name'}">${stationNameHtml(station)}</td>
+        <td class="${stationsEditMode ? 'distance-cell' : 'meta-value'}">${distanceHtml(station, evaluated)}</td>
+        <td class="${stationsEditMode ? 'time-cell' : 'meta-value'}">${cutoffHtml(station, evaluated)}</td>
         <td class="time-cell"><input data-field="actual" value="${escapeAttribute(station.actual)}" placeholder=""></td>
         <td class="pace-cell">${paceHtml(evaluated)}</td>
         <td class="status-cell">${statusHtml(evaluated)}</td>
         <td class="prediction-cell">${predictionHtml(evaluated)}</td>
-        <td><button type="button" class="btn-secondary btn-small" data-action="edit">${editingStationId === station.id ? 'Done' : 'Edit'}</button></td>
+        <td>${stationsEditMode ? '<button type="button" class="btn-danger btn-small" data-action="remove">Remove</button>' : '<span class="muted">-</span>'}</td>
       `;
       stationRows.appendChild(row);
-      if (editingStationId === station.id) {
-        const editRow = document.createElement('tr');
-        editRow.className = 'metadata-row';
-        editRow.dataset.stationId = station.id;
-        editRow.innerHTML = `
-          <td colspan="8">
-            <div class="metadata-editor">
-              <div class="name-cell">
-                <label>Station Name</label>
-                <input data-field="name" value="${escapeAttribute(station.name)}" placeholder="Aid station">
-              </div>
-              <div class="distance-cell">
-                <label>Distance</label>
-                <input data-field="distance" type="number" min="0" step="0.1" value="${escapeAttribute(station.distance)}" placeholder="0">
-              </div>
-              <div class="time-cell">
-                <label>Cutoff</label>
-                <input data-field="cutoff" value="${escapeAttribute(station.cutoff)}" placeholder="12:30">
-              </div>
-              <div class="metadata-actions">
-                <button type="button" class="btn-secondary btn-small" data-action="edit">Done</button>
-                <button type="button" class="btn-danger btn-small" data-action="remove">Remove</button>
-              </div>
-            </div>
-          </td>
-        `;
-        stationRows.appendChild(editRow);
-      }
     });
   }
 
-  function distanceHtml(station) {
-    return station.distance !== null ? `${escapeHtml(station.distance)} ${escapeHtml(state.distanceUnit)}` : '<span class="muted">Set distance</span>';
+  function stationNameHtml(station) {
+    if (stationsEditMode) {
+      return `<input data-field="name" value="${escapeAttribute(station.name)}" placeholder="Aid station">`;
+    }
+    return escapeHtml(station.name || 'Unnamed');
   }
 
-  function cutoffHtml(station) {
-    return station.cutoffElapsed !== null ? escapeHtml(formatTime(station.cutoffElapsed)) : '<span class="muted">Set cutoff</span>';
+  function distanceHtml(station, evaluated) {
+    if (stationsEditMode) {
+      return `<input data-field="distance" type="number" min="0" step="0.1" value="${escapeAttribute(station.distance)}" placeholder="0">`;
+    }
+    return evaluated.distance !== null ? `${escapeHtml(evaluated.distance)} ${escapeHtml(state.distanceUnit)}` : '<span class="muted">Set distance</span>';
+  }
+
+  function cutoffHtml(station, evaluated) {
+    if (stationsEditMode) {
+      return `<input data-field="cutoff" value="${escapeAttribute(station.cutoff)}" placeholder="12:30">`;
+    }
+    return evaluated.cutoffElapsed !== null ? escapeHtml(formatTime(evaluated.cutoffElapsed)) : '<span class="muted">Set cutoff</span>';
   }
 
   function paceHtml(station) {
@@ -1221,19 +1189,23 @@
     state.distanceUnit = distanceUnitInput.value;
     render();
   });
+  editStationsButton.addEventListener('click', () => {
+    stationsEditMode = !stationsEditMode;
+    render();
+  });
   document.getElementById('add-station-btn').addEventListener('click', () => {
     const station = createStation();
     state.stations.push(station);
-    editingStationId = station.id;
+    stationsEditMode = true;
     render();
   });
   document.getElementById('sample-btn').addEventListener('click', () => {
-    editingStationId = null;
+    stationsEditMode = false;
     loadSample();
   });
   document.getElementById('clear-btn').addEventListener('click', () => {
     state = structuredClone(blankState);
-    editingStationId = null;
+    stationsEditMode = false;
     pasteInput.value = '';
     clearImportError();
     render();
@@ -1241,7 +1213,7 @@
   document.getElementById('import-btn').addEventListener('click', () => {
     try {
       state.stations = parsePastedRows(pasteInput.value);
-      editingStationId = null;
+      stationsEditMode = false;
       clearImportError();
       render();
     } catch (error) {
@@ -1251,7 +1223,7 @@
   document.getElementById('append-import-btn').addEventListener('click', () => {
     try {
       state.stations.push(...parsePastedRows(pasteInput.value));
-      editingStationId = null;
+      stationsEditMode = false;
       clearImportError();
       render();
     } catch (error) {
@@ -1269,13 +1241,32 @@
       return;
     }
     station[input.dataset.field] = input.value;
+    saveState();
+  });
+  stationRows.addEventListener('change', (event) => {
+    const input = event.target.closest('input[data-field]');
+    if (!input) {
+      return;
+    }
+    const row = input.closest('tr');
+    const station = state.stations.find((item) => item.id === row.dataset.stationId);
+    if (!station) {
+      return;
+    }
+    station[input.dataset.field] = input.value;
+    if (stationsEditMode && input.dataset.field !== 'actual') {
+      saveState();
+      return;
+    }
     render();
-    const replacement = stationRows.querySelector(`tr[data-station-id="${station.id}"] input[data-field="${input.dataset.field}"]`);
-    if (replacement) {
-      replacement.focus();
-      if (typeof replacement.setSelectionRange === 'function' && input.selectionStart !== null) {
-        replacement.setSelectionRange(input.selectionStart, input.selectionEnd);
-      }
+  });
+  stationRows.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter') {
+      return;
+    }
+    const input = event.target.closest('input[data-field]');
+    if (input) {
+      input.blur();
     }
   });
   stationRows.addEventListener('click', (event) => {
@@ -1284,18 +1275,10 @@
       return;
     }
     const row = button.closest('tr');
-    if (button.dataset.action === 'edit') {
-      editingStationId = editingStationId === row.dataset.stationId ? null : row.dataset.stationId;
-      render();
-      return;
-    }
     if (button.dataset.action !== 'remove') {
       return;
     }
     state.stations = state.stations.filter((station) => station.id !== row.dataset.stationId);
-    if (editingStationId === row.dataset.stationId) {
-      editingStationId = null;
-    }
     render();
   });
   window.addEventListener('resize', () => drawChart(getEvaluatedStations()));
