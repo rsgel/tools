@@ -14,6 +14,7 @@ Each tool is a single, self-contained HTML file. The site is hosted via [GitHub 
 - [Initiative Tracker](initiative-tracker) track D&D combat turn order, HP, conditions, and death saves
 - [Hand and Foot Scorer](hand-and-foot-scorer) track scores for the card game Hand and Foot across four rounds
 - [Ultra Race Planner](ultra-race-planner) plan ultrarunning race logistics with splits, aid stations, drop bags, and nutrition strategy
+- [Race Cutoff Tracker](race-cutoff-tracker) track aid station cutoffs, runner check-ins, and projected cutoff margins for race-day crewing
 - [Running Planner](running-planner) plan weekly running mileage with natural language entry, drag-and-drop, and FIT export
 - [FIT File Workout](fit-file-workout) view FIT activity files with charts and tables, or create structured workouts from natural language
 - [Tip Calculator](tip-calculator) calculate tip and split the bill among multiple people
