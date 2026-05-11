@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 10 Tracker</title>
+    <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.5;
+      color: #2d3748;
+      background: #f7fafc;
+    }
+    h1 {
+      margin: 0 0 4px;
+      font-size: 28px;
+    }
+    .tagline {
+      margin: 0 0 16px;
+      color: #718096;
+      font-size: 14px;
+    }
+
+    /* Top actions */
+    .top-actions {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .btn-small {
+      padding: 8px 14px;
+      border: 2px solid #e2e8f0;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-family: inherit;
+      background: #fff;
+      color: #4a5568;
+      font-weight: 500;
+    }
+    .btn-small:hover {
+      background: #edf2f7;
+    }
+
+    /* Score toggle */
+    .score-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border: 2px solid #e2e8f0;
+      border-radius: 6px;
+      background: #fff;
+      font-size: 14px;
+      cursor: pointer;
+      user-select: none;
+      font-weight: 500;
+      color: #4a5568;
+    }
+    .score-toggle input {
+      width: 16px;
+      height: 16px;
+      margin: 0;
+      cursor: pointer;
+    }
+
+    /* Player grid */
+    .players {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+    .player {
+      background: #fff;
+      border-radius: 10px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      border: 2px solid transparent;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    .player.winner {
+      border-color: #f6ad55;
+      background: linear-gradient(180deg, #fffaf0 0%, #fff 80%);
+    }
+
+    /* Player name */
+    .player-name-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .player-name {
+      font-size: 17px;
+      font-weight: 600;
+      cursor: pointer;
+      flex: 1;
+      padding: 2px 4px;
+      border-radius: 4px;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .player-name:hover {
+      background: #edf2f7;
+    }
+    .player-name-input {
+      font-size: 17px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border: 2px solid #4a90e2;
+      border-radius: 4px;
+      font-family: inherit;
+      width: 100%;
+      flex: 1;
+      min-width: 0;
+    }
+    .remove-btn {
+      background: none;
+      border: none;
+      color: #cbd5e0;
+      cursor: pointer;
+      font-size: 20px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .remove-btn:hover {
+      color: #e53e3e;
+      background: #fff5f5;
+    }
+
+    /* Phase display */
+    .phase-block {
+      text-align: center;
+      margin: 8px 0 12px;
+    }
+    .phase-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #a0aec0;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+    .phase-number {
+      font-size: 56px;
+      font-weight: 800;
+      line-height: 1;
+      color: #2b6cb0;
+      margin: 4px 0;
+      letter-spacing: -2px;
+    }
+    .phase-number.done {
+      color: #d69e2e;
+      font-size: 36px;
+      letter-spacing: 0;
+    }
+    .phase-desc {
+      font-size: 14px;
+      color: #4a5568;
+      min-height: 21px;
+      font-weight: 500;
+    }
+
+    /* Phase controls */
+    .phase-controls {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .phase-btn {
+      width: 56px;
+      height: 44px;
+      border-radius: 8px;
+      border: none;
+      font-size: 22px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: transform 0.05s;
+    }
+    .phase-btn:active {
+      transform: scale(0.95);
+    }
+    .phase-minus {
+      background: #edf2f7;
+      color: #4a5568;
+    }
+    .phase-minus:hover {
+      background: #e2e8f0;
+    }
+    .phase-plus {
+      background: #4299e1;
+      color: #fff;
+    }
+    .phase-plus:hover {
+      background: #3182ce;
+    }
+    .phase-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Score row */
+    .score-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-top: 12px;
+      border-top: 1px solid #edf2f7;
+      margin-top: auto;
+    }
+    .score-row label {
+      font-size: 13px;
+      color: #718096;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .score-input {
+      flex: 1;
+      padding: 6px 8px;
+      border: 2px solid #e2e8f0;
+      border-radius: 4px;
+      font-size: 16px;
+      font-family: inherit;
+      text-align: right;
+      background: #fff;
+      min-width: 0;
+    }
+    .score-input:focus {
+      outline: none;
+      border-color: #4a90e2;
+    }
+    .score-add-btn {
+      padding: 6px 10px;
+      border: 2px solid #e2e8f0;
+      background: #fff;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      color: #4a5568;
+      font-family: inherit;
+      flex-shrink: 0;
+    }
+    .score-add-btn:hover {
+      background: #edf2f7;
+    }
+
+    /* Add player */
+    .add-player {
+      width: 100%;
+      padding: 14px;
+      border: 2px dashed #cbd5e0;
+      background: transparent;
+      color: #718096;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: inherit;
+    }
+    .add-player:hover {
+      background: #edf2f7;
+      border-color: #a0aec0;
+      color: #4a5568;
+    }
+
+    /* Reference panel */
+    .reference {
+      background: #fff;
+      border-radius: 8px;
+      padding: 14px 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      margin-top: 16px;
+    }
+    .ref-toggle {
+      cursor: pointer;
+      font-weight: 600;
+      color: #4a5568;
+      background: none;
+      border: none;
+      font-size: 15px;
+      font-family: inherit;
+      padding: 0;
+      width: 100%;
+      text-align: left;
+    }
+    .ref-toggle:hover {
+      color: #2d3748;
+    }
+    .ref-content {
+      display: none;
+      margin-top: 10px;
+    }
+    .ref-content.open {
+      display: block;
+    }
+    .ref-content table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    .ref-content th, .ref-content td {
+      text-align: left;
+      padding: 6px 10px;
+      border-bottom: 1px solid #edf2f7;
+    }
+    .ref-content th {
+      color: #718096;
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .ref-content td:first-child {
+      font-weight: 700;
+      color: #2b6cb0;
+      width: 60px;
+    }
+    .ref-section-title {
+      font-weight: 600;
+      color: #2d3748;
+      margin-top: 14px;
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+    .scoring-list {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 14px;
+      color: #4a5568;
+    }
+    .scoring-list li {
+      margin: 2px 0;
+    }
+
+    /* Winner badge */
+    .winner-badge {
+      position: absolute;
+      top: -10px;
+      right: -8px;
+      background: #f6ad55;
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 700;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 12px;
+      }
+      h1 {
+        font-size: 22px;
+      }
+      .players {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+      .phase-number {
+        font-size: 64px;
+      }
+      .phase-btn {
+        width: 64px;
+        height: 48px;
+        font-size: 24px;
+      }
+    }
+    </style>
+</head>
+<body>
+    <h1>Phase 10 Tracker</h1>
+    <p class="tagline">Track which phase each player is on. Add or remove players any time.</p>
+
+    <div class="top-actions">
+      <button class="btn-small" id="add-player-top-btn">+ Add Player</button>
+      <button class="btn-small" id="copy-link-btn">📋 Copy Link</button>
+      <button class="btn-small" id="new-game-btn">🔄 New Game</button>
+      <label class="score-toggle">
+        <input type="checkbox" id="track-scores-toggle">
+        Track scores
+      </label>
+    </div>
+
+    <div class="players" id="players-container"></div>
+
+    <button class="add-player" id="add-player-btn">+ Add Player</button>
+
+    <div class="reference">
+      <button class="ref-toggle" id="ref-toggle">▶ Phase Reference</button>
+      <div class="ref-content" id="ref-content">
+        <table>
+          <thead>
+            <tr><th>Phase</th><th>Goal</th></tr>
+          </thead>
+          <tbody id="phase-ref-body"></tbody>
+        </table>
+        <div class="ref-section-title">Scoring (penalty points for cards left in hand)</div>
+        <ul class="scoring-list">
+          <li>Number cards 1–9: <strong>5 pts</strong> each</li>
+          <li>Number cards 10–12: <strong>10 pts</strong> each</li>
+          <li>Skip card: <strong>15 pts</strong> each</li>
+          <li>Wild card: <strong>25 pts</strong> each</li>
+        </ul>
+        <div class="ref-section-title">Winning</div>
+        <p style="margin: 4px 0 0; font-size: 14px; color: #4a5568;">
+          First player to complete Phase 10 wins. If multiple players finish in the same round, the lowest score wins.
+        </p>
+      </div>
+    </div>
+
+    <script>
+    const PHASES = [
+      "2 sets of 3",
+      "1 set of 3 + 1 run of 4",
+      "1 set of 4 + 1 run of 4",
+      "1 run of 7",
+      "1 run of 8",
+      "1 run of 9",
+      "2 sets of 4",
+      "7 cards of one color",
+      "1 set of 5 + 1 set of 2",
+      "1 set of 5 + 1 set of 3",
+    ];
+    const MAX_PHASE = 10;
+
+    function makePlayer(id, name) {
+      return { id, name, phase: 1, score: 0 };
+    }
+
+    function createInitialState() {
+      return {
+        players: [
+          makePlayer(1, "Player 1"),
+          makePlayer(2, "Player 2"),
+          makePlayer(3, "Player 3"),
+          makePlayer(4, "Player 4"),
+        ],
+        nextId: 5,
+        trackScores: false,
+      };
+    }
+
+    let state = createInitialState();
+
+    // --- URL state persistence ---
+    function encodeState() {
+      const data = {
+        p: state.players.map(p => [p.name, p.phase, p.score]),
+        n: state.nextId,
+        s: state.trackScores ? 1 : 0,
+      };
+      return btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+    }
+
+    function decodeState(hash) {
+      try {
+        const data = JSON.parse(decodeURIComponent(escape(atob(hash))));
+        if (Array.isArray(data.p)) {
+          state.players = data.p.map((arr, i) => ({
+            id: i + 1,
+            name: arr[0],
+            phase: arr[1],
+            score: arr[2] || 0,
+          }));
+          state.nextId = data.n || state.players.length + 1;
+          state.trackScores = !!data.s;
+          return true;
+        }
+      } catch (e) {
+        // ignore
+      }
+      return false;
+    }
+
+    function loadFromHash() {
+      const hash = window.location.hash.slice(1);
+      if (hash) decodeState(hash);
+    }
+
+    function saveToHash() {
+      history.replaceState(null, "", `#${encodeState()}`);
+    }
+
+    // --- Rendering ---
+    function phaseDisplay(phase) {
+      if (phase > MAX_PHASE) {
+        return `<div class="phase-number done">🏆 DONE</div>
+                <div class="phase-desc">All 10 phases complete</div>`;
+      }
+      return `<div class="phase-number">${phase}</div>
+              <div class="phase-desc">${PHASES[phase - 1]}</div>`;
+    }
+
+    function renderPlayer(player) {
+      const isWinner = player.phase > MAX_PHASE;
+      const minusDisabled = player.phase <= 1;
+      const plusDisabled = player.phase > MAX_PHASE;
+      const scoreRow = state.trackScores ? `
+        <div class="score-row">
+          <label>Score</label>
+          <input type="number" class="score-input" inputmode="numeric"
+            data-id="${player.id}" data-action="score" value="${player.score}">
+          <button class="score-add-btn" data-id="${player.id}" data-action="add-score">+</button>
+        </div>
+      ` : "";
+
+      return `
+        <div class="player ${isWinner ? "winner" : ""}" data-id="${player.id}">
+          ${isWinner ? '<span class="winner-badge">WINNER</span>' : ""}
+          <div class="player-name-row">
+            <div class="player-name" data-id="${player.id}" data-action="edit-name"
+              title="Tap to edit">${escapeHtml(player.name)}</div>
+            <button class="remove-btn" data-id="${player.id}" data-action="remove"
+              title="Remove player">×</button>
+          </div>
+          <div class="phase-block">
+            <div class="phase-label">Phase</div>
+            ${phaseDisplay(player.phase)}
+          </div>
+          <div class="phase-controls">
+            <button class="phase-btn phase-minus" data-id="${player.id}" data-action="minus"
+              ${minusDisabled ? "disabled" : ""} title="Previous phase">−</button>
+            <button class="phase-btn phase-plus" data-id="${player.id}" data-action="plus"
+              ${plusDisabled ? "disabled" : ""} title="Advance phase">+</button>
+          </div>
+          ${scoreRow}
+        </div>
+      `;
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    function render() {
+      const container = document.getElementById("players-container");
+      container.innerHTML = state.players.map(renderPlayer).join("");
+      document.getElementById("track-scores-toggle").checked = state.trackScores;
+    }
+
+    function renderPhaseReference() {
+      const tbody = document.getElementById("phase-ref-body");
+      tbody.innerHTML = PHASES.map((desc, i) =>
+        `<tr><td>${i + 1}</td><td>${desc}</td></tr>`
+      ).join("");
+    }
+
+    // --- Event handling ---
+    document.getElementById("players-container").addEventListener("click", (e) => {
+      const el = e.target.closest("[data-action]");
+      if (!el) return;
+      const action = el.dataset.action;
+      const id = parseInt(el.dataset.id);
+      const player = state.players.find(p => p.id === id);
+      if (!player) return;
+
+      if (action === "plus") {
+        if (player.phase <= MAX_PHASE) player.phase += 1;
+      } else if (action === "minus") {
+        if (player.phase > 1) player.phase -= 1;
+      } else if (action === "remove") {
+        if (state.players.length <= 1) {
+          alert("At least one player is required.");
+          return;
+        }
+        if (confirm(`Remove ${player.name}?`)) {
+          state.players = state.players.filter(p => p.id !== id);
+        } else {
+          return;
+        }
+      } else if (action === "edit-name") {
+        startEditingName(id);
+        return;
+      } else if (action === "add-score") {
+        promptAddScore(id);
+        return;
+      }
+      saveToHash();
+      render();
+    });
+
+    document.getElementById("players-container").addEventListener("input", (e) => {
+      const el = e.target;
+      if (el.dataset.action !== "score") return;
+      const id = parseInt(el.dataset.id);
+      const player = state.players.find(p => p.id === id);
+      if (!player) return;
+      player.score = parseInt(el.value) || 0;
+      saveToHash();
+    });
+
+    function startEditingName(id) {
+      const player = state.players.find(p => p.id === id);
+      if (!player) return;
+      const nameEl = document.querySelector(`.player-name[data-id="${id}"]`);
+      if (!nameEl) return;
+      const original = player.name;
+      nameEl.outerHTML = `<input type="text" class="player-name-input" id="edit-${id}"
+        value="${escapeHtml(original)}" maxlength="30">`;
+      const input = document.getElementById(`edit-${id}`);
+      input.focus();
+      input.select();
+
+      const finish = () => {
+        const newName = input.value.trim() || original;
+        player.name = newName;
+        saveToHash();
+        render();
+      };
+      input.addEventListener("blur", finish);
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          input.blur();
+        } else if (e.key === "Escape") {
+          e.preventDefault();
+          render();
+        }
+      });
+    }
+
+    function promptAddScore(id) {
+      const player = state.players.find(p => p.id === id);
+      if (!player) return;
+      const input = prompt(`Add penalty points to ${player.name} (current: ${player.score}):`, "0");
+      if (input === null) return;
+      const add = parseInt(input);
+      if (isNaN(add)) return;
+      player.score += add;
+      saveToHash();
+      render();
+    }
+
+    function addPlayer() {
+      const name = `Player ${state.players.length + 1}`;
+      state.players.push(makePlayer(state.nextId, name));
+      state.nextId += 1;
+      saveToHash();
+      render();
+    }
+
+    document.getElementById("add-player-btn").addEventListener("click", addPlayer);
+    document.getElementById("add-player-top-btn").addEventListener("click", addPlayer);
+
+    document.getElementById("track-scores-toggle").addEventListener("change", (e) => {
+      state.trackScores = e.target.checked;
+      saveToHash();
+      render();
+    });
+
+    document.getElementById("new-game-btn").addEventListener("click", () => {
+      if (confirm("Start a new game? Phases and scores will reset, but player names will be kept.")) {
+        for (const p of state.players) {
+          p.phase = 1;
+          p.score = 0;
+        }
+        saveToHash();
+        render();
+      }
+    });
+
+    document.getElementById("copy-link-btn").addEventListener("click", () => {
+      saveToHash();
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        const btn = document.getElementById("copy-link-btn");
+        btn.textContent = "Copied!";
+        setTimeout(() => { btn.textContent = "📋 Copy Link"; }, 2000);
+      });
+    });
+
+    document.getElementById("ref-toggle").addEventListener("click", () => {
+      const content = document.getElementById("ref-content");
+      const btn = document.getElementById("ref-toggle");
+      const isOpen = content.classList.toggle("open");
+      btn.textContent = isOpen ? "▼ Phase Reference" : "▶ Phase Reference";
+    });
+
+    window.addEventListener("hashchange", () => {
+      state = createInitialState();
+      loadFromHash();
+      render();
+    });
+
+    // Initialize
+    loadFromHash();
+    renderPhaseReference();
+    render();
+    </script>
+</body>
+</html>
