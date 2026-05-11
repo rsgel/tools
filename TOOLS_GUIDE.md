@@ -188,7 +188,7 @@ For tools using SQLite WASM, Pyodide, etc.
    ```
    - [Tool Name](tool-name) short description
    ```
-4. (Optional) Create `tests/test_{tool_name}.py` with Playwright tests
+4. Create `tests/test_{tool_name}.py` with Playwright tests
 5. Test locally: `python -m http.server 8000` then visit `localhost:8000/tool-name.html`
 
 ---

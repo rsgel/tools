@@ -51,6 +51,16 @@ def test_tool_has_docs(tool):
     )
 
 
+@pytest.mark.parametrize("tool", get_tool_files())
+def test_tool_has_test_file(tool):
+    """Every published tool must have a corresponding pytest file."""
+    test_file = root / "tests" / f"test_{tool.replace('-', '_')}.py"
+    assert test_file.exists(), (
+        f"{tool}.html exists but {test_file.name} is missing. "
+        "Published tools must have tests that run in GitHub Actions."
+    )
+
+
 def test_no_dead_readme_links(tool_files, readme_links):
     """Every tool linked in README.md must have a corresponding HTML file."""
     for link in readme_links:
