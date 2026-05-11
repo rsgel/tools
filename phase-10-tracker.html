@@ -50,8 +50,8 @@
       background: #edf2f7;
     }
 
-    /* Score toggle */
-    .score-toggle {
+    /* Toggle pills */
+    .toggle-pill {
       display: inline-flex;
       align-items: center;
       gap: 8px;
@@ -65,33 +65,63 @@
       font-weight: 500;
       color: #4a5568;
     }
-    .score-toggle input {
+    .toggle-pill input {
       width: 16px;
       height: 16px;
       margin: 0;
       cursor: pointer;
     }
+    .toggle-pill.unsupported {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
 
     /* Player grid */
     .players {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
       gap: 14px;
       margin-bottom: 16px;
     }
     .player {
-      background: #fff;
-      border-radius: 10px;
-      padding: 16px;
+      --bg: #fff;
+      --num-color: #2b6cb0;
+      --text-color: #2d3748;
+      --muted-color: #718096;
+      --border-color: rgba(0,0,0,0.08);
+      background: var(--bg);
+      color: var(--text-color);
+      border-radius: 12px;
+      padding: 14px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.08);
       border: 2px solid transparent;
       position: relative;
       display: flex;
       flex-direction: column;
+      transition:
+        background-color 0.45s ease,
+        color 0.45s ease,
+        box-shadow 0.25s ease,
+        transform 0.15s ease;
+    }
+    .player:hover {
+      box-shadow: 0 4px 10px rgba(0,0,0,0.12);
     }
     .player.winner {
       border-color: #f6ad55;
-      background: linear-gradient(180deg, #fffaf0 0%, #fff 80%);
+      background: linear-gradient(135deg, #fffaf0 0%, #fef5e7 60%, #fceabb 100%);
+      animation: winner-glow 2s ease-in-out infinite;
+    }
+    .player.added {
+      animation: slide-in 0.35s ease-out;
+    }
+    @keyframes slide-in {
+      from { opacity: 0; transform: translateY(-12px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes winner-glow {
+      0%, 100% { box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 0 0 0 rgba(246,173,85,0.4); }
+      50% { box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 0 0 8px rgba(246,173,85,0); }
     }
 
     /* Player name */
@@ -99,11 +129,11 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 10px;
+      gap: 6px;
+      margin-bottom: 6px;
     }
     .player-name {
-      font-size: 17px;
+      font-size: 16px;
       font-weight: 600;
       cursor: pointer;
       flex: 1;
@@ -113,12 +143,13 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      color: var(--text-color);
     }
     .player-name:hover {
-      background: #edf2f7;
+      background: rgba(255,255,255,0.4);
     }
     .player-name-input {
-      font-size: 17px;
+      font-size: 16px;
       font-weight: 600;
       padding: 2px 6px;
       border: 2px solid #4a90e2;
@@ -131,49 +162,56 @@
     .remove-btn {
       background: none;
       border: none;
-      color: #cbd5e0;
+      color: var(--muted-color);
       cursor: pointer;
       font-size: 20px;
       padding: 2px 6px;
       border-radius: 4px;
       line-height: 1;
       flex-shrink: 0;
+      opacity: 0.6;
+      transition: opacity 0.2s, color 0.2s, background 0.2s;
     }
     .remove-btn:hover {
       color: #e53e3e;
       background: #fff5f5;
+      opacity: 1;
     }
 
     /* Phase display */
     .phase-block {
       text-align: center;
-      margin: 8px 0 12px;
+      margin: 4px 0 10px;
     }
     .phase-label {
-      font-size: 11px;
+      font-size: 10px;
       text-transform: uppercase;
-      letter-spacing: 1px;
-      color: #a0aec0;
+      letter-spacing: 1.2px;
+      color: var(--muted-color);
       font-weight: 600;
       margin-bottom: 2px;
     }
     .phase-number {
-      font-size: 56px;
+      font-size: 64px;
       font-weight: 800;
       line-height: 1;
-      color: #2b6cb0;
-      margin: 4px 0;
-      letter-spacing: -2px;
+      color: var(--num-color);
+      margin: 2px 0 4px;
+      letter-spacing: -3px;
+      transition: color 0.45s ease;
+      display: inline-block;
     }
     .phase-number.done {
-      color: #d69e2e;
+      color: #b7791f;
       font-size: 36px;
       letter-spacing: 0;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.6);
     }
     .phase-desc {
-      font-size: 14px;
-      color: #4a5568;
-      min-height: 21px;
+      font-size: 13px;
+      color: var(--text-color);
+      opacity: 0.85;
+      min-height: 19px;
       font-weight: 500;
     }
 
@@ -183,10 +221,11 @@
       gap: 8px;
       justify-content: center;
       align-items: center;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
     .phase-btn {
-      width: 56px;
+      flex: 1;
+      max-width: 80px;
       height: 44px;
       border-radius: 8px;
       border: none;
@@ -194,75 +233,95 @@
       font-weight: 700;
       cursor: pointer;
       font-family: inherit;
-      transition: transform 0.05s;
+      transition: transform 0.08s ease, background-color 0.2s, box-shadow 0.2s;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
     }
-    .phase-btn:active {
-      transform: scale(0.95);
+    .phase-btn:active:not(:disabled) {
+      transform: scale(0.92);
     }
     .phase-minus {
-      background: #edf2f7;
-      color: #4a5568;
+      background: rgba(255,255,255,0.7);
+      color: var(--text-color);
     }
-    .phase-minus:hover {
-      background: #e2e8f0;
+    .phase-minus:hover:not(:disabled) {
+      background: rgba(255,255,255,0.95);
     }
     .phase-plus {
-      background: #4299e1;
+      background: rgba(0,0,0,0.18);
+      color: var(--text-color);
+    }
+    .phase-plus:hover:not(:disabled) {
+      background: rgba(0,0,0,0.28);
+    }
+    .player.dark-text .phase-plus {
+      background: rgba(0,0,0,0.18);
+    }
+    .player.light-text .phase-plus {
+      background: rgba(0,0,0,0.28);
       color: #fff;
     }
-    .phase-plus:hover {
-      background: #3182ce;
+    .player.light-text .phase-minus {
+      background: rgba(255,255,255,0.85);
+      color: #2d3748;
     }
     .phase-btn:disabled {
-      opacity: 0.4;
+      opacity: 0.35;
       cursor: not-allowed;
-      transform: none;
     }
 
     /* Score row */
     .score-row {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding-top: 12px;
-      border-top: 1px solid #edf2f7;
+      gap: 6px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(0,0,0,0.08);
       margin-top: auto;
     }
+    .player.light-text .score-row {
+      border-top-color: rgba(255,255,255,0.25);
+    }
     .score-row label {
-      font-size: 13px;
-      color: #718096;
+      font-size: 12px;
+      color: var(--muted-color);
       font-weight: 600;
       flex-shrink: 0;
     }
     .score-input {
       flex: 1;
       padding: 6px 8px;
-      border: 2px solid #e2e8f0;
+      border: 2px solid rgba(0,0,0,0.12);
       border-radius: 4px;
       font-size: 16px;
       font-family: inherit;
       text-align: right;
-      background: #fff;
+      background: rgba(255,255,255,0.85);
+      color: #2d3748;
       min-width: 0;
     }
     .score-input:focus {
       outline: none;
       border-color: #4a90e2;
+      background: #fff;
     }
     .score-add-btn {
       padding: 6px 10px;
-      border: 2px solid #e2e8f0;
-      background: #fff;
+      border: 2px solid rgba(0,0,0,0.12);
+      background: rgba(255,255,255,0.85);
       border-radius: 4px;
       cursor: pointer;
-      font-size: 13px;
-      font-weight: 600;
-      color: #4a5568;
+      font-size: 14px;
+      font-weight: 700;
+      color: #2d3748;
       font-family: inherit;
       flex-shrink: 0;
+      transition: background 0.2s, transform 0.08s;
     }
     .score-add-btn:hover {
-      background: #edf2f7;
+      background: #fff;
+    }
+    .score-add-btn:active {
+      transform: scale(0.92);
     }
 
     /* Add player */
@@ -277,6 +336,7 @@
       font-size: 15px;
       font-weight: 600;
       font-family: inherit;
+      transition: background 0.2s, border-color 0.2s, color 0.2s;
     }
     .add-player:hover {
       background: #edf2f7;
@@ -358,33 +418,93 @@
       position: absolute;
       top: -10px;
       right: -8px;
-      background: #f6ad55;
+      background: linear-gradient(135deg, #f6ad55 0%, #ed8936 100%);
       color: #fff;
       padding: 4px 10px;
       border-radius: 12px;
       font-size: 12px;
       font-weight: 700;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+      box-shadow: 0 2px 6px rgba(237,137,54,0.4);
+      animation: badge-pop 0.4s ease-out;
+    }
+    @keyframes badge-pop {
+      0% { transform: scale(0) rotate(-15deg); }
+      70% { transform: scale(1.15) rotate(3deg); }
+      100% { transform: scale(1) rotate(0); }
     }
 
     @media (max-width: 600px) {
       body {
-        padding: 12px;
+        padding: 10px;
       }
       h1 {
         font-size: 22px;
       }
+      .tagline {
+        font-size: 13px;
+        margin-bottom: 12px;
+      }
+      .top-actions {
+        gap: 6px;
+        margin-bottom: 12px;
+      }
+      .btn-small, .toggle-pill {
+        padding: 7px 10px;
+        font-size: 13px;
+      }
       .players {
-        grid-template-columns: 1fr;
-        gap: 10px;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+      }
+      .player {
+        padding: 10px 10px 12px;
+        border-radius: 10px;
+      }
+      .player-name {
+        font-size: 14px;
+      }
+      .phase-block {
+        margin: 2px 0 6px;
+      }
+      .phase-label {
+        font-size: 9px;
+        margin-bottom: 0;
       }
       .phase-number {
-        font-size: 64px;
+        font-size: 52px;
+        letter-spacing: -2px;
+      }
+      .phase-number.done {
+        font-size: 26px;
+      }
+      .phase-desc {
+        font-size: 11px;
+        line-height: 1.3;
+        min-height: 28px;
+      }
+      .phase-controls {
+        gap: 6px;
+        margin-bottom: 6px;
       }
       .phase-btn {
-        width: 64px;
-        height: 48px;
-        font-size: 24px;
+        height: 40px;
+        font-size: 20px;
+      }
+      .score-row {
+        padding-top: 8px;
+        gap: 4px;
+      }
+      .score-row label {
+        font-size: 11px;
+      }
+      .score-input {
+        padding: 5px 6px;
+      }
+      .winner-badge {
+        font-size: 10px;
+        padding: 3px 7px;
+        top: -8px;
+        right: -4px;
       }
     }
     </style>
@@ -397,9 +517,13 @@
       <button class="btn-small" id="add-player-top-btn">+ Add Player</button>
       <button class="btn-small" id="copy-link-btn">📋 Copy Link</button>
       <button class="btn-small" id="new-game-btn">🔄 New Game</button>
-      <label class="score-toggle">
+      <label class="toggle-pill">
         <input type="checkbox" id="track-scores-toggle">
         Track scores
+      </label>
+      <label class="toggle-pill" id="wake-lock-label">
+        <input type="checkbox" id="wake-lock-toggle">
+        Keep screen on
       </label>
     </div>
 
@@ -463,6 +587,10 @@
     }
 
     let state = createInitialState();
+    let justAddedId = null;
+    let justChangedId = null;
+    let wakeLock = null;
+    let wantsWakeLock = false;
 
     // --- URL state persistence ---
     function encodeState() {
@@ -503,6 +631,32 @@
       history.replaceState(null, "", `#${encodeState()}`);
     }
 
+    // --- Phase color computation ---
+    // Heat scale: cool blue at phase 1 → vibrant red at phase 10.
+    function phaseColors(phase) {
+      const t = (Math.max(1, Math.min(MAX_PHASE, phase)) - 1) / (MAX_PHASE - 1);
+      // Hue: 200 (blue) → ~2 (red), going through cyan/green/yellow/orange.
+      const hue = 200 - t * 198;
+      // Saturation rises so higher phases feel more vivid.
+      const sat = 55 + t * 30;
+      // Lightness drops so higher phases feel more intense.
+      const lightness = 92 - t * 36;
+      const useLightText = lightness < 70;
+
+      const bg = `hsl(${hue}, ${sat}%, ${lightness}%)`;
+      const numColor = useLightText
+        ? "#fff"
+        : `hsl(${hue}, 75%, 22%)`;
+      const textColor = useLightText
+        ? "rgba(255,255,255,0.95)"
+        : `hsl(${hue}, 60%, 18%)`;
+      const mutedColor = useLightText
+        ? "rgba(255,255,255,0.75)"
+        : `hsl(${hue}, 30%, 35%)`;
+
+      return { bg, numColor, textColor, mutedColor, useLightText };
+    }
+
     // --- Rendering ---
     function phaseDisplay(phase) {
       if (phase > MAX_PHASE) {
@@ -517,6 +671,13 @@
       const isWinner = player.phase > MAX_PHASE;
       const minusDisabled = player.phase <= 1;
       const plusDisabled = player.phase > MAX_PHASE;
+      const colors = phaseColors(Math.min(player.phase, MAX_PHASE));
+      const styleStr = isWinner
+        ? ""
+        : `--bg:${colors.bg};--num-color:${colors.numColor};--text-color:${colors.textColor};--muted-color:${colors.mutedColor};`;
+      const textClass = isWinner ? "" : (colors.useLightText ? "light-text" : "dark-text");
+      const addedClass = (player.id === justAddedId) ? " added" : "";
+
       const scoreRow = state.trackScores ? `
         <div class="score-row">
           <label>Score</label>
@@ -527,7 +688,8 @@
       ` : "";
 
       return `
-        <div class="player ${isWinner ? "winner" : ""}" data-id="${player.id}">
+        <div class="player ${isWinner ? "winner" : ""} ${textClass}${addedClass}"
+             data-id="${player.id}" style="${styleStr}">
           ${isWinner ? '<span class="winner-badge">WINNER</span>' : ""}
           <div class="player-name-row">
             <div class="player-name" data-id="${player.id}" data-action="edit-name"
@@ -563,6 +725,30 @@
       const container = document.getElementById("players-container");
       container.innerHTML = state.players.map(renderPlayer).join("");
       document.getElementById("track-scores-toggle").checked = state.trackScores;
+
+      // Animate the phase number for the player whose phase just changed.
+      if (justChangedId !== null) {
+        const el = container.querySelector(`.player[data-id="${justChangedId}"] .phase-number`);
+        if (el && el.animate) {
+          el.animate(
+            [
+              { transform: "scale(1)" },
+              { transform: "scale(1.28)" },
+              { transform: "scale(1)" },
+            ],
+            { duration: 320, easing: "cubic-bezier(0.34, 1.56, 0.64, 1)" }
+          );
+        }
+        justChangedId = null;
+      }
+
+      // Clear the just-added marker after the slide-in animation has run.
+      if (justAddedId !== null) {
+        const id = justAddedId;
+        setTimeout(() => {
+          if (justAddedId === id) justAddedId = null;
+        }, 400);
+      }
     }
 
     function renderPhaseReference() {
@@ -582,9 +768,15 @@
       if (!player) return;
 
       if (action === "plus") {
-        if (player.phase <= MAX_PHASE) player.phase += 1;
+        if (player.phase <= MAX_PHASE) {
+          player.phase += 1;
+          justChangedId = id;
+        }
       } else if (action === "minus") {
-        if (player.phase > 1) player.phase -= 1;
+        if (player.phase > 1) {
+          player.phase -= 1;
+          justChangedId = id;
+        }
       } else if (action === "remove") {
         if (state.players.length <= 1) {
           alert("At least one player is required.");
@@ -660,8 +852,10 @@
 
     function addPlayer() {
       const name = `Player ${state.players.length + 1}`;
-      state.players.push(makePlayer(state.nextId, name));
+      const newPlayer = makePlayer(state.nextId, name);
+      state.players.push(newPlayer);
       state.nextId += 1;
+      justAddedId = newPlayer.id;
       saveToHash();
       render();
     }
@@ -700,6 +894,53 @@
       const btn = document.getElementById("ref-toggle");
       const isOpen = content.classList.toggle("open");
       btn.textContent = isOpen ? "▼ Phase Reference" : "▶ Phase Reference";
+    });
+
+    // --- Wake Lock (keep screen on) ---
+    const wakeLockSupported = "wakeLock" in navigator;
+    const wakeLockToggle = document.getElementById("wake-lock-toggle");
+    const wakeLockLabel = document.getElementById("wake-lock-label");
+
+    if (!wakeLockSupported) {
+      wakeLockToggle.disabled = true;
+      wakeLockLabel.classList.add("unsupported");
+      wakeLockLabel.title = "Your browser doesn't support keeping the screen on";
+    }
+
+    async function acquireWakeLock() {
+      if (!wakeLockSupported || wakeLock) return;
+      try {
+        wakeLock = await navigator.wakeLock.request("screen");
+        wakeLock.addEventListener("release", () => {
+          wakeLock = null;
+        });
+      } catch (err) {
+        wantsWakeLock = false;
+        wakeLockToggle.checked = false;
+      }
+    }
+
+    async function releaseWakeLock() {
+      if (wakeLock) {
+        try { await wakeLock.release(); } catch (e) { console.warn("Failed to release wake lock:", e); }
+        wakeLock = null;
+      }
+    }
+
+    wakeLockToggle.addEventListener("change", async (e) => {
+      wantsWakeLock = e.target.checked;
+      if (wantsWakeLock) {
+        await acquireWakeLock();
+      } else {
+        await releaseWakeLock();
+      }
+    });
+
+    // Re-acquire after the tab becomes visible again (the browser releases on hide).
+    document.addEventListener("visibilitychange", () => {
+      if (wantsWakeLock && document.visibilityState === "visible" && !wakeLock) {
+        acquireWakeLock();
+      }
     });
 
     window.addEventListener("hashchange", () => {

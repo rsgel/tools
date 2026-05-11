@@ -1,6 +1,7 @@
 A tracker for the card game Phase 10. Each player has a large, easy-to-read
 phase number with simple +/− buttons to advance or correct their progress.
-Score tracking is optional, and players can be added or removed at any time.
+Score tracking is optional, players can be added or removed at any time, and
+each card's color intensifies as the player approaches phase 10.
 
 ## Spec
 
@@ -14,8 +15,21 @@ Key behaviors:
 - Tap a player name to rename inline.
 - A "Track scores" checkbox shows/hides per-player score inputs; the "+" next
   to a score prompts for a delta to add to the current total.
+- "Keep screen on" uses the Wake Lock API to prevent the device from sleeping
+  during a game; gracefully disabled on browsers without support and
+  re-acquired automatically when the tab becomes visible again.
 - "New Game" resets phases and scores but keeps player names.
 - Phase reference panel lists all 10 phase goals plus card penalty values.
+
+Visual design:
+- Each card's background color is computed from the player's phase via HSL,
+  shifting from pale cool blue at phase 1 through green/yellow/orange to a
+  vivid red at phase 10. The phase-number text colour switches to white when
+  the background lightness drops below ~70% so the number stays legible.
+- Mobile (≤600px) uses a 2-column grid so all players fit on one screen
+  without scrolling for typical Phase 10 games (2–6 players).
+- Animations: phase number bumps when changed (Web Animations API), new
+  player cards slide in, and the winner card has a pulsing gold glow.
 
 ## Backlog
 
