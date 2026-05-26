@@ -96,6 +96,7 @@
       --text-color: #2d3748;
       --muted-color: #718096;
       --border-color: rgba(0,0,0,0.08);
+      --glow: none;
       background: var(--bg);
       color: var(--text-color);
       border-radius: 12px;
@@ -208,6 +209,7 @@
       letter-spacing: -3px;
       transition: color 0.45s ease;
       display: inline-block;
+      text-shadow: var(--glow);
     }
     .phase-number.done {
       color: #b7791f;
@@ -221,6 +223,7 @@
       opacity: 0.85;
       min-height: 19px;
       font-weight: 500;
+      text-shadow: var(--glow);
     }
 
     /* Phase controls */
@@ -271,6 +274,14 @@
     .player.light-text .phase-minus {
       background: rgba(255,255,255,0.85);
       color: #2d3748;
+    }
+    /* Adaptive glow behind the phase text so it stays legible on any hue:
+       a soft light halo under dark ink, a soft dark halo under white ink. */
+    .player.dark-text {
+      --glow: 0 1px 2px rgba(255,255,255,0.65);
+    }
+    .player.light-text {
+      --glow: 0 1px 3px rgba(0,0,0,0.5);
     }
     .phase-btn:disabled {
       opacity: 0.35;
@@ -542,6 +553,7 @@
     <div class="top-actions">
       <button class="btn-small" id="add-player-top-btn">+ Add Player</button>
       <button class="btn-small" id="copy-link-btn">📋 Copy Link</button>
+      <button class="btn-small" id="copy-results-btn">🏅 Copy Results</button>
       <button class="btn-small" id="new-game-btn">🔄 New Game</button>
       <label class="toggle-pill">
         <input type="checkbox" id="track-scores-toggle">
@@ -660,6 +672,25 @@
 
     // --- Phase color computation ---
     // Heat scale: cool blue at phase 1 → vibrant red at phase 10.
+    function hslToRgb(h, s, l) {
+      s /= 100;
+      l /= 100;
+      const k = n => (n + h / 30) % 12;
+      const a = s * Math.min(l, 1 - l);
+      const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1));
+      return [f(0), f(8), f(4)];
+    }
+    function relLuminance(h, s, l) {
+      const [r, g, b] = hslToRgb(h, s, l);
+      const lin = c => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+      return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+    }
+    function contrastRatio(l1, l2) {
+      const hi = Math.max(l1, l2);
+      const lo = Math.min(l1, l2);
+      return (hi + 0.05) / (lo + 0.05);
+    }
+
     function phaseColors(phase) {
       const t = (Math.max(1, Math.min(MAX_PHASE, phase)) - 1) / (MAX_PHASE - 1);
       // Hue: 200 (blue) → ~2 (red), going through cyan/green/yellow/orange.
@@ -668,7 +699,16 @@
       const sat = 55 + t * 30;
       // Lightness drops so higher phases feel more intense.
       const lightness = 92 - t * 36;
-      const useLightText = lightness < 70;
+
+      // Pick text color by actual perceived contrast rather than HSL
+      // lightness — bright mid-scale hues (yellow/green) read as far lighter
+      // than their lightness value, so a lightness threshold wrongly puts
+      // white text on them. Compare white vs a dark hue-tinted ink and keep
+      // whichever has more contrast against the background.
+      const bgLum = relLuminance(hue, sat, lightness);
+      const darkInkLum = relLuminance(hue, 60, 18);
+      const useLightText =
+        contrastRatio(bgLum, 1.0) > contrastRatio(bgLum, darkInkLum);
 
       const bg = `hsl(${hue}, ${sat}%, ${lightness}%)`;
       const numColor = useLightText
@@ -928,6 +968,37 @@
         const btn = document.getElementById("copy-link-btn");
         btn.textContent = "Copied!";
         setTimeout(() => { btn.textContent = "📋 Copy Link"; }, 2000);
+      });
+    });
+
+    // Build a plain-text, shareable standings summary. Players are ranked by
+    // phase (furthest along first); when scores are tracked, ties break on the
+    // lower score, which is what wins in Phase 10.
+    function buildResultsText() {
+      const ranked = state.players
+        .map((p, i) => ({ ...p, i }))
+        .sort((a, b) => {
+          if (b.phase !== a.phase) return b.phase - a.phase;
+          if (state.trackScores && a.score !== b.score) return a.score - b.score;
+          return a.i - b.i;
+        });
+      const d = new Date();
+      const dateStr = `${d.getMonth() + 1}/${d.getDate()}/${String(d.getFullYear()).slice(-2)}`;
+      const lines = [`Phase 10 — ${dateStr}`, ""];
+      ranked.forEach((p, idx) => {
+        const done = p.phase > MAX_PHASE;
+        const phaseText = done ? "Done 🏆" : `Phase ${p.phase}`;
+        const scoreText = state.trackScores ? ` — ${p.score} pts` : "";
+        lines.push(`${idx + 1}. ${p.name} — ${phaseText}${scoreText}`);
+      });
+      return lines.join("\n");
+    }
+
+    document.getElementById("copy-results-btn").addEventListener("click", () => {
+      navigator.clipboard.writeText(buildResultsText()).then(() => {
+        const btn = document.getElementById("copy-results-btn");
+        btn.textContent = "Copied!";
+        setTimeout(() => { btn.textContent = "🏅 Copy Results"; }, 2000);
       });
     });
 
