@@ -24,13 +24,22 @@ Key behaviors:
   during a game; gracefully disabled on browsers without support and
   re-acquired automatically when the tab becomes visible again.
 - "New Game" resets phases and scores but keeps player names.
+- "Copy Results" copies a plain-text standings summary for sharing, ranked by
+  phase (furthest first); when scores are tracked, ties break on the lower
+  score (which wins in Phase 10) and "pts" are included per player.
 - Phase reference panel lists all 10 phase goals plus card penalty values.
 
 Visual design:
 - Each card's background color is computed from the player's phase via HSL,
   shifting from pale cool blue at phase 1 through green/yellow/orange to a
-  vivid red at phase 10. The phase-number text colour switches to white when
-  the background lightness drops below ~70% so the number stays legible.
+  vivid red at phase 10. Text colour (dark hue-tinted ink vs white) is chosen
+  by comparing actual WCAG relative-luminance contrast against the background
+  rather than a raw HSL-lightness threshold — bright mid-scale hues like
+  yellow/green read as far lighter than their lightness value, so the old
+  threshold wrongly put white text on them. In practice phases 1–9 use dark
+  ink and only phase 10 (red) uses white. An adaptive text-shadow "glow"
+  (light halo under dark ink, dark halo under white) gives the phase number
+  and goal text extra legibility on any hue.
 - Mobile (≤600px) uses a 2-column grid so all players fit on one screen
   without scrolling for typical Phase 10 games (2–6 players).
 - Animations: phase number bumps when changed (Web Animations API), new
