@@ -13,8 +13,13 @@ resumed by reopening the link.
 Key behaviors:
 - Tap +/− to advance or undo a phase (the most common action — large hit area).
 - Tap a player name to rename inline.
-- A "Track scores" checkbox shows/hides per-player score inputs; the "+" next
-  to a score prompts for a delta to add to the current total.
+- A "Track scores" checkbox shows/hides a per-player score panel. Scores are
+  tallied with quick-add buttons (+5 / +10 / +25) matching the common card
+  penalty values, so you can tap as you count cards; tap the score value to
+  set an exact total (for corrections).
+- Interactive controls use `touch-action: manipulation` to suppress
+  double-tap-to-zoom (pinch-zoom still works), since rapid phase/score
+  tapping previously triggered zooms on mobile.
 - "Keep screen on" uses the Wake Lock API to prevent the device from sleeping
   during a game; gracefully disabled on browsers without support and
   re-acquired automatically when the tab becomes visible again.
@@ -33,7 +38,6 @@ Visual design:
 
 ## Backlog
 
-- Quick-add buttons for common card values (5/10/15/25)
 - Per-round history (track who completed each round, undo round)
 - Sort players by phase or score
 - Custom phase variants (House Rules / Phase 10 Masters)
