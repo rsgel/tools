@@ -982,7 +982,9 @@
           if (state.trackScores && a.score !== b.score) return a.score - b.score;
           return a.i - b.i;
         });
-      const lines = ["Phase 10 Tracker", ""];
+      const d = new Date();
+      const dateStr = `${d.getMonth() + 1}/${d.getDate()}/${String(d.getFullYear()).slice(-2)}`;
+      const lines = [`Phase 10 — ${dateStr}`, ""];
       ranked.forEach((p, idx) => {
         const done = p.phase > MAX_PHASE;
         const phaseText = done ? "Done 🏆" : `Phase ${p.phase}`;

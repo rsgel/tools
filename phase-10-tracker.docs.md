@@ -24,9 +24,10 @@ Key behaviors:
   during a game; gracefully disabled on browsers without support and
   re-acquired automatically when the tab becomes visible again.
 - "New Game" resets phases and scores but keeps player names.
-- "Copy Results" copies a plain-text standings summary for sharing, ranked by
-  phase (furthest first); when scores are tracked, ties break on the lower
-  score (which wins in Phase 10) and "pts" are included per player.
+- "Copy Results" copies a plain-text standings summary for sharing, headed
+  with "Phase 10 — M/D/YY" (today's local date), ranked by phase (furthest
+  first); when scores are tracked, ties break on the lower score (which wins
+  in Phase 10) and "pts" are included per player.
 - Phase reference panel lists all 10 phase goals plus card penalty values.
 
 Visual design:
