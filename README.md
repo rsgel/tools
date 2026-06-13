@@ -20,6 +20,8 @@ Each tool is a single, self-contained HTML file. The site is hosted via [GitHub 
 - [Tip Calculator](tip-calculator) calculate tip and split the bill among multiple people
 - [Phase 10 Tracker](phase-10-tracker) track which phase each player is on in the card game Phase 10, with optional score tracking
 
+- [Agent Injection Lab](agent-injection-lab) adversarial test harness that disguises itself as a SaaS app and shows which indirect prompt-injection vectors a browsing agent acted on
+
 <!-- New tools should be added above this line as bullet points:
 - [Tool Name](tool-name) short description
 -->
